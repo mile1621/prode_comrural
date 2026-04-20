@@ -26,7 +26,17 @@ export function useBets() {
         sheetsApi.partidos.listar()
       ])
 
-      const allMatches = dataPartidos.partidos || []
+      let allMatches = dataPartidos.partidos || []
+
+      // MOCKEADO TEMPORAL: Partidos de prueba si la hoja de GS está vacía
+      if (allMatches.length === 0) {
+        allMatches = [
+          { id: 'mock1', equipo_local: 'Boca Juniors', equipo_visitante: 'River Plate', estado: 'programado' },
+          { id: 'mock2', equipo_local: 'Real Madrid', equipo_visitante: 'Barcelona', estado: 'programado' },
+          { id: 'mock3', equipo_local: 'Inter Miami', equipo_visitante: 'LA Galaxy', estado: 'programado' }
+        ]
+      }
+      
       setMatches(allMatches)
 
       const enrichedBets = (dataApuestas.apuestas || []).map(a => {
