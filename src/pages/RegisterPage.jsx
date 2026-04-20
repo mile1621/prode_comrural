@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
+import { useAuth } from '../hooks/useAuth.jsx'
 
 export default function RegisterPage() {
+  const { register }          = useAuth()
   const [form, setForm]       = useState({ name: '', email: '', password: '' })
   const [done, setDone]       = useState(false)
   const [loading, setLoading] = useState(false)
@@ -11,10 +13,14 @@ export default function RegisterPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
-    // TODO: conectar con authService.register(form.name, form.email, form.password)
-    await new Promise(r => setTimeout(r, 800))
-    setLoading(false)
-    setDone(true)
+    try {
+      await register(form.name, form.email, form.password)
+      setDone(true)
+    } catch (err) {
+      alert(err.message || 'Error al registrarte')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

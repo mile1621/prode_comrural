@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const { bets, predictions } = useBets()
 
   const activeBets   = bets.filter(b => isBetOpen(b))
-  const liveBets     = bets.filter(b => b.match?.state === 'live')
+  const liveBets     = bets.filter(b => b.partidos?.some(p => p.estado === 'en_vivo'))
   const myPredictions = Object.keys(predictions).length
 
   return (
@@ -55,23 +55,27 @@ export default function DashboardPage() {
             <span className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent)] animate-pulse-accent" />
           </h2>
           <div className="grid gap-3">
-            {liveBets.map(bet => (
-              <Card key={bet.id} glow className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="font-body font-semibold text-[var(--color-text)]">{bet.title}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">{bet.prize}</p>
-                </div>
-                {bet.match && (
-                  <div className="flex items-center gap-3 font-body font-semibold text-sm">
-                    <span>{bet.match.home}</span>
-                    <span className="font-display text-2xl text-[var(--color-accent)] px-2">
-                      {bet.match.homeScore} : {bet.match.awayScore}
-                    </span>
-                    <span>{bet.match.away}</span>
+            {liveBets.map(bet => {
+              const liveMatch = bet.partidos?.find(p => p.estado === 'en_vivo') || bet.partidos?.[0]
+              
+              return (
+                <Card key={bet.id} glow className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-body font-semibold text-[var(--color-text)]">{bet.titulo}</p>
+                    <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">{bet.premio}</p>
                   </div>
-                )}
-              </Card>
-            ))}
+                  {liveMatch && (
+                    <div className="flex items-center gap-3 font-body font-semibold text-sm">
+                      <span>{liveMatch.equipo_local}</span>
+                      <span className="font-display text-2xl text-[var(--color-accent)] px-2">
+                        {liveMatch.goles_local || 0} : {liveMatch.goles_visitante || 0}
+                      </span>
+                      <span>{liveMatch.equipo_visitante}</span>
+                    </div>
+                  )}
+                </Card>
+              )
+            })}
           </div>
         </section>
       )}
@@ -85,22 +89,28 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="grid gap-3">
-          {activeBets.slice(0, 3).map(bet => (
-            <Card key={bet.id} className="flex items-center justify-between gap-4 hover:border-[var(--color-accent)] transition-colors">
-              <div>
-                <p className="font-body font-semibold">{bet.title}</p>
-                <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
-                  Cierra en <span className="text-[var(--color-warn)]">{timeLeft(bet.deadline)}</span>
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={matchStateLabel(bet.match?.state).label === 'EN VIVO' ? 'accent' : 'muted'}>
-                  {matchStateLabel(bet.match?.state).label}
-                </Badge>
-                <Badge variant="warn">{bet.prize}</Badge>
-              </div>
-            </Card>
-          ))}
+          {activeBets.slice(0, 3).map(bet => {
+            const betState = bet.partidos?.some(p => p.estado === 'en_vivo') 
+              ? 'en_vivo' 
+              : bet.partidos?.every(p => p.estado === 'finalizado') ? 'finalizado' : 'programado'
+              
+            return (
+              <Card key={bet.id} className="flex items-center justify-between gap-4 hover:border-[var(--color-accent)] transition-colors">
+                <div>
+                  <p className="font-body font-semibold">{bet.titulo}</p>
+                  <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
+                    Cierra en <span className="text-[var(--color-warn)]">{timeLeft(bet.fecha_cierre)}</span>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={matchStateLabel(betState).label === 'EN VIVO' ? 'accent' : 'muted'}>
+                    {matchStateLabel(betState).label}
+                  </Badge>
+                  <Badge variant="warn">{bet.premio}</Badge>
+                </div>
+              </Card>
+            )
+          })}
           {activeBets.length === 0 && (
             <p className="text-[var(--color-text-muted)] font-body text-sm py-6 text-center">
               No hay apuestas activas en este momento.

@@ -7,11 +7,12 @@ import sheetsApi from '../services/sheetsApi.js'
 
 export function useBets() {
   const [bets, setBets]               = useState([])
+  const [matches, setMatches]         = useState([]) // Todos los partidos para selects admin
   const [predictions, setPredictions] = useState({}) // { partido_id: prediccion }
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState(null)
 
-  // Carga inicial de apuestas
+  // Carga inicial de apuestas y partidos
   useEffect(() => {
     loadBets()
   }, [])
@@ -20,8 +21,24 @@ export function useBets() {
     setLoading(true)
     setError(null)
     try {
-      const data = await sheetsApi.apuestas.listar(estado)
-      setBets(data.apuestas || [])
+      const [dataApuestas, dataPartidos] = await Promise.all([
+        sheetsApi.apuestas.listar(estado),
+        sheetsApi.partidos.listar()
+      ])
+
+      const allMatches = dataPartidos.partidos || []
+      setMatches(allMatches)
+
+      const enrichedBets = (dataApuestas.apuestas || []).map(a => {
+        const pIds = a.partidos_ids ? a.partidos_ids.split(',').map(id => id.trim()) : []
+        const mappedMatches = pIds.map(id => allMatches.find(pm => pm.id === id)).filter(Boolean)
+        return {
+          ...a,
+          partidos: mappedMatches
+        }
+      })
+
+      setBets(enrichedBets)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -112,6 +129,7 @@ export function useBets() {
 
   return {
     bets,
+    matches,
     predictions,
     loading,
     error,
