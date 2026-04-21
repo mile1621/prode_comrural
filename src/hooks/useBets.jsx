@@ -12,9 +12,10 @@ export function useBets() {
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState(null)
 
-  // Carga inicial de apuestas y partidos
+  // Carga inicial de apuestas, partidos y predicciones del usuario
   useEffect(() => {
     loadBets()
+    loadMyPredictions()
   }, [])
 
   const loadBets = useCallback(async (estado = '') => {

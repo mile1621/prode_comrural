@@ -2,22 +2,23 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
-import { useAuth } from '../hooks/useAuth.jsx'
+import sheetsApi from '../services/sheetsApi.js'
 
 export default function RegisterPage() {
-  const { register }          = useAuth()
-  const [form, setForm]       = useState({ name: '', email: '', password: '' })
+  const [form, setForm]       = useState({ nombre: '', email: '', password: '' })
   const [done, setDone]       = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setLoading(true)
+    setError(null)
     try {
-      await register(form.name, form.email, form.password)
+      await sheetsApi.auth.registro(form.nombre, form.email, form.password)
       setDone(true)
     } catch (err) {
-      alert(err.message || 'Error al registrarte')
+      setError(err.message || 'No se pudo completar el registro')
     } finally {
       setLoading(false)
     }
@@ -54,8 +55,8 @@ export default function RegisterPage() {
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <Input
                   label="Nombre completo"
-                  value={form.name}
-                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  value={form.nombre}
+                  onChange={e => setForm(p => ({ ...p, nombre: e.target.value }))}
                   placeholder="Juan Pérez"
                   required
                   autoFocus
@@ -76,6 +77,13 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   required
                 />
+
+                {error && (
+                  <p className="text-sm text-[var(--color-danger)] font-body bg-[var(--color-danger-dim)] px-3 py-2 rounded-[var(--radius-sm)]">
+                    {error}
+                  </p>
+                )}
+
                 <Button type="submit" loading={loading} className="w-full mt-1">
                   Registrarme
                 </Button>

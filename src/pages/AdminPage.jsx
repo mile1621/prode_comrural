@@ -8,12 +8,6 @@ import Button from '../components/ui/Button.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
 import sheetsApi from '../services/sheetsApi.js'
 
-// Mock de usuarios pendientes (se reemplazará por sheetsApi.usuarios.listar('pendiente') en el punto B7)
-const PENDING_USERS = [
-  { id: 'u3', nombre: 'María López',  email: 'maria@prode.one', fecha_creacion: new Date().toISOString() },
-  { id: 'u4', nombre: 'Carlos Ruiz',  email: 'carlos@prode.one', fecha_creacion: new Date().toISOString() },
-]
-
 const TABS = ['Apuestas', 'Usuarios']
 
 export default function AdminPage() {
@@ -155,7 +149,6 @@ export default function AdminPage() {
                     <p className="text-xs text-[var(--color-text-muted)] font-body">{u.email}</p>
                     <p className="text-xs text-[var(--color-text-faint)] font-body mt-0.5">
                       {formatDate(u.fecha_registro)}
-                      {formatDate(u.fecha_creacion)}
                     </p>
                   </div>
                   <div className="flex gap-2">
