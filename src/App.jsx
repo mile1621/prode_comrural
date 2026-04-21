@@ -21,9 +21,12 @@ export default function App() {
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
+          {/* Raíz: home pública siempre */}
+          <Route path="/" element={<HomePage />} />
+
           {/* Usuario autenticado */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/"          element={<DashboardPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/apuestas"  element={<BetsPage />} />
           </Route>
 

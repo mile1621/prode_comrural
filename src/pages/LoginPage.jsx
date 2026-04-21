@@ -13,7 +13,7 @@ export default function LoginPage() {
     e.preventDefault()
     try {
       await login(form.email, form.password)
-      navigate('/')
+      navigate('/dashboard')
     } catch (_) {}
   }
 
