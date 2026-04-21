@@ -4,7 +4,8 @@
    ─────────────────────────────────────────────────────────── */
 
 const variants = {
-  primary:   'bg-[var(--color-accent)] text-[var(--color-bg)] hover:bg-[var(--color-accent-dim)] font-semibold',
+  primary:   'bg-[var(--gold-500)] text-[var(--ink-900)] hover:bg-[var(--gold-300)] font-bold',
+  accent:    'bg-[var(--color-accent)] text-[var(--ink-900)] hover:bg-[var(--color-accent-dim)] font-semibold',
   secondary: 'bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]',
   danger:    'bg-[var(--color-danger-dim)] text-[var(--color-danger)] border border-[var(--color-danger)] hover:bg-[var(--color-danger)] hover:text-white',
   ghost:     'bg-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface)]',
