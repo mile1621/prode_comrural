@@ -7,10 +7,10 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
 
-// Mock de usuarios pendientes
+// Mock de usuarios pendientes (se reemplazará por sheetsApi.usuarios.listar('pendiente') en el punto B7)
 const PENDING_USERS = [
-  { id: 'u3', name: 'María López',  email: 'maria@prode.one', createdAt: new Date().toISOString() },
-  { id: 'u4', name: 'Carlos Ruiz',  email: 'carlos@prode.one', createdAt: new Date().toISOString() },
+  { id: 'u3', nombre: 'María López',  email: 'maria@prode.one', fecha_creacion: new Date().toISOString() },
+  { id: 'u4', nombre: 'Carlos Ruiz',  email: 'carlos@prode.one', fecha_creacion: new Date().toISOString() },
 ]
 
 const TABS = ['Apuestas', 'Usuarios']
@@ -113,10 +113,10 @@ export default function AdminPage() {
               {pendingUsers.map(u => (
                 <Card key={u.id} className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-body font-semibold">{u.name}</p>
+                    <p className="font-body font-semibold">{u.nombre}</p>
                     <p className="text-xs text-[var(--color-text-muted)] font-body">{u.email}</p>
                     <p className="text-xs text-[var(--color-text-faint)] font-body mt-0.5">
-                      {formatDate(u.createdAt)}
+                      {formatDate(u.fecha_creacion)}
                     </p>
                   </div>
                   <div className="flex gap-2">

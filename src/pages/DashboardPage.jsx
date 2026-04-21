@@ -32,7 +32,7 @@ export default function DashboardPage() {
       {/* Bienvenida */}
       <div className="mb-8 animate-fade-in">
         <h1 className="font-display text-4xl mb-1">
-          Hola, <span className="text-[var(--color-accent)]">{user?.name?.split(' ')[0]}</span>
+          Hola, <span className="text-[var(--color-accent)]">{user?.nombre?.split(' ')[0]}</span>
         </h1>
         <p className="text-[var(--color-text-muted)] font-body">
           Acá está el resumen de tu actividad en Prode One.

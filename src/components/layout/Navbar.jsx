@@ -59,7 +59,7 @@ export default function Navbar() {
         {user && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-[var(--color-text-muted)] font-body hidden sm:block">
-              {user.name}
+              {user.nombre}
             </span>
             <Button variant="ghost" size="sm" onClick={logout}>
               Salir
