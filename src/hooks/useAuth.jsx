@@ -61,10 +61,24 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  const register = useCallback(async (nombre, email, password) => {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await sheetsApi.auth.registro(nombre, email, password)
+      return data
+    } catch (err) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const isAdmin = user?.rol === 'admin'
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout, isAdmin }}>
+    <AuthContext.Provider value={{ user, loading, error, login, logout, register, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

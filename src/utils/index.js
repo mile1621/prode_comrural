@@ -24,25 +24,26 @@ export function timeLeft(deadline) {
 
 /** Devuelve true si una apuesta está abierta */
 export function isBetOpen(bet) {
-  return bet.status === 'active' && new Date(bet.deadline) > Date.now()
+  return bet.estado === 'abierta' && new Date(bet.fecha_cierre) > Date.now()
 }
 
 /** Clases CSS para el estado de una apuesta */
-export function betStatusClass(status) {
+export function betStatusClass(estado) {
   return {
-    active: 'text-accent',
-    closed: 'text-muted',
-    finished: 'text-warn',
-  }[status] ?? 'text-muted'
+    abierta: 'text-accent',
+    cerrada: 'text-muted',
+    finalizada: 'text-warn',
+  }[estado] ?? 'text-muted'
 }
 
 /** Clases CSS para el estado de un partido */
-export function matchStateLabel(state) {
+export function matchStateLabel(estado) {
   return {
-    scheduled: { label: 'Programado', class: 'text-muted' },
-    live:       { label: 'EN VIVO',   class: 'text-accent animate-pulse-accent' },
-    finished:   { label: 'Finalizado', class: 'text-warn' },
-  }[state] ?? { label: state, class: 'text-muted' }
+    programado:  { label: 'Programado', class: 'text-muted' },
+    en_vivo:     { label: 'EN VIVO',    class: 'text-accent animate-pulse-accent' },
+    finalizado:  { label: 'Finalizado', class: 'text-warn' },
+    cancelado:   { label: 'Cancelado',  class: 'text-danger' }
+  }[estado] ?? { label: estado || '-', class: 'text-muted' }
 }
 
 /** Trunca texto a n caracteres */

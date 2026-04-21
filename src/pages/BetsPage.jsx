@@ -7,19 +7,31 @@ import { useBets } from '../hooks/useBets.jsx'
 const FILTERS = ['todas', 'activas', 'cerradas']
 
 export default function BetsPage() {
-  const { bets, predictions, loading, placePrediction } = useBets()
+  const { bets, predictions, loading, savePrediction } = useBets()
   const [filter, setFilter]     = useState('todas')
   const [activeBet, setActiveBet] = useState(null) // apuesta seleccionada para modal
 
   const filtered = bets.filter(b => {
-    if (filter === 'activas')  return b.status === 'active'
-    if (filter === 'cerradas') return b.status === 'closed' || b.status === 'finished'
+    if (filter === 'activas')  return b.estado === 'abierta'
+    if (filter === 'cerradas') return b.estado === 'cerrada' || b.estado === 'finalizada'
     return true
   })
 
-  async function handlePredict(betId, prediction) {
-    await placePrediction(betId, prediction)
-    setActiveBet(null)
+  async function handlePredict(betId, matchPredictions) {
+    try {
+      await Promise.all(
+        matchPredictions.map(p => savePrediction({
+          apuesta_id: betId,
+          partido_id: p.partido_id,
+          pred_local: p.pred_local,
+          pred_visitante: p.pred_visitante
+        }))
+      )
+      setActiveBet(null)
+      alert('Tus predicciones se han guardado con éxito.')
+    } catch (err) {
+      alert(err.message || 'No se pudieron guardar las predicciones')
+    }
   }
 
   return (
@@ -58,7 +70,7 @@ export default function BetsPage() {
           <div key={bet.id} className={`delay-${Math.min(i + 1, 5)}`}>
             <BetCard
               bet={bet}
-              userPrediction={predictions[bet.id]}
+              predictionsMap={predictions}
               onPredict={setActiveBet}
             />
           </div>

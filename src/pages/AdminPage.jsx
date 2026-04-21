@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import AppLayout from '../components/layout/AppLayout.jsx'
 import CreateBetForm from '../components/admin/CreateBetForm.jsx'
 import { useBets } from '../hooks/useBets.jsx'
@@ -6,6 +6,7 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
+import sheetsApi from '../services/sheetsApi.js'
 
 // Mock de usuarios pendientes (se reemplazará por sheetsApi.usuarios.listar('pendiente') en el punto B7)
 const PENDING_USERS = [
@@ -16,16 +17,48 @@ const PENDING_USERS = [
 const TABS = ['Apuestas', 'Usuarios']
 
 export default function AdminPage() {
-  const { bets, loading, createBet } = useBets()
+  const { bets, loading, createBet, matches } = useBets()
   const [tab, setTab] = useState('Apuestas')
-  const [pendingUsers, setPendingUsers] = useState(PENDING_USERS)
+  const [pendingUsers, setPendingUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
 
-  function approveUser(id) {
-    // TODO: conectar con authService / sheetsApi para aprobar
-    setPendingUsers(prev => prev.filter(u => u.id !== id))
+  useEffect(() => {
+    if (tab === 'Usuarios') {
+      loadPendingUsers()
+    }
+  }, [tab])
+
+  async function loadPendingUsers() {
+    setLoadingUsers(true)
+    try {
+      const resp = await sheetsApi.usuarios.listar('pendiente')
+      setPendingUsers(resp.usuarios || [])
+    } catch(err) {
+      alert("Error cargando usuarios: " + err.message)
+    } finally {
+      setLoadingUsers(false)
+    }
   }
-  function rejectUser(id) {
-    setPendingUsers(prev => prev.filter(u => u.id !== id))
+
+  async function approveUser(id) {
+    try {
+      await sheetsApi.usuarios.aprobar(id)
+      setPendingUsers(prev => prev.filter(u => u.id !== id))
+      alert('Usuario aprobado exitosamente.')
+    } catch(err) {
+      alert(err.message || 'Error al aprobar usuario')
+    }
+  }
+  
+  async function rejectUser(id) {
+    if (!window.confirm("¿Estás seguro de que rechazar y borrar este usuario?")) return
+    try {
+      await sheetsApi.usuarios.rechazar(id)
+      setPendingUsers(prev => prev.filter(u => u.id !== id))
+      alert('Usuario rechazado.')
+    } catch(err) {
+      alert(err.message || 'Error al rechazar usuario')
+    }
   }
 
   return (
@@ -70,7 +103,7 @@ export default function AdminPage() {
           {/* Formulario */}
           <Card>
             <h2 className="font-display text-2xl mb-4">Nueva apuesta</h2>
-            <CreateBetForm onSubmit={createBet} loading={loading} />
+            <CreateBetForm onSubmit={createBet} loading={loading} matches={matches} />
           </Card>
 
           {/* Lista de apuestas */}
@@ -79,9 +112,9 @@ export default function AdminPage() {
             {bets.map(bet => (
               <Card key={bet.id} className="flex items-center justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="font-body font-semibold truncate">{bet.title}</p>
+                  <p className="font-body font-semibold truncate">{bet.titulo}</p>
                   <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
-                    {bet.prize} · {bet.type}
+                    {bet.premio} · {bet.tipo === 'por_equipos' ? 'Equipos' : 'Libre'}
                   </p>
                 </div>
                 <Badge variant={isBetOpen(bet) ? 'accent' : 'muted'}>
@@ -96,14 +129,19 @@ export default function AdminPage() {
       {/* Tab: Usuarios */}
       {tab === 'Usuarios' && (
         <div className="animate-fade-in">
-          <h2 className="font-display text-2xl mb-4">
-            Pendientes de aprobación
-            {pendingUsers.length > 0 && (
-              <span className="ml-2 text-[var(--color-danger)] text-xl">({pendingUsers.length})</span>
-            )}
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+             <h2 className="font-display text-2xl">
+               Pendientes de aprobación
+               {pendingUsers.length > 0 && (
+                 <span className="ml-2 text-[var(--color-danger)] text-xl">({pendingUsers.length})</span>
+               )}
+             </h2>
+             <Button size="sm" variant="ghost" onClick={loadPendingUsers} loading={loadingUsers}>Actualizar</Button>
+          </div>
 
-          {pendingUsers.length === 0 ? (
+          {loadingUsers && pendingUsers.length === 0 ? (
+             <p className="text-[var(--color-text-muted)]">Cargando...</p>
+          ) : pendingUsers.length === 0 ? (
             <Card className="text-center py-10">
               <p className="text-4xl mb-2">✅</p>
               <p className="text-[var(--color-text-muted)] font-body">No hay usuarios pendientes.</p>
@@ -116,6 +154,7 @@ export default function AdminPage() {
                     <p className="font-body font-semibold">{u.nombre}</p>
                     <p className="text-xs text-[var(--color-text-muted)] font-body">{u.email}</p>
                     <p className="text-xs text-[var(--color-text-faint)] font-body mt-0.5">
+                      {formatDate(u.fecha_registro)}
                       {formatDate(u.fecha_creacion)}
                     </p>
                   </div>
