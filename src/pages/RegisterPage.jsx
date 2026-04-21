@@ -25,11 +25,22 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 bg-[var(--color-bg)]">
-      <div className="w-full max-w-sm animate-fade-in">
-        <div className="text-center mb-8">
-          <h1 className="font-display text-5xl text-[var(--color-accent)]">
-            PRODE<span className="text-white">ONE</span>
-          </h1>
+      {/* Fondo decorativo */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full opacity-[0.07]"
+          style={{ background: 'var(--violet-600)', filter: 'blur(80px)' }} />
+        <div className="absolute -bottom-40 -right-40 w-96 h-96 rounded-full opacity-[0.07]"
+          style={{ background: 'var(--gold-500)', filter: 'blur(80px)' }} />
+      </div>
+
+      <div className="relative w-full max-w-sm animate-fade-in">
+        <div className="text-center mb-8 flex flex-col items-center">
+          <div className="flex items-center gap-2 justify-center">
+            <div className="w-10 h-10 rounded bg-[var(--color-bg-2)] border border-[var(--color-border)] flex items-center justify-center text-xs text-[var(--color-text-muted)]">PNG</div>
+            <h1 className="font-display text-5xl text-[var(--color-accent)] tracking-wider">
+              PRODE<span className="text-[var(--color-text)]">ONE</span>
+            </h1>
+          </div>
         </div>
 
         <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-xl)] p-6 shadow-[var(--shadow-md)]">

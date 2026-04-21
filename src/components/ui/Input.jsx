@@ -12,7 +12,7 @@ export default function Input({ label, error, className = '', ...props }) {
           text-[var(--color-text)] placeholder:text-[var(--color-text-faint)]
           rounded-[var(--radius-md)] px-4 py-2.5 text-sm font-body
           outline-none transition-all duration-[var(--transition-fast)]
-          focus:border-[var(--color-accent)] focus:ring-1 focus:ring-[var(--color-accent-glow)]
+          focus:border-[var(--color-border-focus)] focus:ring-1 focus:ring-[var(--color-border-focus)]
           ${error ? 'border-[var(--color-danger)]' : ''}
           ${className}
         `}

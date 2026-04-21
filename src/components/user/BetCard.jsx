@@ -35,13 +35,15 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
           {bet.partidos.map((match) => {
             const pred = predictionsMap?.[match.id]
             return (
-              <div key={match.id} className="bg-[var(--color-bg-2)] rounded-[var(--radius-md)] p-3 flex flex-col gap-2">
+              <div key={match.id} className="bg-[var(--color-bg-2)] rounded-[var(--radius-md)] p-3 flex flex-col gap-2 border border-[var(--color-border)]">
                 <div className="flex items-center justify-between">
-                  <span className="font-body font-semibold text-[var(--color-text)] text-sm">{match.equipo_local}</span>
-                  <span className="font-display text-2xl text-[var(--color-accent)] px-4">
-                    {match.goles_local || 0} : {match.goles_visitante || 0}
-                  </span>
-                  <span className="font-body font-semibold text-[var(--color-text)] text-sm">{match.equipo_visitante}</span>
+                  <span className="font-body font-semibold text-[var(--color-text)] text-sm flex-1">{match.equipo_local}</span>
+                  <div className="bg-[var(--color-bg)] px-3 py-1 rounded-[var(--radius-sm)] border border-[var(--color-border)] shadow-sm">
+                    <span className="font-display text-2xl text-[var(--color-accent)]">
+                      {match.goles_local ?? '-'} <span className="text-[var(--color-text-faint)]">:</span> {match.goles_visitante ?? '-'}
+                    </span>
+                  </div>
+                  <span className="font-body font-semibold text-[var(--color-text)] text-sm flex-1 text-right">{match.equipo_visitante}</span>
                 </div>
                 {pred && (
                   <div className="text-center text-xs text-[var(--color-text-muted)] font-body">

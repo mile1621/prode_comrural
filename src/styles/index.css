@@ -12,30 +12,50 @@
 
 /* ── Tokens de Diseño ────────────────────────────────────── */
 :root {
-  /* Colores primarios */
-  --color-bg:           #0C0D0F;
+  /* --- Nueva Paleta --- */
+  --ink-900:    #210d41;   /* Neutro corporativo profundo */
+  --ink-800:    #252525;   /* Texto primario oscuro */
+  --earth-800:  #342f1d;   /* Apoyo/overlays cálidos */
+  --gray-400:   #c0c0c0;   /* Bordes/separadores */
+  --white:      #ffffff;   /* Fondo claro base */
+
+  --violet-900: #280640;   /* Violeta institucional profundo */
+  --violet-700: #47278c;   /* Violeta marca principal */
+  --violet-600: #6e3eab;   /* Violeta complementario (gradiente) */
+  --magenta-600:#953a90;   /* Acento cálido controlado */
+
+  --gold-700:   #b88917;   /* Acento premium 1 */
+  --gold-500:   #e2b808;   /* Acento premium 2 (botón primario) */
+  --gold-300:   #f4ce29;   /* Hover/iluminación sutil */
+
+  --brand-grad: linear-gradient(135deg, #280640 0%, #6e3eab 100%);
+
+  /* --- Mapeo de Tema Oscuro (Por defecto) --- */
+  --color-bg:           #0C0D0F; /* Fondo oscuro original o --ink-900 */
   --color-bg-2:         #141618;
-  --color-bg-3:         #1C1E22;
+  --color-bg-3:         var(--ink-900);
   --color-surface:      #22252B;
   --color-border:       #2E3138;
+  
+  --color-border-focus: var(--gray-400);
 
   /* Acento principal — verde eléctrico */
   --color-accent:       #00E676;
   --color-accent-dim:   #00B85C;
   --color-accent-glow:  rgba(0, 230, 118, 0.15);
 
-  /* Acento secundario — ámbar para alertas/pendientes */
-  --color-warn:         #FFB300;
-  --color-warn-dim:     rgba(255, 179, 0, 0.15);
+  /* Acento secundario y CTA */
+  --color-warn:         var(--gold-500); /* Usamos gold como principal alert/cta alternativo */
+  --color-warn-dim:     rgba(226, 184, 8, 0.15);
 
   /* Danger */
   --color-danger:       #FF4D4D;
   --color-danger-dim:   rgba(255, 77, 77, 0.15);
 
   /* Texto */
-  --color-text:         #F0F2F5;
-  --color-text-muted:   #7A8194;
-  --color-text-faint:   #3E4455;
+  --color-text:         var(--white);
+  --color-text-muted:   #9ca3af;
+  --color-text-faint:   #4b5563;
 
   /* Tipografía */
   --font-display:       'Bebas Neue', sans-serif;
@@ -58,6 +78,23 @@
   --transition-slow:    400ms ease;
 }
 
+/* --- Mapeo de Tema Claro --- */
+.theme-light {
+  --color-bg:           var(--white);
+  --color-bg-2:         #f3f4f6;
+  --color-bg-3:         #e5e7eb;
+  --color-surface:      var(--white);
+  --color-border:       color-mix(in srgb, var(--gray-400) 60%, transparent);
+  --color-border-focus: var(--violet-700);
+
+  --color-text:         var(--ink-800);
+  --color-text-muted:   #4b5563;
+  --color-text-faint:   #9ca3af;
+
+  --shadow-sm:          0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md:          0 4px 16px rgba(0,0,0,0.1);
+}
+
 /* ── Reset & Base ────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -78,6 +115,7 @@ body {
   color: var(--color-text);
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 #root {
@@ -121,6 +159,7 @@ a:hover { color: var(--color-accent-dim); }
 
 .bg-surface     { background-color: var(--color-surface); }
 .bg-2           { background-color: var(--color-bg-2); }
+.bg-brand-grad  { background: var(--brand-grad); }
 
 .border-base    { border: 1px solid var(--color-border); }
 

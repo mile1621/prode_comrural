@@ -37,25 +37,25 @@ export default function BetsPage() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 animate-fade-in">
+      <div className="bg-brand-grad rounded-[var(--radius-lg)] p-6 mb-6 text-white shadow-md animate-fade-in flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl">Apuestas</h1>
-          <p className="text-[var(--color-text-muted)] font-body text-sm mt-1">
+          <h1 className="font-display text-4xl text-white">Apuestas</h1>
+          <p className="text-white opacity-80 font-body text-sm mt-1">
             {bets.length} apuestas en total
           </p>
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-[var(--radius-md)] p-1">
+        <div className="flex gap-1 bg-white/10 p-1 rounded-[var(--radius-md)] backdrop-blur-sm border border-white/20">
           {FILTERS.map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
               className={`
-                px-3 py-1.5 text-xs font-semibold font-body capitalize rounded-[var(--radius-sm)] transition-all
+                px-4 py-1.5 text-xs font-semibold font-body capitalize rounded-[var(--radius-sm)] transition-all
                 ${filter === f
-                  ? 'bg-[var(--color-accent)] text-[var(--color-bg)]'
-                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
+                  ? 'bg-white text-black shadow-sm'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'}
               `}
             >
               {f}

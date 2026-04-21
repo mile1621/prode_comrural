@@ -58,14 +58,14 @@ export default function AdminPage() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6 animate-fade-in">
+      <div className="bg-brand-grad rounded-[var(--radius-lg)] p-6 mb-6 text-white shadow-md animate-fade-in flex items-center justify-between">
         <div>
-          <h1 className="font-display text-4xl">Panel Admin</h1>
-          <p className="text-[var(--color-text-muted)] font-body text-sm mt-1">
+          <h1 className="font-display text-4xl text-white">Panel Admin</h1>
+          <p className="text-white opacity-80 font-body text-sm mt-1">
             Gestión de apuestas y usuarios
           </p>
         </div>
-        <Badge variant="warn" className="ml-auto">Admin</Badge>
+        <Badge variant="warn" className="ml-auto text-black border-none shadow-sm">Admin</Badge>
       </div>
 
       {/* Tabs */}
@@ -134,7 +134,10 @@ export default function AdminPage() {
           </div>
 
           {loadingUsers && pendingUsers.length === 0 ? (
-             <p className="text-[var(--color-text-muted)]">Cargando...</p>
+             <div className="flex flex-col items-center justify-center py-10 gap-3">
+               <span className="w-8 h-8 border-4 border-[var(--color-border)] border-t-[var(--color-accent)] rounded-full animate-spin"></span>
+               <p className="text-[var(--color-text-muted)] font-body font-semibold">Cargando usuarios...</p>
+             </div>
           ) : pendingUsers.length === 0 ? (
             <Card className="text-center py-10">
               <p className="text-4xl mb-2">✅</p>

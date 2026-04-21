@@ -55,15 +55,19 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
       onClick={onClose}
     >
       <div
-        className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-xl)] p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[var(--shadow-md)] animate-fade-in"
+        className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-[var(--radius-xl)] w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col shadow-[var(--shadow-md)] animate-fade-in"
         onClick={e => e.stopPropagation()}
       >
-        <h2 className="font-display text-2xl mb-1">{bet.titulo}</h2>
-        <p className="text-sm text-[var(--color-text-muted)] font-body mb-5">
-          Ingresá los goles exactos para cada partido de la apuesta.
-        </p>
+        {/* Header */}
+        <div className="bg-brand-grad p-6 text-white border-b border-[var(--color-border)] shadow-sm">
+          <h2 className="font-display text-2xl mb-1">{bet.titulo}</h2>
+          <p className="text-sm opacity-80 font-body">
+            Ingresá los goles exactos para cada partido de la apuesta.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="p-6 overflow-y-auto">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           
           <div className="flex flex-col gap-4 mb-2">
             {bet.partidos?.map(match => (
@@ -100,15 +104,16 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
             ))}
           </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="flex-1" loading={loading}>
-              Confirmar
-            </Button>
-          </div>
-        </form>
+            <div className="flex gap-3 pt-4 border-t border-[var(--color-border)] mt-2">
+              <Button type="button" variant="ghost" className="flex-1" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" className="flex-1" loading={loading}>
+                Confirmar
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )
