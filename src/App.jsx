@@ -3,6 +3,7 @@ import { AuthProvider } from './hooks/useAuth.jsx'
 import ProtectedRoute from './components/ui/ProtectedRoute.jsx'
 
 // Pages
+import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
@@ -16,6 +17,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Públicas */}
+          <Route path="/home"     element={<HomePage />} />
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 

@@ -1,76 +1,56 @@
 /* ============================================================
-   PRODE ONE — Design Tokens & Global Styles
-   Todos los colores, tipografías y variables están aquí.
-   Modificar este archivo para cambiar el look global del sistema.
+   PRODE ONE — Design System
+   Plataforma white-label para prode empresarial.
    ============================================================ */
 
 @import "tailwindcss";
 
-/* ── Fuentes ─────────────────────────────────────────────── */
-/* Display: Bebas Neue (headings, scores, grandes numeros)    */
-/* Body:    DM Sans (textos, labels, UI en general)           */
-
-/* ── Tokens de Diseño ────────────────────────────────────── */
 :root {
-  /* --- Nueva Paleta --- */
-  --ink-900:    #210d41;   /* Neutro corporativo profundo */
-  --ink-800:    #252525;   /* Texto primario oscuro */
-  --earth-800:  #342f1d;   /* Apoyo/overlays cálidos */
-  --gray-400:   #c0c0c0;   /* Bordes/separadores */
-  --white:      #ffffff;   /* Fondo claro base */
+  /* Backgrounds — navy profundo */
+  --color-bg:           #020F27;
+  --color-bg-2:         #071A3A;
+  --color-bg-3:         #0F2145;
+  --color-surface:      #0F2B4F;
+  --color-surface-2:    #17376A;
+  --color-border:       #1E3B6E;
+  --color-border-soft:  rgba(34, 217, 223, 0.12);
 
-  --violet-900: #280640;   /* Violeta institucional profundo */
-  --violet-700: #47278c;   /* Violeta marca principal */
-  --violet-600: #6e3eab;   /* Violeta complementario (gradiente) */
-  --magenta-600:#953a90;   /* Acento cálido controlado */
+  /* Acento único — cyan premium */
+  --color-accent:       #22D9DF;
+  --color-accent-bright:#28FFFF;
+  --color-accent-dim:   #148B91;
+  --color-accent-glow:  rgba(34, 217, 223, 0.18);
+  --color-accent-soft:  rgba(34, 217, 223, 0.08);
 
-  --gold-700:   #b88917;   /* Acento premium 1 */
-  --gold-500:   #e2b808;   /* Acento premium 2 (botón primario) */
-  --gold-300:   #f4ce29;   /* Hover/iluminación sutil */
-
-  --brand-grad: linear-gradient(135deg, #280640 0%, #6e3eab 100%);
-
-  /* --- Mapeo de Tema Oscuro (Por defecto) --- */
-  --color-bg:           #0C0D0F; /* Fondo oscuro original o --ink-900 */
-  --color-bg-2:         #141618;
-  --color-bg-3:         var(--ink-900);
-  --color-surface:      #22252B;
-  --color-border:       #2E3138;
-  
-  --color-border-focus: var(--gray-400);
-
-  /* Acento principal — verde eléctrico */
-  --color-accent:       #00E676;
-  --color-accent-dim:   #00B85C;
-  --color-accent-glow:  rgba(0, 230, 118, 0.15);
-
-  /* Acento secundario y CTA */
-  --color-warn:         var(--gold-500); /* Usamos gold como principal alert/cta alternativo */
-  --color-warn-dim:     rgba(226, 184, 8, 0.15);
-
-  /* Danger */
-  --color-danger:       #FF4D4D;
-  --color-danger-dim:   rgba(255, 77, 77, 0.15);
+  /* Semánticos */
+  --color-success:      #22D9DF;
+  --color-warn:         #F4B42A;
+  --color-warn-dim:     rgba(244, 180, 42, 0.15);
+  --color-danger:       #FF4D6D;
+  --color-danger-dim:   rgba(255, 77, 109, 0.15);
+  --color-live:         #FF3D71;
 
   /* Texto */
-  --color-text:         var(--white);
-  --color-text-muted:   #9ca3af;
-  --color-text-faint:   #4b5563;
+  --color-text:         #F0F4FF;
+  --color-text-muted:   #8499C2;
+  --color-text-faint:   #4A5F8A;
 
   /* Tipografía */
   --font-display:       'Bebas Neue', sans-serif;
   --font-body:          'DM Sans', sans-serif;
 
-  /* Espaciado base */
+  /* Radios */
   --radius-sm:          6px;
   --radius-md:          10px;
   --radius-lg:          16px;
   --radius-xl:          24px;
 
   /* Sombras */
-  --shadow-sm:          0 1px 3px rgba(0,0,0,0.4);
-  --shadow-md:          0 4px 16px rgba(0,0,0,0.5);
-  --shadow-glow:        0 0 24px var(--color-accent-glow);
+  --shadow-sm:          0 1px 3px rgba(0,0,0,0.5);
+  --shadow-md:          0 4px 20px rgba(0,0,0,0.6);
+  --shadow-lg:          0 12px 40px rgba(0,0,0,0.7);
+  --shadow-glow:        0 0 32px var(--color-accent-glow);
+  --shadow-glow-strong: 0 0 48px rgba(34, 217, 223, 0.35);
 
   /* Transiciones */
   --transition-fast:    150ms ease;
@@ -78,26 +58,12 @@
   --transition-slow:    400ms ease;
 }
 
-/* --- Mapeo de Tema Claro --- */
-.theme-light {
-  --color-bg:           var(--white);
-  --color-bg-2:         #f3f4f6;
-  --color-bg-3:         #e5e7eb;
-  --color-surface:      var(--white);
-  --color-border:       color-mix(in srgb, var(--gray-400) 60%, transparent);
-  --color-border-focus: var(--violet-700);
-
-  --color-text:         var(--ink-800);
-  --color-text-muted:   #4b5563;
-  --color-text-faint:   #9ca3af;
-
-  --shadow-sm:          0 1px 3px rgba(0,0,0,0.1);
-  --shadow-md:          0 4px 16px rgba(0,0,0,0.1);
-}
-
-/* ── Reset & Base ────────────────────────────────────────── */
+/* ── Reset & Base ─────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+body {
   margin: 0;
   padding: 0;
 }
@@ -112,10 +78,13 @@ html {
 body {
   font-family: var(--font-body);
   background-color: var(--color-bg);
+  background-image:
+    radial-gradient(ellipse at top left, rgba(34, 217, 223, 0.08), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(11, 74, 110, 0.3), transparent 60%);
+  background-attachment: fixed;
   color: var(--color-text);
   min-height: 100vh;
   line-height: 1.6;
-  transition: background-color var(--transition-base), color var(--transition-base);
 }
 
 #root {
@@ -124,19 +93,19 @@ body {
   flex-direction: column;
 }
 
-/* ── Scrollbar ───────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
+/* ── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-bg-2); }
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-faint); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent-dim); }
 
-/* ── Tipografía global ───────────────────────────────────── */
+/* ── Tipografía global ─────────────────────────────────── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
-  line-height: 1.1;
+  line-height: 1.05;
   letter-spacing: 0.02em;
   color: var(--color-text);
 }
@@ -146,22 +115,23 @@ a {
   text-decoration: none;
   transition: color var(--transition-fast);
 }
-a:hover { color: var(--color-accent-dim); }
+a:hover { color: var(--color-accent-bright); }
 
-/* ── Clases utilitarias de diseño ────────────────────────── */
+/* ── Utilitarias ───────────────────────────────────────── */
 .font-display   { font-family: var(--font-display); }
 .font-body      { font-family: var(--font-body); }
 
-.text-accent    { color: var(--color-accent); }
-.text-muted     { color: var(--color-text-muted); }
-.text-warn      { color: var(--color-warn); }
-.text-danger    { color: var(--color-danger); }
+.text-accent        { color: var(--color-accent); }
+.text-accent-bright { color: var(--color-accent-bright); }
+.text-muted         { color: var(--color-text-muted); }
+.text-warn          { color: var(--color-warn); }
+.text-danger        { color: var(--color-danger); }
 
 .bg-surface     { background-color: var(--color-surface); }
 .bg-2           { background-color: var(--color-bg-2); }
-.bg-brand-grad  { background: var(--brand-grad); }
 
 .border-base    { border: 1px solid var(--color-border); }
+.border-soft    { border: 1px solid var(--color-border-soft); }
 
 .radius-sm      { border-radius: var(--radius-sm); }
 .radius-md      { border-radius: var(--radius-md); }
@@ -169,7 +139,18 @@ a:hover { color: var(--color-accent-dim); }
 
 .shadow-glow    { box-shadow: var(--shadow-glow); }
 
-/* ── Animaciones ─────────────────────────────────────────── */
+/* ── Glass effect ──────────────────────────────────────── */
+.glass {
+  background: linear-gradient(
+    135deg,
+    rgba(34, 217, 223, 0.05),
+    rgba(11, 74, 110, 0.15)
+  );
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border-soft);
+}
+
+/* ── Animaciones ───────────────────────────────────────── */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -177,20 +158,51 @@ a:hover { color: var(--color-accent-dim); }
 
 @keyframes pulse-accent {
   0%, 100% { box-shadow: 0 0 0 0 var(--color-accent-glow); }
-  50%       { box-shadow: 0 0 0 8px transparent; }
+  50%      { box-shadow: 0 0 0 10px transparent; }
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.5; }
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-.animate-fade-in  { animation: fadeIn var(--transition-slow) both; }
-.animate-pulse-accent { animation: pulse-accent 2s infinite; }
-.animate-spin     { animation: spin 1s linear infinite; }
+.animate-fade-in       { animation: fadeIn var(--transition-slow) both; }
+.animate-pulse-accent  { animation: pulse-accent 2s infinite; }
+.animate-pulse-live    { animation: pulse-live 1.2s infinite; }
+.animate-spin          { animation: spin 1s linear infinite; }
 
-/* Delays para stagger */
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 .delay-1 { animation-delay: 100ms; }
 .delay-2 { animation-delay: 200ms; }
 .delay-3 { animation-delay: 300ms; }
 .delay-4 { animation-delay: 400ms; }
 .delay-5 { animation-delay: 500ms; }
+
+/* ── Botón primario con glow ───────────────────────────── */
+.btn-primary-glow {
+  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-dim) 100%);
+  box-shadow: 0 4px 16px rgba(34, 217, 223, 0.3);
+  transition: all var(--transition-base);
+}
+.btn-primary-glow:hover {
+  box-shadow: 0 6px 24px rgba(34, 217, 223, 0.5);
+  transform: translateY(-1px);
+}
+
+/* ── Fix botones tipo Link ───────────────────────────── */
+a.bg-\[var\(--color-accent\)\] {
+  color: #020F27 !important;
+}
+a:hover {
+  color: inherit;
+}
