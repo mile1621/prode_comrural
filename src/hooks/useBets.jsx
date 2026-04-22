@@ -37,7 +37,7 @@ export function useBets() {
           { id: 'mock3', equipo_local: 'Inter Miami', equipo_visitante: 'LA Galaxy', estado: 'programado' }
         ]
       }
-      
+
       setMatches(allMatches)
 
       const enrichedBets = (dataApuestas.apuestas || []).map(a => {
