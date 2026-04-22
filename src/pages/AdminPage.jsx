@@ -16,9 +16,25 @@ export default function AdminPage() {
   const [pendingUsers, setPendingUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
+  // NUEVOS ESTADOS PARA ÁREAS
+  const [areas, setAreas] = useState([])
+  const [approvingUser, setApprovingUser] = useState(null)
+
   useEffect(() => {
-    if (tab === 'Usuarios') loadPendingUsers()
+    if (tab === 'Usuarios') {
+      loadPendingUsers()
+      loadAreas()
+    }
   }, [tab])
+
+  async function loadAreas() {
+    try {
+      const resp = await sheetsApi.areas.listar(true)
+      setAreas(resp.areas || [])
+    } catch (err) {
+      console.error("Error cargando áreas:", err)
+    }
+  }
 
   async function loadPendingUsers() {
     setLoadingUsers(true)
@@ -32,13 +48,16 @@ export default function AdminPage() {
     }
   }
 
-  async function approveUser(id) {
+  async function confirmApprove(id) {
+    if (!approvingUser.tipo_usuario || !approvingUser.area_id) {
+      return alert('Debes seleccionar el rol y el área del usuario.')
+    }
     try {
-      await sheetsApi.usuarios.aprobar(id)
-      setPendingUsers(prev => prev.filter(u => u.id !== id))
-      alert('Usuario aprobado exitosamente.')
+      await sheetsApi.usuarios.aprobar(id, approvingUser.tipo_usuario, approvingUser.area_id)
+      setApprovingUser(null)
+      await loadPendingUsers()
     } catch (err) {
-      alert(err.message || 'Error al aprobar usuario')
+      alert('Error aprobando: ' + err.message)
     }
   }
 
@@ -156,10 +175,36 @@ export default function AdminPage() {
                       {formatDate(u.fecha_registro)}
                     </p>
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={() => approveUser(u.id)}>Aprobar</Button>
-                    <Button size="sm" variant="danger" onClick={() => rejectUser(u.id)}>Rechazar</Button>
-                  </div>
+                  {approvingUser?.id === u.id ? (
+                    <div className="flex flex-col gap-2 items-end">
+                      <select 
+                        className="text-sm bg-[var(--color-bg-2)] text-[var(--color-text)] p-1.5 rounded border border-[var(--color-border)] outline-none"
+                        value={approvingUser.tipo_usuario}
+                        onChange={e => setApprovingUser({...approvingUser, tipo_usuario: e.target.value})}
+                      >
+                        <option value="">Seleccionar Rol...</option>
+                        <option value="general">Participante General</option>
+                        <option value="jefe">Jefe de Área (Carga prodes)</option>
+                      </select>
+                      <select 
+                        className="text-sm bg-[var(--color-bg-2)] text-[var(--color-text)] p-1.5 rounded border border-[var(--color-border)] outline-none"
+                        value={approvingUser.area_id}
+                        onChange={e => setApprovingUser({...approvingUser, area_id: e.target.value})}
+                      >
+                        <option value="">Seleccionar Área...</option>
+                        {areas.map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)}
+                      </select>
+                      <div className="flex gap-2 mt-1">
+                        <Button size="sm" onClick={() => confirmApprove(u.id)}>Confirmar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setApprovingUser(null)}>Cancelar</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={() => setApprovingUser({ id: u.id, tipo_usuario: '', area_id: '' })}>Aprobar</Button>
+                      <Button size="sm" variant="danger" onClick={() => rejectUser(u.id)}>Rechazar</Button>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>

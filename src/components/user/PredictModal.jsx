@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react'
 import { useBets } from '../../hooks/useBets.jsx'
+import { useAuth } from '../../hooks/useAuth.jsx' // Importamos la autenticación
 import { timeLeft, isBetOpen } from '../../utils/index.js'
 
 export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const { predictions } = useBets()
+  const { user } = useAuth() // Obtenemos al usuario actual
   const [scores, setScores] = useState({})
+
+  // Validación de permisos para apuestas por áreas
+  const esApuestaPorArea = bet?.tipo === 'por_areas' || bet?.type === 'por_areas'
+  const esJefe = user?.tipo_usuario === 'jefe'
+  const areaUsuario = user?.area_id
+  const areasParticipantes = bet?.areas_ids ? bet.areas_ids.split(',').map(id => id.trim()) : []
+  const miAreaParticipa = areasParticipantes.includes(areaUsuario)
+  
+  // Bloqueo: si es apuesta por área y (el usuario no es jefe o su área no participa)
+  const estaBloqueado = esApuestaPorArea && (!esJefe || !miAreaParticipa)
 
   // Inicializar inputs: si el usuario ya predijo, precargar sus valores
   useEffect(() => {

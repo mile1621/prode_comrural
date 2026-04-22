@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Input from '../ui/Input.jsx'
 import Button from '../ui/Button.jsx'
+import sheetsApi from '../../services/sheetsApi.js'
 
-const INITIAL = { titulo: '', type: 'por_equipos', premio: '', fecha_cierre: '', partidos_ids: [] }
+const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
 
 const ORDEN_FASES = ['grupos', '16avos', 'octavos', 'cuartos', 'semis', '3er_puesto', 'final']
 const LABEL_FASE = {
@@ -32,6 +33,11 @@ function fmtFecha(f) {
 export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   const [form, setForm] = useState(INITIAL)
   const [filtroFase, setFiltroFase] = useState('todas')
+  const [areas, setAreas] = useState([])
+
+  useEffect(() => {
+    sheetsApi.areas.listar(true).then(res => setAreas(res.areas || [])).catch(console.error)
+  }, [])
   const [filtroJornada, setFiltroJornada] = useState('todas')
   const [filtroGrupo, setFiltroGrupo] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
@@ -137,13 +143,21 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       return
     }
     try {
-      await onSubmit({
+      const payload = {
         titulo: form.titulo,
         tipo: form.type,
         premio: form.premio,
         fecha_cierre: form.fecha_cierre,
         partidos_ids: form.partidos_ids.join(',')
-      })
+      }
+      if (form.type === 'grupos') {
+        if (form.areas_ids.length < 2) {
+          alert('Para apuestas por áreas seleccioná al menos 2 áreas.')
+          return
+        }
+        payload.areas_ids = form.areas_ids.join(',')
+      }
+      await onSubmit(payload)
       alert('Apuesta creada exitosamente')
       setForm(INITIAL)
       setFiltroFase('todas')
@@ -293,23 +307,52 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           Tipo
         </label>
         <div className="flex gap-2">
-          {['libre', 'por_equipos'].map(t => (
+          {['libre', 'grupos'].map(t => (
             <button
               key={t}
               type="button"
               onClick={() => setForm(p => ({ ...p, type: t }))}
               className={`
-                flex-1 py-2.5 rounded-[var(--radius-md)] text-sm font-semibold font-body border capitalize transition-all
+                flex-1 py-2 rounded-md font-semibold text-sm font-body border transition-colors
                 ${form.type === t
-                  ? 'bg-[var(--color-accent-glow)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                  ? 'bg-[var(--color-accent-soft)] border-[var(--color-accent)] text-[var(--color-accent)]'
                   : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]'}
               `}
             >
-              {t === 'por_equipos' ? 'Equipos' : 'Libre'}
+              {t === 'grupos' ? 'Por Áreas' : 'Libre'}
             </button>
           ))}
         </div>
       </div>
+
+      {form.type === 'grupos' && (
+        <div className="flex flex-col gap-2 mt-1 mb-2 p-3 border border-[var(--color-border-soft)] bg-black/20 rounded-lg">
+          <p className="text-xs font-semibold uppercase text-[var(--color-text-muted)] font-body">
+            Seleccionar áreas participantes (Mín. 2)
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {areas.map(a => {
+              const isActive = form.areas_ids.includes(a.id)
+              return (
+                <FilterChip
+                  key={a.id}
+                  active={isActive}
+                  onClick={() => {
+                    setForm(p => ({
+                      ...p,
+                      areas_ids: isActive
+                        ? p.areas_ids.filter(id => id !== a.id)
+                        : [...p.areas_ids, a.id]
+                    }))
+                  }}
+                >
+                  {a.nombre}
+                </FilterChip>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <Input

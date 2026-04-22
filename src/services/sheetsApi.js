@@ -72,7 +72,7 @@ const auth = {
 const usuarios = {
   listar: (estado = '') => get('usuarios.listar', estado ? { estado } : {}),
   obtener: (user_id) => get('usuarios.obtener', { user_id }),
-  aprobar: (user_id) => post('usuarios.aprobar', { user_id }),
+  aprobar: (user_id, tipo_usuario, area_id) => post('usuarios.aprobar', { user_id, tipo_usuario, area_id }),
   rechazar: (user_id) => post('usuarios.rechazar', { user_id }),
   crear: (data) => post('usuarios.crear', data),
 }
@@ -109,6 +109,14 @@ const grupos = {
   listar: () => get('grupos.listar'),
 }
 
+// ── Módulo: Áreas ─────────────────────────────────────────
+const areas = {
+  listar: (solo_activas = true) => get('areas.listar', { solo_activas }),
+  crear: (data) => post('areas.crear', data),
+  editar: (data) => post('areas.editar', data),
+  toggle_activa: (area_id) => post('areas.toggle_activa', { area_id }),
+}
+
 // ── Export ────────────────────────────────────────────────
 
 const sheetsApi = {
@@ -119,6 +127,7 @@ const sheetsApi = {
   partidos,
   predicciones,
   grupos,
+  areas,
   _token: { get: getToken, save: saveToken, clear: clearToken },
 }
 
