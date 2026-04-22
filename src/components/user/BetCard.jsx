@@ -4,31 +4,31 @@ import { timeLeft, isBetOpen } from '../../utils/index.js'
 const STATE_STYLES = {
   en_vivo: {
     border: 'rgba(255,61,113,0.4)',
-    glow:   '0 0 32px rgba(255,61,113,0.12)',
-    label:  'EN VIVO',
-    color:  'var(--color-live)',
-    bg:     'rgba(255,61,113,0.12)',
+    glow: '0 0 32px rgba(255,61,113,0.12)',
+    label: 'EN VIVO',
+    color: 'var(--color-live)',
+    bg: 'rgba(255,61,113,0.12)',
   },
   abierta: {
     border: 'rgba(34,217,223,0.25)',
-    glow:   '0 0 24px rgba(34,217,223,0.08)',
-    label:  'ABIERTA',
-    color:  'var(--color-accent)',
-    bg:     'rgba(34,217,223,0.1)',
+    glow: '0 0 24px rgba(34,217,223,0.08)',
+    label: 'ABIERTA',
+    color: 'var(--color-accent)',
+    bg: 'rgba(34,217,223,0.1)',
   },
   finalizada: {
     border: 'rgba(244,180,42,0.3)',
-    glow:   '0 0 24px rgba(244,180,42,0.1)',
-    label:  'FINALIZADA',
-    color:  'var(--color-warn)',
-    bg:     'rgba(244,180,42,0.1)',
+    glow: '0 0 24px rgba(244,180,42,0.1)',
+    label: 'FINALIZADA',
+    color: 'var(--color-warn)',
+    bg: 'rgba(244,180,42,0.1)',
   },
   cerrada: {
     border: 'var(--color-border)',
-    glow:   'none',
-    label:  'CERRADA',
-    color:  'var(--color-text-muted)',
-    bg:     'rgba(132,153,194,0.08)',
+    glow: 'none',
+    label: 'CERRADA',
+    color: 'var(--color-text-muted)',
+    bg: 'rgba(132,153,194,0.08)',
   },
 }
 
@@ -56,9 +56,22 @@ function ClockIcon({ size = 12 }) {
   )
 }
 
+/* ── Bandera del equipo (con fallback si no hay imagen) ─── */
+function Bandera({ url, alt = '' }) {
+  if (!url) return null
+  return (
+    <img
+      src={url}
+      alt={alt}
+      className="w-7 h-5 object-cover rounded-[3px] flex-shrink-0 shadow-sm"
+      style={{ border: '1px solid rgba(255,255,255,0.08)' }}
+    />
+  )
+}
+
 export default function BetCard({ bet, predictionsMap, onPredict }) {
-  const open       = isBetOpen(bet)
-  const isLive     = bet.partidos?.some(p => p.estado === 'en_vivo')
+  const open = isBetOpen(bet)
+  const isLive = bet.partidos?.some(p => p.estado === 'en_vivo')
   const allFinished = bet.partidos?.length > 0 && bet.partidos.every(p => p.estado === 'finalizado')
 
   // Estado visual de la apuesta
@@ -72,10 +85,10 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
 
   const style = STATE_STYLES[state]
 
-  const matchCount       = bet.partidos?.length || 0
+  const matchCount = bet.partidos?.length || 0
   const hasAnyPrediction = bet.partidos?.some(p => predictionsMap?.[p.id])
-  const remaining        = timeLeft(bet.fecha_cierre)
-  const isClosingSoon    = open && remaining !== 'Cerrada' && !remaining.includes('d')
+  const remaining = timeLeft(bet.fecha_cierre)
+  const isClosingSoon = open && remaining !== 'Cerrada' && !remaining.includes('d')
 
   // Texto del botón según contexto
   const actionLabel = !open
@@ -161,19 +174,27 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                     border: `1px solid ${isMatchLive ? 'rgba(255,61,113,0.25)' : 'var(--color-border)'}`,
                   }}
                 >
-                  {/* Fila equipos */}
+                  {/* Fila equipos + banderas */}
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
-                    <span className="font-body font-semibold text-white text-sm truncate">
-                      {match.equipo_local}
-                    </span>
+                    {/* Local: bandera a la izquierda, nombre a la derecha */}
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Bandera url={match.bandera_local} alt={match.equipo_local} />
+                      <span className="font-body font-semibold text-white text-sm truncate">
+                        {match.equipo_local}
+                      </span>
+                    </div>
 
                     <span className="font-display text-lg text-[var(--color-text-faint)] px-2">
                       vs
                     </span>
 
-                    <span className="font-body font-semibold text-white text-sm truncate text-right">
-                      {match.equipo_visitante}
-                    </span>
+                    {/* Visitante: nombre a la izquierda, bandera a la derecha */}
+                    <div className="flex items-center gap-2 min-w-0 justify-end">
+                      <span className="font-body font-semibold text-white text-sm truncate text-right">
+                        {match.equipo_visitante}
+                      </span>
+                      <Bandera url={match.bandera_visitante} alt={match.equipo_visitante} />
+                    </div>
                   </div>
 
                   {/* Scores: tu predicción + real (si corresponde) */}
