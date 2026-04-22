@@ -1,6 +1,4 @@
 import { useState, useMemo, useEffect } from 'react'
-import Input from '../ui/Input.jsx'
-import Button from '../ui/Button.jsx'
 import sheetsApi from '../../services/sheetsApi.js'
 
 const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
@@ -171,7 +169,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <Input
+      <Field
         label="Título de la apuesta"
         value={form.titulo}
         onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
@@ -355,14 +353,14 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Input
+        <Field
           label="Premio / Incentivo"
           value={form.premio}
           onChange={e => setForm(p => ({ ...p, premio: e.target.value }))}
           required
           placeholder="Ej: Gift card $50"
         />
-        <Input
+        <Field
           label="Fecha límite"
           type="datetime-local"
           value={form.fecha_cierre}
@@ -371,10 +369,56 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         />
       </div>
 
-      <Button type="submit" loading={loading} className="w-full mt-2">
-        Crear Apuesta{seleccionados > 0 && ` (${seleccionados} partidos)`}
-      </Button>
+      <button
+        type="submit"
+        disabled={loading || seleccionados === 0}
+        className="w-full mt-2 py-3 rounded-lg font-body font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        style={{
+          background: (loading || seleccionados === 0)
+            ? 'var(--color-accent-dim)'
+            : 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%)',
+          color: '#020F27',
+          boxShadow: (loading || seleccionados === 0)
+            ? 'none'
+            : '0 6px 24px rgba(34,217,223,0.35)',
+        }}
+        onMouseEnter={e => {
+          if (!loading && seleccionados > 0) {
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(34,217,223,0.55)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+          }
+        }}
+        onMouseLeave={e => {
+          if (!loading && seleccionados > 0) {
+            e.currentTarget.style.boxShadow = '0 6px 24px rgba(34,217,223,0.35)'
+            e.currentTarget.style.transform = 'translateY(0)'
+          }
+        }}
+      >
+        {loading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            Creando...
+          </>
+        ) : (
+          <>Crear Apuesta{seleccionados > 0 && ` · ${seleccionados} partidos`}</>
+        )}
+      </button>
     </form>
+  )
+}
+
+function Field({ label, ...props }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] font-body">
+        {label}
+      </label>
+      <input
+        {...props}
+        className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--color-text)] font-body placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-accent)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(34,217,223,0.15)] transition-all"
+      />
+    </div>
   )
 }
 
