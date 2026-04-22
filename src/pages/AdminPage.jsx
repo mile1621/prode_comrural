@@ -5,7 +5,7 @@ import { useBets } from '../hooks/useBets.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
 import sheetsApi from '../services/sheetsApi.js'
 
-const TABS = ['Apuestas', 'Usuarios']
+const TABS = ['Apuestas', 'Usuarios', 'Áreas']
 
 /* ── Helpers ────────────────────────────────────────────── */
 
@@ -30,14 +30,24 @@ export default function AdminPage() {
   const [pendingUsers, setPendingUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
-  // Estados para flujo de áreas
+  // Estados para flujo de áreas (tab Usuarios → solo activas)
   const [areas, setAreas] = useState([])
   const [approvingUser, setApprovingUser] = useState(null)
+
+  // Estados para gestión de áreas (tab Áreas → todas, también inactivas)
+  const [areasAll, setAreasAll] = useState([])
+  const [loadingAreas, setLoadingAreas] = useState(false)
+  const [editingArea, setEditingArea] = useState(null)
+  const [newArea, setNewArea] = useState({ nombre: '', descripcion: '' })
+  const [savingArea, setSavingArea] = useState(false)
 
   useEffect(() => {
     if (tab === 'Usuarios') {
       loadPendingUsers()
       loadAreas()
+    }
+    if (tab === 'Áreas') {
+      loadAreasAll()
     }
   }, [tab])
 
@@ -47,6 +57,65 @@ export default function AdminPage() {
       setAreas(resp.areas || [])
     } catch (err) {
       console.error('Error cargando áreas:', err)
+    }
+  }
+
+  async function loadAreasAll() {
+    setLoadingAreas(true)
+    try {
+      const resp = await sheetsApi.areas.listar(false)
+      setAreasAll(resp.areas || [])
+    } catch (err) {
+      alert('Error cargando áreas: ' + err.message)
+    } finally {
+      setLoadingAreas(false)
+    }
+  }
+
+  async function handleCreateArea(e) {
+    e.preventDefault()
+    if (!newArea.nombre.trim()) return alert('El nombre del área es obligatorio.')
+    setSavingArea(true)
+    try {
+      await sheetsApi.areas.crear({
+        nombre: newArea.nombre.trim(),
+        descripcion: newArea.descripcion.trim(),
+      })
+      setNewArea({ nombre: '', descripcion: '' })
+      await loadAreasAll()
+    } catch (err) {
+      alert('Error creando área: ' + err.message)
+    } finally {
+      setSavingArea(false)
+    }
+  }
+
+  async function handleSaveEdit() {
+    if (!editingArea.nombre.trim()) return alert('El nombre no puede estar vacío.')
+    setSavingArea(true)
+    try {
+      await sheetsApi.areas.editar({
+        area_id: editingArea.id,
+        nombre: editingArea.nombre.trim(),
+        descripcion: editingArea.descripcion?.trim() || '',
+      })
+      setEditingArea(null)
+      await loadAreasAll()
+    } catch (err) {
+      alert('Error guardando cambios: ' + err.message)
+    } finally {
+      setSavingArea(false)
+    }
+  }
+
+  async function handleToggleArea(area, currentlyActive) {
+    const accion = currentlyActive ? 'desactivar' : 'reactivar'
+    if (!window.confirm(`¿Seguro que querés ${accion} el área "${area.nombre}"?`)) return
+    try {
+      await sheetsApi.areas.toggle_activa(area.id)
+      await loadAreasAll()
+    } catch (err) {
+      alert('Error: ' + err.message)
     }
   }
 
@@ -525,6 +594,231 @@ export default function AdminPage() {
           )}
         </div>
       )}
+    {/* ── Tab: Áreas ─────────────────────── */}
+      {tab === 'Áreas' && (
+        <div className="animate-fade-in delay-2 grid lg:grid-cols-5 gap-6">
+
+          {/* Columna izquierda: Crear área */}
+          <div
+            className="lg:col-span-2 rounded-2xl p-6 h-fit"
+            style={{
+              background: 'linear-gradient(145deg, rgba(15,43,79,0.85) 0%, rgba(15,33,69,0.9) 100%)',
+              border: '1px solid rgba(34,217,223,0.15)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-5">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <h2 className="font-display text-2xl text-white tracking-wide">NUEVA ÁREA</h2>
+            </div>
+
+            <form onSubmit={handleCreateArea} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] font-body">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={newArea.nombre}
+                  onChange={e => setNewArea({ ...newArea, nombre: e.target.value })}
+                  required
+                  placeholder="Ej: Marketing, Ventas, IT..."
+                  className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--color-text)] font-body placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-accent)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(34,217,223,0.15)] transition-all"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] font-body">
+                  Descripción (opcional)
+                </label>
+                <textarea
+                  value={newArea.descripcion}
+                  onChange={e => setNewArea({ ...newArea, descripcion: e.target.value })}
+                  rows={3}
+                  placeholder="Breve descripción del área"
+                  className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--color-text)] font-body placeholder:text-[var(--color-text-faint)] focus:border-[var(--color-accent)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(34,217,223,0.15)] transition-all resize-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingArea || !newArea.nombre.trim()}
+                className="py-3 rounded-lg font-body font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{
+                  background: (savingArea || !newArea.nombre.trim())
+                    ? 'var(--color-accent-dim)'
+                    : 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%)',
+                  color: '#020F27',
+                  boxShadow: (savingArea || !newArea.nombre.trim()) ? 'none' : '0 6px 24px rgba(34,217,223,0.35)',
+                }}
+              >
+                {savingArea ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Creando...
+                  </>
+                ) : 'Crear área'}
+              </button>
+            </form>
+          </div>
+
+          {/* Columna derecha: Lista */}
+          <div className="lg:col-span-3 flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-2xl md:text-3xl text-white tracking-wide">
+                ÁREAS
+                <span className="ml-2 text-[var(--color-accent)] text-xl">({areasAll.length})</span>
+              </h2>
+              <button
+                onClick={loadAreasAll}
+                disabled={loadingAreas}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-body font-semibold uppercase tracking-wider transition-all disabled:opacity-50"
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--color-border)',
+                  color: 'var(--color-text-muted)',
+                }}
+              >
+                {loadingAreas ? (
+                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="23 4 23 10 17 10" />
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                  </svg>
+                )}
+                Actualizar
+              </button>
+            </div>
+
+            {loadingAreas && areasAll.length === 0 ? (
+              <div className="text-center py-16">
+                <span className="inline-block w-8 h-8 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin" />
+                <p className="text-[var(--color-text-muted)] font-body text-sm mt-3">Cargando áreas...</p>
+              </div>
+            ) : areasAll.length === 0 ? (
+              <div
+                className="rounded-2xl p-10 text-center"
+                style={{ background: 'rgba(15,43,79,0.4)', border: '1px dashed var(--color-border)' }}
+              >
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3">
+                  <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" />
+                </svg>
+                <p className="text-[var(--color-text-muted)] font-body text-sm">Todavía no hay áreas creadas.</p>
+                <p className="text-[var(--color-text-faint)] font-body text-xs mt-1">Creá la primera desde el formulario de la izquierda.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {areasAll.map(area => {
+                  const isActive = area.activa === true || area.activa === 'TRUE' || area.activa === 'true' || area.activa === 1
+                  const isEditing = editingArea?.id === area.id
+                  return (
+                    <div
+                      key={area.id}
+                      className="rounded-xl p-4 transition-all"
+                      style={{
+                        background: 'linear-gradient(145deg, rgba(15,43,79,0.85) 0%, rgba(15,33,69,0.9) 100%)',
+                        border: `1px solid ${isActive ? 'rgba(34,217,223,0.2)' : 'rgba(132,153,194,0.15)'}`,
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+                        opacity: isActive ? 1 : 0.65,
+                      }}
+                    >
+                      {isEditing ? (
+                        <div className="flex flex-col gap-3">
+                          <input
+                            type="text"
+                            value={editingArea.nombre}
+                            onChange={e => setEditingArea({ ...editingArea, nombre: e.target.value })}
+                            placeholder="Nombre del área"
+                            className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--color-text)] font-body focus:border-[var(--color-accent)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(34,217,223,0.15)] transition-all"
+                          />
+                          <textarea
+                            value={editingArea.descripcion || ''}
+                            onChange={e => setEditingArea({ ...editingArea, descripcion: e.target.value })}
+                            placeholder="Descripción"
+                            rows={2}
+                            className="bg-[var(--color-bg-2)] border border-[var(--color-border)] rounded-[var(--radius-md)] px-3 py-2 text-sm text-[var(--color-text)] font-body focus:border-[var(--color-accent)] focus:outline-none focus:shadow-[0_0_0_3px_rgba(34,217,223,0.15)] transition-all resize-none"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => setEditingArea(null)}
+                              className="px-4 py-2 rounded-lg text-xs font-body font-semibold uppercase tracking-wider transition-all"
+                              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={handleSaveEdit}
+                              disabled={savingArea}
+                              className="px-5 py-2 rounded-lg text-xs font-body font-bold uppercase tracking-wider transition-all disabled:opacity-40"
+                              style={{
+                                background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%)',
+                                color: '#020F27',
+                                boxShadow: '0 4px 16px rgba(34,217,223,0.3)',
+                              }}
+                            >
+                              {savingArea ? 'Guardando...' : 'Guardar'}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-display text-lg text-white tracking-wide truncate">{area.nombre}</p>
+                              <span
+                                className="inline-flex px-2 py-0.5 rounded text-[9px] font-body font-bold uppercase tracking-wider"
+                                style={{
+                                  background: isActive ? 'rgba(34,217,223,0.12)' : 'rgba(132,153,194,0.1)',
+                                  color: isActive ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                                  border: `1px solid ${isActive ? 'rgba(34,217,223,0.4)' : 'var(--color-border)'}`,
+                                }}
+                              >
+                                {isActive ? 'Activa' : 'Inactiva'}
+                              </span>
+                            </div>
+                            {area.descripcion && (
+                              <p className="text-xs text-[var(--color-text-muted)] font-body mt-1">
+                                {area.descripcion}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex gap-1.5 flex-shrink-0">
+                            <button
+                              onClick={() => setEditingArea({ id: area.id, nombre: area.nombre, descripcion: area.descripcion || '' })}
+                              className="px-3 py-1.5 rounded-lg text-xs font-body font-semibold uppercase tracking-wider transition-all"
+                              style={{ background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}
+                              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(34,217,223,0.4)'; e.currentTarget.style.color = 'var(--color-accent)' }}
+                              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleToggleArea(area, isActive)}
+                              className="px-3 py-1.5 rounded-lg text-xs font-body font-semibold uppercase tracking-wider transition-all"
+                              style={{
+                                background: 'transparent',
+                                border: `1px solid ${isActive ? 'rgba(255,77,109,0.4)' : 'rgba(34,217,223,0.4)'}`,
+                                color: isActive ? 'var(--color-danger)' : 'var(--color-accent)',
+                              }}
+                            >
+                              {isActive ? 'Desactivar' : 'Reactivar'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
     </AppLayout>
   )
 }
