@@ -8,15 +8,31 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const { user } = useAuth() // Obtenemos al usuario actual
   const [scores, setScores] = useState({})
 
-  // Validación de permisos para apuestas por áreas
-  const esApuestaPorArea = bet?.tipo === 'por_areas' || bet?.type === 'por_areas'
+  // Validación de permisos para apuestas por áreas ('grupos' en el backend)
+  const esApuestaGrupos = bet?.tipo === 'grupos' || bet?.type === 'grupos'
   const esJefe = user?.tipo_usuario === 'jefe'
   const areaUsuario = user?.area_id
-  const areasParticipantes = bet?.areas_ids ? bet.areas_ids.split(',').map(id => id.trim()) : []
-  const miAreaParticipa = areasParticipantes.includes(areaUsuario)
-  
+  const areasParticipantes = bet?.areas_ids ? String(bet.areas_ids).split(',').map(id => id.trim()) : []
+  const miAreaParticipa = areaUsuario && areasParticipantes.includes(String(areaUsuario))
+
   // Bloqueo: si es apuesta por área y (el usuario no es jefe o su área no participa)
-  const estaBloqueado = esApuestaPorArea && (!esJefe || !miAreaParticipa)
+  const estaBloqueado = esApuestaGrupos && (!esJefe || !miAreaParticipa)
+
+  // Razón del bloqueo para mostrar mensaje específico
+  let razonBloqueo = null
+  if (estaBloqueado) {
+    if (!esJefe) {
+      razonBloqueo = {
+        titulo: 'Solo el jefe de área puede cargar predicciones',
+        detalle: 'Esta apuesta es grupal: cada área compite como equipo y las predicciones las carga únicamente el jefe. Podés ver los partidos pero no modificar el marcador.',
+      }
+    } else if (!miAreaParticipa) {
+      razonBloqueo = {
+        titulo: 'Tu área no participa en esta apuesta',
+        detalle: 'Esta apuesta grupal está reservada a otras áreas de la empresa. Podés ver los partidos pero no cargar predicciones.',
+      }
+    }
+  }
 
   // Inicializar inputs: si el usuario ya predijo, precargar sus valores
   useEffect(() => {
@@ -68,6 +84,8 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault()
+
+    if (estaBloqueado) return
 
     const matchPredictions = Object.entries(scores).map(([partido_id, vals]) => ({
       partido_id,
@@ -208,10 +226,44 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
         <div className="flex-1 overflow-y-auto p-5 md:p-6">
           <form onSubmit={handleSubmit} id="predict-form" className="flex flex-col gap-3">
 
+            {/* Cartel de advertencia cuando el usuario no puede cargar */}
+            {razonBloqueo && (
+              <div
+                className="rounded-xl p-4 md:p-5 flex items-start gap-3"
+                style={{
+                  background: 'rgba(255,77,109,0.08)',
+                  border: '1px solid rgba(255,77,109,0.4)',
+                  boxShadow: '0 4px 16px rgba(255,77,109,0.08)',
+                }}
+              >
+                <div
+                  className="flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{
+                    background: 'rgba(255,77,109,0.15)',
+                    border: '1px solid rgba(255,77,109,0.4)',
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-body font-bold text-[var(--color-danger)] text-sm md:text-base mb-1">
+                    {razonBloqueo.titulo}
+                  </p>
+                  <p className="text-xs md:text-sm text-[var(--color-text-muted)] font-body leading-relaxed">
+                    {razonBloqueo.detalle}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {bet.partidos?.map((match, idx) => {
               const isLive       = match.estado === 'en_vivo'
               const isFinished   = match.estado === 'finalizado'
-              const isDisabled   = !open || isLive || isFinished
+              const isDisabled   = !open || isLive || isFinished || estaBloqueado
               const hasPred      = scores[match.id]?.local !== '' && scores[match.id]?.visitante !== ''
               const matchState   = isLive ? 'EN VIVO' : isFinished ? 'FINALIZADO' : null
 
@@ -412,7 +464,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
               Cancelar
             </button>
 
-            {open && (
+            {open && !estaBloqueado && (
               <button
                 type="submit"
                 form="predict-form"
@@ -454,9 +506,15 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
             )}
           </div>
 
-          {open && (
+          {open && !estaBloqueado && (
             <p className="text-[10px] text-[var(--color-text-faint)] font-body text-center mt-3">
               Podés editar tus predicciones mientras la apuesta siga abierta
+            </p>
+          )}
+
+          {open && estaBloqueado && (
+            <p className="text-[10px] text-[var(--color-danger)] font-body text-center mt-3 font-semibold uppercase tracking-wider">
+              Modo solo lectura · No podés modificar predicciones
             </p>
           )}
         </div>
