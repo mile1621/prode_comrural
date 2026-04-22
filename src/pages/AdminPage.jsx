@@ -136,29 +136,132 @@ export default function AdminPage() {
 
       {/* Tab: Apuestas */}
       {tab === 'Apuestas' && (
-        <div className="grid lg:grid-cols-2 gap-6 animate-fade-in">
-          {/* Formulario */}
-          <Card>
-            <h2 className="font-display text-2xl mb-4">Nueva apuesta</h2>
-            <CreateBetForm onSubmit={createBet} loading={loading} matches={matches} />
-          </Card>
+        <div className="grid lg:grid-cols-5 gap-6 animate-fade-in">
 
-          {/* Lista de apuestas */}
-          <div className="flex flex-col gap-3">
-            <h2 className="font-display text-2xl">Apuestas creadas</h2>
-            {bets.map(bet => (
-              <Card key={bet.id} className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-body font-semibold truncate">{bet.titulo}</p>
-                  <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
-                    {bet.premio} · {bet.tipo === 'por_equipos' ? 'Equipos' : 'Libre'}
-                  </p>
-                </div>
-                <Badge variant={isBetOpen(bet) ? 'accent' : 'muted'}>
-                  {isBetOpen(bet) ? 'Activa' : 'Cerrada'}
-                </Badge>
-              </Card>
-            ))}
+          {/* ── Formulario: Nueva apuesta ─────────────── */}
+          <div
+            className="lg:col-span-2 rounded-2xl p-6"
+            style={{
+              background: 'linear-gradient(145deg, rgba(15,43,79,0.9) 0%, rgba(15,33,69,0.95) 100%)',
+              border: '1px solid rgba(34,217,223,0.15)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-5">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <h2 className="font-display text-2xl md:text-3xl text-white tracking-wide">
+                NUEVA APUESTA
+              </h2>
+            </div>
+
+            <CreateBetForm onSubmit={createBet} loading={loading} matches={matches} />
+          </div>
+
+          {/* ── Listado: Apuestas creadas ─────────────── */}
+          <div className="lg:col-span-3">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display text-2xl md:text-3xl text-white tracking-wide">
+                APUESTAS CREADAS
+              </h2>
+              <span className="text-xs text-[var(--color-text-muted)] font-body">
+                {bets.length} {bets.length === 1 ? 'apuesta' : 'apuestas'}
+              </span>
+            </div>
+
+            {bets.length === 0 ? (
+              <div
+                className="rounded-2xl p-10 text-center"
+                style={{
+                  background: 'rgba(15,43,79,0.4)',
+                  border: '1px dashed var(--color-border)',
+                }}
+              >
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--color-text-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                </svg>
+                <p className="text-[var(--color-text-muted)] font-body text-sm mb-1">
+                  Todavía no creaste ninguna apuesta
+                </p>
+                <p className="text-[var(--color-text-faint)] font-body text-xs">
+                  Completá el formulario de la izquierda para crear la primera.
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {bets.map((bet, i) => {
+                  const active = isBetOpen(bet)
+                  const isLive = bet.partidos?.some(p => p.estado === 'en_vivo')
+                  const allFinished = bet.partidos?.length > 0 && bet.partidos.every(p => p.estado === 'finalizado')
+
+                  const state = isLive
+                    ? { label: 'EN VIVO', color: 'var(--color-live)', bg: 'rgba(255,61,113,0.12)', border: 'rgba(255,61,113,0.4)' }
+                    : allFinished
+                      ? { label: 'FINALIZADA', color: 'var(--color-warn)', bg: 'rgba(244,180,42,0.1)', border: 'rgba(244,180,42,0.35)' }
+                      : active
+                        ? { label: 'ACTIVA', color: 'var(--color-accent)', bg: 'rgba(34,217,223,0.1)', border: 'rgba(34,217,223,0.35)' }
+                        : { label: 'CERRADA', color: 'var(--color-text-muted)', bg: 'rgba(132,153,194,0.08)', border: 'var(--color-border)' }
+
+                  return (
+                    <div
+                      key={bet.id}
+                      className={`rounded-xl p-4 transition-all animate-fade-in delay-${Math.min(i + 1, 5)}`}
+                      style={{
+                        background: 'linear-gradient(145deg, rgba(15,43,79,0.85) 0%, rgba(15,33,69,0.9) 100%)',
+                        border: '1px solid rgba(34,217,223,0.12)',
+                        boxShadow: '0 6px 20px rgba(0,0,0,0.25)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-display text-lg md:text-xl text-white tracking-wide leading-tight truncate">
+                            {bet.titulo}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-[var(--color-text-muted)] font-body">
+                            {bet.premio && (
+                              <span className="inline-flex items-center gap-1">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--color-warn)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                                  <path d="M4 22h16" />
+                                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
+                                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
+                                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
+                                </svg>
+                                <span className="truncate max-w-[140px]">{bet.premio}</span>
+                              </span>
+                            )}
+                            <span className="text-[var(--color-text-faint)]">·</span>
+                            <span>{bet.tipo === 'por_equipos' ? 'Equipos' : 'Libre'}</span>
+                            {bet.partidos && (
+                              <>
+                                <span className="text-[var(--color-text-faint)]">·</span>
+                                <span>{bet.partidos.length} {bet.partidos.length === 1 ? 'partido' : 'partidos'}</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        <span
+                          className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-body font-bold uppercase tracking-wider"
+                          style={{
+                            background: state.bg,
+                            color: state.color,
+                            border: `1px solid ${state.border}`,
+                          }}
+                        >
+                          {isLive && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-live)] animate-pulse-live" />}
+                          {state.label}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
