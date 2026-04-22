@@ -3,7 +3,12 @@ import { useAuth } from '../../hooks/useAuth.jsx'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/apuestas',  label: 'Apuestas' },
+  { to: '/apuestas', label: 'Apuestas' },
+]
+
+const ADMIN_LINKS = [
+  { to: '/admin', label: 'Admin' },
+  { to: '/ranking', label: 'Ranking' },
 ]
 
 export default function Navbar() {
@@ -44,9 +49,11 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
-          {isAdmin && (
+
+          {isAdmin && ADMIN_LINKS.map(link => (
             <NavLink
-              to="/admin"
+              key={link.to}
+              to={link.to}
               className={({ isActive }) => `
                 px-3 py-1.5 rounded-md text-sm font-medium font-body whitespace-nowrap
                 transition-colors duration-[var(--transition-fast)]
@@ -55,9 +62,9 @@ export default function Navbar() {
                   : 'text-[var(--color-text-muted)] hover:text-[var(--color-warn)]'}
               `}
             >
-              Admin
+              {link.label}
             </NavLink>
-          )}
+          ))}
         </div>
 
         {/* Usuario y logout */}
