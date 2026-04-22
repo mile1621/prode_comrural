@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth.jsx'
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
   { to: '/apuestas', label: 'Apuestas' },
+  { to: '/partidos', label: 'Partidos' },
 ]
 
 const ADMIN_LINKS = [

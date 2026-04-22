@@ -8,6 +8,7 @@ import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import BetsPage from './pages/BetsPage.jsx'
+import PartidosPage from './pages/PartidosPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
 import RankingPage from './pages/RankingPage.jsx'
 import NotFoundPage from './pages/NotFoundPage.jsx'
@@ -29,6 +30,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/apuestas" element={<BetsPage />} />
+            <Route path="/partidos" element={<PartidosPage />} />
           </Route>
 
           {/* Solo admin */}
