@@ -8,31 +8,25 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const { user } = useAuth() // Obtenemos al usuario actual
   const [scores, setScores] = useState({})
 
-  // Validación de permisos para apuestas por áreas ('grupos' en el backend)
+  // Validación de permisos para apuestas por áreas ('grupos' en el backend).
+  // Todos los miembros del área participan: la predicción oficial se calcula
+  // automáticamente por mayoría de votos del equipo (con desempate por voto del jefe).
   const esApuestaGrupos = bet?.tipo === 'grupos' || bet?.type === 'grupos'
-  const esJefe = user?.tipo_usuario === 'jefe'
   const areaUsuario = user?.area_id
   const areasParticipantes = bet?.areas_ids ? String(bet.areas_ids).split(',').map(id => id.trim()) : []
   const miAreaParticipa = areaUsuario && areasParticipantes.includes(String(areaUsuario))
 
-  // Bloqueo: si es apuesta por área y (el usuario no es jefe o su área no participa)
-  const estaBloqueado = esApuestaGrupos && (!esJefe || !miAreaParticipa)
+  // Bloqueo: solo si es apuesta grupal y el área del usuario NO está entre las participantes.
+  // Ya no bloqueamos por rol: cualquier miembro del área (jefe o general) puede votar.
+  const estaBloqueado = esApuestaGrupos && !miAreaParticipa
 
-  // Razón del bloqueo para mostrar mensaje específico
-  let razonBloqueo = null
-  if (estaBloqueado) {
-    if (!esJefe) {
-      razonBloqueo = {
-        titulo: 'Solo el jefe de área puede cargar predicciones',
-        detalle: 'Esta apuesta es grupal: cada área compite como equipo y las predicciones las carga únicamente el jefe. Podés ver los partidos pero no modificar el marcador.',
-      }
-    } else if (!miAreaParticipa) {
-      razonBloqueo = {
+  // Razón del bloqueo (único caso que queda: el área del usuario no participa en esta apuesta)
+  const razonBloqueo = estaBloqueado
+    ? {
         titulo: 'Tu área no participa en esta apuesta',
         detalle: 'Esta apuesta grupal está reservada a otras áreas de la empresa. Podés ver los partidos pero no cargar predicciones.',
       }
-    }
-  }
+    : null
 
   // Inicializar inputs: si el usuario ya predijo, precargar sus valores
   useEffect(() => {
