@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import sheetsApi from '../../services/sheetsApi.js'
+import { useAuth } from '../../hooks/useAuth.jsx'
 
 const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
 
@@ -29,6 +30,7 @@ function fmtFecha(f) {
 }
 
 export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
+  const { isPro } = useAuth()
   const [form, setForm] = useState(INITIAL)
   const [filtroFase, setFiltroFase] = useState('todas')
   const [areas, setAreas] = useState([])
@@ -300,30 +302,32 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] font-body">
-          Tipo
-        </label>
-        <div className="flex gap-2">
-          {['libre', 'grupos'].map(t => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setForm(p => ({ ...p, type: t }))}
-              className={`
-                flex-1 py-2 rounded-md font-semibold text-sm font-body border transition-colors
-                ${form.type === t
-                  ? 'bg-[var(--color-accent-soft)] border-[var(--color-accent)] text-[var(--color-accent)]'
-                  : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]'}
-              `}
-            >
-              {t === 'grupos' ? 'Por Áreas' : 'Libre'}
-            </button>
-          ))}
+      {isPro && (
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)] font-body">
+            Tipo
+          </label>
+          <div className="flex gap-2">
+            {['libre', 'grupos'].map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setForm(p => ({ ...p, type: t }))}
+                className={`
+                  flex-1 py-2 rounded-md font-semibold text-sm font-body border transition-colors
+                  ${form.type === t
+                    ? 'bg-[var(--color-accent-soft)] border-[var(--color-accent)] text-[var(--color-accent)]'
+                    : 'bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-[var(--color-accent)]'}
+                `}
+              >
+                {t === 'grupos' ? 'Por Áreas' : 'Libre'}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
-      {form.type === 'grupos' && (
+      {isPro && form.type === 'grupos' && (
         <div className="flex flex-col gap-2 mt-1 mb-2 p-3 border border-[var(--color-border-soft)] bg-black/20 rounded-lg">
           <p className="text-xs font-semibold uppercase text-[var(--color-text-muted)] font-body">
             Seleccionar áreas participantes (Mín. 2)
