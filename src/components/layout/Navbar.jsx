@@ -7,6 +7,10 @@ const NAV_LINKS = [
   { to: '/partidos', label: 'Partidos' },
 ]
 
+const USER_LINKS = [
+  { to: '/mis-predicciones', label: 'Mis predicciones' },
+]
+
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Admin' },
   { to: '/ranking', label: 'Ranking' },
@@ -51,6 +55,24 @@ export default function Navbar() {
             </NavLink>
           ))}
 
+          {/* Solo usuarios (no admin) */}
+          {user && !isAdmin && USER_LINKS.map(link => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) => `
+                px-3 py-1.5 rounded-md text-sm font-medium font-body whitespace-nowrap
+                transition-colors duration-[var(--transition-fast)]
+                ${isActive
+                  ? 'bg-[var(--color-accent-glow)] text-[var(--color-accent)]'
+                  : 'text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}
+              `}
+            >
+              {link.label}
+            </NavLink>
+          ))}
+
+          {/* Solo admin */}
           {isAdmin && ADMIN_LINKS.map(link => (
             <NavLink
               key={link.to}
