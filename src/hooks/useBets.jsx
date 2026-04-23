@@ -6,11 +6,11 @@ import sheetsApi from '../services/sheetsApi.js'
    ─────────────────────────────────────────────────────────── */
 
 export function useBets() {
-  const [bets, setBets]               = useState([])
-  const [matches, setMatches]         = useState([]) // Todos los partidos para selects admin
+  const [bets, setBets] = useState([])
+  const [matches, setMatches] = useState([]) // Todos los partidos para selects admin
   const [predictions, setPredictions] = useState({}) // { partido_id: prediccion }
-  const [loading, setLoading]         = useState(false)
-  const [error, setError]             = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   // Carga inicial de apuestas, partidos y predicciones del usuario
   useEffect(() => {
@@ -27,17 +27,7 @@ export function useBets() {
         sheetsApi.partidos.listar()
       ])
 
-      let allMatches = dataPartidos.partidos || []
-
-      // MOCKEADO TEMPORAL: Partidos de prueba si la hoja de GS está vacía
-      if (allMatches.length === 0) {
-        allMatches = [
-          { id: 'mock1', equipo_local: 'Boca Juniors', equipo_visitante: 'River Plate', estado: 'programado' },
-          { id: 'mock2', equipo_local: 'Real Madrid', equipo_visitante: 'Barcelona', estado: 'programado' },
-          { id: 'mock3', equipo_local: 'Inter Miami', equipo_visitante: 'LA Galaxy', estado: 'programado' }
-        ]
-      }
-
+      const allMatches = dataPartidos.partidos || []
       setMatches(allMatches)
 
       const enrichedBets = (dataApuestas.apuestas || []).map(a => {
@@ -62,7 +52,7 @@ export function useBets() {
       const data = await sheetsApi.predicciones.mias(apuesta_id)
       // Convertir array a mapa { partido_id: prediccion }
       const map = {}
-      ;(data.predicciones || []).forEach(p => { map[p.partido_id] = p })
+        ; (data.predicciones || []).forEach(p => { map[p.partido_id] = p })
       setPredictions(map)
     } catch (err) {
       setError(err.message)
