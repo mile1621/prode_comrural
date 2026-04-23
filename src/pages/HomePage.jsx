@@ -16,9 +16,11 @@ export default function HomePage() {
               LOGO EMPRESA
             </div>
             <div className="w-px h-5 bg-[var(--color-border)] hidden sm:block" />
-            <div className="font-display text-lg md:text-xl text-[var(--color-accent)] tracking-wider whitespace-nowrap">
-              PRODE<span className="text-[var(--color-text)]">ONE</span>
-            </div>
+            <img
+              src="/logo-prodetalento.png"
+              alt="Prode Talento"
+              className="h-8 md:h-10 w-auto"
+            />
           </div>
           <Link
             to="/login"
@@ -156,7 +158,7 @@ export default function HomePage() {
       <footer className="w-full border-t border-[var(--color-border)] bg-[var(--color-bg)]">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-[var(--color-text-faint)] text-xs md:text-sm font-body text-center sm:text-left">
-            Prode One · Plataforma de <span className="text-[var(--color-text-muted)]">Escencial Consultora</span>
+            Prode Talento · Plataforma de <span className="text-[var(--color-text-muted)]">Escencial Consultora</span>
           </p>
           <p className="text-[var(--color-text-faint)] text-xs font-body text-center sm:text-right">
             Juego responsable · Solo mayores de 18 años
