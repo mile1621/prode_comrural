@@ -39,10 +39,7 @@ export default function Navbar() {
         {/* ── Logo ── */}
         <Link to="/dashboard" className="flex items-center gap-3 flex-shrink-0 min-w-0">
           {/* Slot logo empresa */}
-          <div className="px-3 py-1.5 rounded-lg text-xs tracking-widest font-body whitespace-nowrap"
-            style={{ background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.4)' }}>
-            LOGO EMPRESA
-          </div>
+
           <div className="w-px h-5 hidden sm:block" style={{ background: 'rgba(235,195,43,.25)' }} />
           <img
             src="./imgprode/one-prode-talento-new3.png"

@@ -76,10 +76,7 @@ export default function RegisterPage() {
 
         {/* ── Logo / Brand ── */}
         <div className="relative z-10 flex flex-col items-center mb-6 rp-card">
-          <div className="mb-3 px-4 py-1.5 rounded-full font-body font-bold text-xs uppercase tracking-widest"
-            style={{ border: '1px solid rgba(235,195,43,.3)', color: 'rgba(255,255,255,.5)', background: 'rgba(235,195,43,.07)' }}>
-            Logo Empresa
-          </div>
+
           <img
             src="./imgprode/one-prode-talento-new3.png"
             alt="Prode Talento"
