@@ -141,8 +141,9 @@ export default function RankingPage() {
                                         <th className="px-4 py-3 text-left w-12">#</th>
                                         <th className="px-4 py-3 text-left">Participante</th>
                                         <th className="px-4 py-3 text-center">Pred.</th>
-                                        <th className="px-4 py-3 text-center">Exactos</th>
-                                        <th className="px-4 py-3 text-center">Resultado</th>
+                                        <th className="px-4 py-3 text-center" title="Marcador exacto">Exactos</th>
+                                        <th className="px-4 py-3 text-center" title="Acertó la diferencia de goles">Diferencia</th>
+                                        <th className="px-4 py-3 text-center" title="Acertó solo el ganador">Resultado</th>
                                         <th className="px-4 py-3 text-right">Puntos</th>
                                     </tr>
                                 </thead>
@@ -154,6 +155,9 @@ export default function RankingPage() {
                                             <td className="px-4 py-3 text-center text-[var(--color-text-muted)]">{u.predicciones}</td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className="text-[var(--color-accent)] font-semibold">{u.aciertos_exactos}</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="text-[var(--color-warn)] font-semibold">{u.aciertos_diferencia || 0}</span>
                                             </td>
                                             <td className="px-4 py-3 text-center text-[var(--color-text-muted)]">{u.aciertos_resultado}</td>
                                             <td className="px-4 py-3 text-right">
