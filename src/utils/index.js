@@ -1,20 +1,84 @@
 /* ── Utilidades Generales ───────────────────────────────────
    Funciones helper reutilizables en todo el proyecto.
+   Todas las fechas viajan como ISO UTC y se muestran en hora
+   local del navegador del usuario.
    ─────────────────────────────────────────────────────────── */
 
-/** Formatea una fecha ISO a string legible */
+/* ══════════════════════════════════════════════════════════
+   FECHAS
+   ══════════════════════════════════════════════════════════ */
+
+/** Formatea una fecha ISO a "24/11/2026 16:00" en hora local */
 export function formatDate(iso, opts = {}) {
-  return new Date(iso).toLocaleString('es-ES', {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleString('es-AR', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
     ...opts,
   })
 }
 
-/** Tiempo restante hasta una fecha límite */
+/** Solo día y mes + hora: "24 nov 16:00" (separador personalizable) */
+export function fmtFecha(iso, separador = ' ') {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return (
+    d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) +
+    separador +
+    d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+  )
+}
+
+/**
+ * Devuelve la fecha (YYYY-MM-DD) en zona LOCAL del navegador.
+ * Útil para agrupar partidos por día sin que se "cambien de día"
+ * al convertir a UTC. Ej: un partido 24/11 21:00 AR no debe
+ * aparecer como del 25/11 solo porque en UTC lo es.
+ */
+export function diaLocalIso(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const pad = n => String(n).padStart(2, '0')
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+}
+
+/** Solo fecha sin hora: "24/11/2026" */
+export function fmtFechaSola(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('es-AR', {
+    day: '2-digit', month: '2-digit', year: 'numeric'
+  })
+}
+
+/** Solo hora: "16:00" */
+export function fmtHora(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+}
+
+/** Fecha estilo "lunes 24 de noviembre" para agrupadores */
+export function fmtFechaLarga(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('es-AR', {
+    weekday: 'long', day: '2-digit', month: 'long'
+  })
+}
+
+/** Tiempo restante hasta una fecha límite: "2d 5h", "45m", "Cerrada" */
 export function timeLeft(deadline) {
+  if (!deadline) return 'Cerrada'
   const diff = new Date(deadline) - Date.now()
-  if (diff <= 0) return 'Cerrada'
+  if (isNaN(diff) || diff <= 0) return 'Cerrada'
   const h = Math.floor(diff / 3_600_000)
   const m = Math.floor((diff % 3_600_000) / 60_000)
   if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`
@@ -22,9 +86,54 @@ export function timeLeft(deadline) {
   return `${m}m`
 }
 
+/**
+ * Convierte el valor de un <input type="datetime-local"> a ISO UTC.
+ *
+ * El input datetime-local devuelve "2026-11-24T16:00" sin zona.
+ * Por default JavaScript lo interpreta en la zona del navegador
+ * (lo cual es lo que queremos: el admin escribe en SU hora local
+ * y cada usuario lo ve en la suya). El ISO resultante es UTC puro
+ * y se puede guardar sin ambigüedad.
+ *
+ * @param {string} valorInput - valor crudo del input datetime-local
+ * @returns {string} ISO UTC ej. "2026-11-24T19:00:00.000Z"
+ */
+export function inputLocalAIsoUtc(valorInput) {
+  if (!valorInput) return ''
+  const d = new Date(valorInput)
+  if (isNaN(d.getTime())) return ''
+  return d.toISOString()
+}
+
+/**
+ * Convierte un ISO UTC a formato "YYYY-MM-DDTHH:mm" que espera un
+ * <input type="datetime-local">, usando la zona local del navegador.
+ * Útil para precargar inputs al editar.
+ */
+export function isoUtcAInputLocal(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const pad = n => String(n).padStart(2, '0')
+  return (
+    d.getFullYear() + '-' +
+    pad(d.getMonth() + 1) + '-' +
+    pad(d.getDate()) + 'T' +
+    pad(d.getHours()) + ':' +
+    pad(d.getMinutes())
+  )
+}
+
+/* ══════════════════════════════════════════════════════════
+   APUESTAS
+   ══════════════════════════════════════════════════════════ */
+
 /** Devuelve true si una apuesta está abierta */
 export function isBetOpen(bet) {
-  return bet.estado === 'abierta' && new Date(bet.fecha_cierre) > Date.now()
+  if (!bet) return false
+  if (bet.estado !== 'abierta') return false
+  const t = new Date(bet.fecha_cierre).getTime()
+  return !isNaN(t) && t > Date.now()
 }
 
 /** Clases CSS para el estado de una apuesta */
@@ -46,7 +155,12 @@ export function matchStateLabel(estado) {
   }[estado] ?? { label: estado || '-', class: 'text-muted' }
 }
 
+/* ══════════════════════════════════════════════════════════
+   OTROS
+   ══════════════════════════════════════════════════════════ */
+
 /** Trunca texto a n caracteres */
 export function truncate(str, n = 40) {
+  if (!str) return ''
   return str.length > n ? str.slice(0, n) + '…' : str
 }

@@ -1,19 +1,19 @@
 import { useState, useEffect } from 'react'
-import AppLayout        from '../components/layout/AppLayout.jsx'
-import { useBets }      from '../hooks/useBets.jsx'
-import { useAuth }      from '../hooks/useAuth.jsx'
+import AppLayout from '../components/layout/AppLayout.jsx'
+import { useBets } from '../hooks/useBets.jsx'
+import { useAuth } from '../hooks/useAuth.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
-import sheetsApi        from '../services/sheetsApi.js'
+import sheetsApi from '../services/sheetsApi.js'
 
-import AdminHeader      from '../components/admin/AdminHeader.jsx'
-import AdminTabs        from '../components/admin/AdminTabs.jsx'
-import BetsTab          from '../components/admin/BetsTab.jsx'
-import UsersTab         from '../components/admin/UsersTab.jsx'
-import AreasTab         from '../components/admin/AreasTab.jsx'
+import AdminHeader from '../components/admin/AdminHeader.jsx'
+import AdminTabs from '../components/admin/AdminTabs.jsx'
+import BetsTab from '../components/admin/BetsTab.jsx'
+import UsersTab from '../components/admin/UsersTab.jsx'
+import AreasTab from '../components/admin/AreasTab.jsx'
 import PartidosAdminTab from '../components/admin/PartidosAdminTab.jsx'
 
-const TABS_ALL   = ['Apuestas', 'Usuarios', 'Áreas']
-const TABS_BASIC = ['Apuestas', 'Usuarios']
+
+
 
 /* ── Helpers ────────────────────────────────────────────── */
 
@@ -35,21 +35,21 @@ function getBetStatusColor(bet) {
 export default function AdminPage() {
   const { bets, loading, createBet, closeBet, finalizeBet, matches, loadBets } = useBets()
   const { isPro } = useAuth()
-  const TABS = isPro ? TABS_ALL : TABS_BASIC
+
   const [tab, setTab] = useState('Apuestas')
 
   /* ── Usuarios ─────────────────────────────────────────── */
-  const [pendingUsers,  setPendingUsers ] = useState([])
-  const [loadingUsers,  setLoadingUsers ] = useState(false)
-  const [areas,         setAreas        ] = useState([])
+  const [pendingUsers, setPendingUsers] = useState([])
+  const [loadingUsers, setLoadingUsers] = useState(false)
+  const [areas, setAreas] = useState([])
   const [approvingUser, setApprovingUser] = useState(null)
 
   /* ── Áreas ────────────────────────────────────────────── */
-  const [areasAll,     setAreasAll    ] = useState([])
+  const [areasAll, setAreasAll] = useState([])
   const [loadingAreas, setLoadingAreas] = useState(false)
-  const [editingArea,  setEditingArea ] = useState(null)
-  const [newArea,      setNewArea     ] = useState({ nombre: '', descripcion: '' })
-  const [savingArea,   setSavingArea  ] = useState(false)
+  const [editingArea, setEditingArea] = useState(null)
+  const [newArea, setNewArea] = useState({ nombre: '', descripcion: '' })
+  const [savingArea, setSavingArea] = useState(false)
 
   /* ── Efectos ──────────────────────────────────────────── */
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function AdminPage() {
     setLoadingAreas(true)
     try { const r = await sheetsApi.areas.listar(false); setAreasAll(r.areas || []) }
     catch (e) { alert('Error cargando áreas: ' + e.message) }
-    finally   { setLoadingAreas(false) }
+    finally { setLoadingAreas(false) }
   }
 
   async function handleCreateArea(e) {
@@ -84,7 +84,7 @@ export default function AdminPage() {
       setNewArea({ nombre: '', descripcion: '' })
       await loadAreasAll()
     } catch (e) { alert('Error creando área: ' + e.message) }
-    finally     { setSavingArea(false) }
+    finally { setSavingArea(false) }
   }
 
   async function handleSaveEdit() {
@@ -95,7 +95,7 @@ export default function AdminPage() {
       setEditingArea(null)
       await loadAreasAll()
     } catch (e) { alert('Error guardando cambios: ' + e.message) }
-    finally     { setSavingArea(false) }
+    finally { setSavingArea(false) }
   }
 
   async function handleToggleArea(area, currentlyActive) {
@@ -109,7 +109,7 @@ export default function AdminPage() {
     setLoadingUsers(true)
     try { const r = await sheetsApi.usuarios.listar('pendiente'); setPendingUsers(r.usuarios || []) }
     catch (e) { alert('Error cargando usuarios: ' + e.message) }
-    finally   { setLoadingUsers(false) }
+    finally { setLoadingUsers(false) }
   }
 
   async function confirmApprove(id) {
@@ -440,7 +440,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'Áreas' && (
+      {tab === 'Áreas' && isPro && (
         <AreasTab
           areasAll={areasAll}
           loadingAreas={loadingAreas}

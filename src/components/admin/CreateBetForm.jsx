@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import sheetsApi from '../../services/sheetsApi.js'
 import { useAuth } from '../../hooks/useAuth.jsx'
+import { fmtFecha, inputLocalAIsoUtc } from '../../utils/index.js'
 
 /* ── Constantes ─────────────────────────────────────────── */
 const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
@@ -18,15 +19,6 @@ function isTBD(m) {
 }
 
 function estaDisponible(m) { return m.estado === 'programado' }
-
-function fmtFecha(f) {
-  if (!f) return ''
-  try {
-    const d = new Date(f)
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) +
-      ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-  } catch { return '' }
-}
 
 /* ── Sub-componentes de UI internos ─────────────────────── */
 function Field({ label, ...props }) {
@@ -176,7 +168,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         titulo:       form.titulo,
         tipo:         form.type,
         premio:       form.premio,
-        fecha_cierre: form.fecha_cierre,
+        fecha_cierre: inputLocalAIsoUtc(form.fecha_cierre),
         partidos_ids: form.partidos_ids.join(',')
       }
       if (isPro && form.type === 'grupos') {
