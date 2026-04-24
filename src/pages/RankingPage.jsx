@@ -5,11 +5,13 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { useBets } from '../hooks/useBets.jsx'
+import { useAuth } from '../hooks/useAuth.jsx'
 import { isBetOpen } from '../utils/index.js'
 import sheetsApi from '../services/sheetsApi.js'
 
 export default function RankingPage() {
     const { bets, loading: loadingBets } = useBets()
+    const { isPro } = useAuth()
     const [apuestaSel, setApuestaSel] = useState(null)
     const [tabla, setTabla] = useState([])
     const [loadingTabla, setLoadingTabla] = useState(false)
@@ -89,7 +91,8 @@ export default function RankingPage() {
                                                 {bet.titulo}
                                             </p>
                                             <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
-                                                {bet.premio} · {bet.tipo === 'por_equipos' ? 'Equipos' : 'Libre'}
+                                                {bet.premio}
+                                                {isPro && ` · ${bet.tipo === 'grupos' ? 'Equipos' : 'Libre'}`}
                                                 {bet.partidos_ids && ` · ${bet.partidos_ids.split(',').filter(Boolean).length} partidos`}
                                             </p>
                                         </div>
@@ -138,8 +141,9 @@ export default function RankingPage() {
                                         <th className="px-4 py-3 text-left w-12">#</th>
                                         <th className="px-4 py-3 text-left">Participante</th>
                                         <th className="px-4 py-3 text-center">Pred.</th>
-                                        <th className="px-4 py-3 text-center">Exactos</th>
-                                        <th className="px-4 py-3 text-center">Resultado</th>
+                                        <th className="px-4 py-3 text-center" title="Marcador exacto">Exactos</th>
+                                        <th className="px-4 py-3 text-center" title="Acertó la diferencia de goles">Diferencia</th>
+                                        <th className="px-4 py-3 text-center" title="Acertó solo el ganador">Resultado</th>
                                         <th className="px-4 py-3 text-right">Puntos</th>
                                     </tr>
                                 </thead>
@@ -151,6 +155,9 @@ export default function RankingPage() {
                                             <td className="px-4 py-3 text-center text-[var(--color-text-muted)]">{u.predicciones}</td>
                                             <td className="px-4 py-3 text-center">
                                                 <span className="text-[var(--color-accent)] font-semibold">{u.aciertos_exactos}</span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <span className="text-[var(--color-warn)] font-semibold">{u.aciertos_diferencia || 0}</span>
                                             </td>
                                             <td className="px-4 py-3 text-center text-[var(--color-text-muted)]">{u.aciertos_resultado}</td>
                                             <td className="px-4 py-3 text-right">

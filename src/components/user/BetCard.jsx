@@ -84,7 +84,7 @@ function Pill({ children, color, bg, border, icon }) {
 }
 
 export default function BetCard({ bet, predictionsMap, onPredict }) {
-  const { user } = useAuth()
+  const { user, isPro } = useAuth()
 
   const open = isBetOpen(bet)
   const isLive = bet.partidos?.some(p => p.estado === 'en_vivo')
@@ -169,8 +169,8 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
               {style.label}
             </Pill>
 
-            {/* Badge de tipo: GRUPAL / INDIVIDUAL */}
-            {esGrupal ? (
+            {/* Badge de tipo: GRUPAL / INDIVIDUAL — solo Plan_pro */}
+            {isPro && (esGrupal ? (
               <Pill
                 color="var(--color-warn)"
                 bg="rgba(244,180,42,0.12)"
@@ -186,7 +186,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
               >
                 Individual
               </Pill>
-            )}
+            ))}
 
             {/* Badge de "SOS REFERENTE" si sos jefe en una grupal que te incluye */}
             {soyReferente && (

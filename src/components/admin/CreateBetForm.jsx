@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import sheetsApi from '../../services/sheetsApi.js'
+import { useAuth } from '../../hooks/useAuth.jsx'
 
 /* ── Constantes ─────────────────────────────────────────── */
 const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
@@ -76,6 +77,7 @@ function FilterChip({ active, onClick, children }) {
 
 /* ── Componente principal ───────────────────────────────── */
 export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
+  const { isPro } = useAuth()
   const [form, setForm] = useState(INITIAL)
   const [areas, setAreas] = useState([])
   const [filtroFase, setFiltroFase] = useState('todas')
@@ -177,7 +179,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         fecha_cierre: form.fecha_cierre,
         partidos_ids: form.partidos_ids.join(',')
       }
-      if (form.type === 'grupos') {
+      if (isPro && form.type === 'grupos') {
         if (form.areas_ids.length < 2) { alert('Para apuestas por áreas seleccioná al menos 2 áreas.'); return }
         payload.areas_ids = form.areas_ids.join(',')
       }
@@ -356,31 +358,35 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         </div>
       </div>
 
-      {/* Tipo */}
-      <div className="flex flex-col gap-1.5">
-        <span className="font-body font-bold text-xs uppercase tracking-widest"
-          style={{ color: 'rgba(235,195,43,.75)' }}>Tipo</span>
-        <div className="flex gap-2">
-          {['libre', 'grupos'].map(t => {
-            const active = form.type === t
-            return (
-              <button key={t} type="button"
-                onClick={() => setForm(p => ({ ...p, type: t }))}
-                className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
-                style={{
-                  background: active ? 'rgba(235,195,43,.12)' : 'rgba(255,255,255,.04)',
-                  border: `1px solid ${active ? 'rgba(235,195,43,.5)' : 'rgba(255,255,255,.1)'}`,
-                  color: active ? '#ebc32b' : 'rgba(255,255,255,.55)',
-                }}>
-                {t === 'grupos' ? 'Por Áreas' : 'Libre'}
-              </button>
-            )
-          })}
+      {/* Tipo — solo Plan Pro */}
+      {isPro && (
+        <div className="flex flex-col gap-1.5">
+          <span className="font-body font-bold text-xs uppercase tracking-widest"
+            style={{ color: 'rgba(235,195,43,.75)' }}>
+            Tipo
+          </span>
+          <div className="flex gap-2">
+            {['libre', 'grupos'].map(t => {
+              const active = form.type === t
+              return (
+                <button key={t} type="button"
+                  onClick={() => setForm(p => ({ ...p, type: t }))}
+                  className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
+                  style={{
+                    background: active ? 'rgba(235,195,43,.12)' : 'rgba(255,255,255,.04)',
+                    border: `1px solid ${active ? 'rgba(235,195,43,.5)' : 'rgba(255,255,255,.1)'}`,
+                    color: active ? '#ebc32b' : 'rgba(255,255,255,.55)',
+                  }}>
+                  {t === 'grupos' ? 'Por Áreas' : 'Libre'}
+                </button>
+              )
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Áreas (solo si tipo = grupos) */}
-      {form.type === 'grupos' && (
+      {/* Áreas — solo Plan Pro y tipo grupos */}
+      {isPro && form.type === 'grupos' && (
         <div className="flex flex-col gap-2 p-3 rounded-xl"
           style={{ border: '1px solid rgba(235,195,43,.2)', background: 'rgba(235,195,43,.04)' }}>
           <span className="font-body font-bold text-xs uppercase tracking-widest"

@@ -77,8 +77,25 @@ export function AuthProvider({ children }) {
 
   const isAdmin = user?.rol === 'admin'
 
+  // Plan de la empresa del usuario logueado.
+  // Si la columna empresa está vacía, se considera Plan_pro por defecto
+  // (mismo criterio que el backend en esPlanBasic_).
+  const empresa = String(user?.empresa || '').trim().toLowerCase()
+  const isPlanBasic = empresa === 'plan_basic'
+  const isPro = !isPlanBasic
+
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, logout, register, isAdmin }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      error,
+      login,
+      logout,
+      register,
+      isAdmin,
+      isPlanBasic,
+      isPro,
+    }}>
       {children}
     </AuthContext.Provider>
   )
