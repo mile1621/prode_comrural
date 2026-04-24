@@ -138,11 +138,22 @@ export default function LoginPage() {
 
               {/* Contraseña */}
               <div>
-                <label htmlFor="password"
-                  className="block font-body font-bold text-xs uppercase tracking-widest mb-2"
-                  style={{ color: 'rgba(235,195,43,.8)' }}>
-                  Contraseña
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label htmlFor="password"
+                    className="block font-body font-bold text-xs uppercase tracking-widest"
+                    style={{ color: 'rgba(235,195,43,.8)' }}>
+                    Contraseña
+                  </label>
+                  <Link
+                    to="/forgot-password"
+                    className="font-body text-xs transition-colors"
+                    style={{ color: 'rgba(255,255,255,.45)', textDecoration: 'none' }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#ebc32b' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <input
                   id="password"
                   type="password"

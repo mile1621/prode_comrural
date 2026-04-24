@@ -8,7 +8,7 @@
 
 // URL directa del deploy de Apps Script.
 // Si hacés un nuevo deploy, actualizá esta URL.
-const API_URL = 'https://script.google.com/macros/s/AKfycbx_bNJQC4N4D1uPtMjqWOpML_W6Zo3L75mIj3S3NfqUUlYxYCHeIgxpi41-nXs78H6T/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbzZzbNCHa8HS97X853VErhzHdWK0P3Z2LBU0Ox6plSLHaI6iawqNdJuQ_XEe7Qyz6aK/exec'
 
 // ── Caché de cliente en memoria ────────────────────────────
 const CLIENT_CACHE = new Map()
@@ -126,6 +126,14 @@ const auth = {
   },
   registro: (nombre, email, password) =>
     post('auth.registro', { nombre, email, password }),
+
+  // Recuperación de contraseña (flujo de 3 pasos)
+  resetSolicitar: (email) =>
+    post('auth.reset_solicitar', { email }),
+  resetValidar: (token) =>
+    post('auth.reset_validar', { token }),
+  resetConfirmar: (token, password) =>
+    post('auth.reset_confirmar', { token, password }),
 }
 
 const usuarios = {
