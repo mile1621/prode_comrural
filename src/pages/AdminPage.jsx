@@ -139,7 +139,7 @@ export default function AdminPage() {
 
   /* ── Render ───────────────────────────────────────────── */
   return (
-    <AppLayout>
+        <AppLayout>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <AdminHeader bets={bets} pendingUsers={pendingUsers} />
@@ -459,6 +459,6 @@ export default function AdminPage() {
       {tab === 'Partidos' && (
         <PartidosAdminTab matches={matches} loadBets={loadBets} />
       )}
-    </AppLayout>
+        </AppLayout>
   )
-}
+};
