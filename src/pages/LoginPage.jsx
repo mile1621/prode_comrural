@@ -16,200 +16,235 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 bg-[var(--color-bg)] relative overflow-hidden">
-      {/* Fondo decorativo: glows cyan sutiles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full opacity-[0.12]"
-          style={{ background: 'var(--color-accent)', filter: 'blur(120px)' }}
-        />
-        <div
-          className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full opacity-[0.08]"
-          style={{ background: 'var(--color-accent-bright)', filter: 'blur(120px)' }}
-        />
-      </div>
+    <>
+      <style>{`
+        @keyframes lp-fade { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .lp-card { animation: lp-fade .5s ease both; }
+        @keyframes lp-spin { to{transform:rotate(360deg)} }
+        .lp-spin { animation: lp-spin .75s linear infinite; }
+        @keyframes lp-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        .lp-pulse { animation: lp-pulse 1.8s ease infinite; }
+      `}</style>
 
-      <div className="relative w-full max-w-[420px] animate-fade-in">
-        {/* Header: logo del cliente + marca */}
-        <div className="text-center mb-8">
+      {/* ── Full-screen background ── */}
+      <div
+        className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-4 py-8"
+        style={{
+          backgroundImage: [
+            'linear-gradient(160deg, rgba(5,9,15,.82) 0%, rgba(12,24,43,.88) 45%, rgba(5,9,15,.95) 100%)',
+            "url('./imgprode/fondo-banner.png')",
+          ].join(','),
+          backgroundSize: 'cover',
+          backgroundPosition: 'center 25%',
+        }}
+      >
+        {/* Gold glow top-left */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{
+          background: 'radial-gradient(ellipse 55% 45% at 20% 25%, rgba(235,195,43,.16), transparent 55%)'
+        }} />
+        {/* Blue glow bottom-right */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none" style={{
+          background: 'radial-gradient(ellipse 50% 45% at 80% 75%, rgba(66,91,139,.28), transparent 55%)'
+        }} />
 
-          {/* Slot para el logo del cliente */}
-          <div
-            className="inline-block px-4 py-2 rounded-full text-[10px] tracking-[0.2em] font-body font-semibold mb-6"
-            style={{
-              background: 'rgba(34,217,223,0.08)',
-              border: '1px solid rgba(34,217,223,0.25)',
-              color: 'var(--color-text-muted)'
-            }}
-          >
-            LOGO DEL CLIENTE
+        {/* ── TOP: logo empresa + marca ── */}
+        <div className="relative z-10 flex flex-col items-center mb-6 lp-card">
+          {/* Slot logo cliente */}
+          <img
+            src="./imgprode/one-prode-talento-new3.png"
+            alt="Prode Talento"
+            style={{ height: 52, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,.6))' }}
+          />
+        </div>
+
+        {/* ── CARD ── */}
+        <div
+          className="lp-card relative z-10 w-full"
+          style={{
+            maxWidth: 420,
+            background: 'linear-gradient(160deg, rgba(12,24,43,.92) 0%, rgba(5,9,15,.96) 100%)',
+            border: '1px solid rgba(235,195,43,.25)',
+            borderRadius: 20,
+            boxShadow: '0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(235,195,43,.08), inset 0 1px 0 rgba(255,255,255,.05)',
+            backdropFilter: 'blur(24px)',
+            animationDelay: '.1s',
+          }}
+        >
+          {/* Gold top accent line */}
+          <div className="rounded-t-[20px] h-0.5 w-full"
+            style={{ background: 'linear-gradient(90deg, transparent, #ebc32b 30%, #ebc32b 70%, transparent)' }} />
+
+          <div className="px-8 py-8">
+
+            {/* Card header */}
+            <div className="mb-7">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 lp-pulse" />
+                <span className="font-body text-xs uppercase tracking-widest font-bold"
+                  style={{ color: 'rgba(235,195,43,.7)' }}>
+                  Mundial 2026
+                </span>
+              </div>
+              <h1 className="font-display leading-none"
+                style={{ fontSize: '2.6rem', color: '#fff', letterSpacing: '.03em' }}>
+                BIENVENIDO
+              </h1>
+              <p className="font-body text-sm mt-1.5" style={{ color: 'rgba(255,255,255,.45)' }}>
+                Ingresá para empezar a pronosticar con tu equipo.
+              </p>
+            </div>
+
+            {/* Divider */}
+            <div className="h-px mb-7"
+              style={{ background: 'linear-gradient(90deg, transparent, rgba(235,195,43,.2) 50%, transparent)' }} />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Email */}
+              <div>
+                <label htmlFor="email"
+                  className="block font-body font-bold text-xs uppercase tracking-widest mb-2"
+                  style={{ color: 'rgba(235,195,43,.8)' }}>
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  placeholder="tu@empresa.com"
+                  required
+                  autoFocus
+                  autoComplete="email"
+                  className="w-full px-4 py-3.5 rounded-xl font-body text-sm outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,.06)',
+                    border: '1px solid rgba(255,255,255,.1)',
+                    color: '#fff',
+                    caretColor: '#ebc32b',
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'rgba(235,195,43,.55)'
+                    e.target.style.background = 'rgba(235,195,43,.06)'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255,255,255,.1)'
+                    e.target.style.background = 'rgba(255,255,255,.06)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+              </div>
+
+              {/* Contraseña */}
+              <div>
+                <label htmlFor="password"
+                  className="block font-body font-bold text-xs uppercase tracking-widest mb-2"
+                  style={{ color: 'rgba(235,195,43,.8)' }}>
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  value={form.password}
+                  onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                  className="w-full px-4 py-3.5 rounded-xl font-body text-sm outline-none transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,.06)',
+                    border: '1px solid rgba(255,255,255,.1)',
+                    color: '#fff',
+                    caretColor: '#ebc32b',
+                  }}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'rgba(235,195,43,.55)'
+                    e.target.style.background = 'rgba(235,195,43,.06)'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)'
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'rgba(255,255,255,.1)'
+                    e.target.style.background = 'rgba(255,255,255,.06)'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl font-body text-sm"
+                  style={{ background: 'rgba(184,69,46,.12)', border: '1px solid rgba(184,69,46,.35)', color: '#e07050' }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-px">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full font-body font-bold text-base py-4 rounded-full flex items-center justify-center gap-2 transition-all mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: '#ebc32b', color: '#05090f', boxShadow: '0 8px 28px rgba(235,195,43,.3)' }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#f5d75a'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(235,195,43,.45)' } }}
+                onMouseLeave={e => { if (!loading) { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 8px 28px rgba(235,195,43,.3)' } }}
+              >
+                {loading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full lp-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  <>
+                    Entrar al torneo
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Divider o */}
+            <div className="flex items-center gap-3 my-5">
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,.08)' }} />
+              <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,.25)' }}>o</span>
+              <div className="h-px flex-1" style={{ background: 'rgba(255,255,255,.08)' }} />
+            </div>
+
+            {/* Registrarse */}
+            <Link
+              to="/register"
+              className="block w-full font-body font-semibold text-sm py-3.5 rounded-full text-center transition-all"
+              style={{ border: '1px solid rgba(255,255,255,.18)', color: 'rgba(255,255,255,.7)', textDecoration: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(235,195,43,.5)'; e.currentTarget.style.color = '#ebc32b'; e.currentTarget.style.background = 'rgba(235,195,43,.06)' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.18)'; e.currentTarget.style.color = 'rgba(255,255,255,.7)'; e.currentTarget.style.background = 'transparent' }}
+            >
+              No tengo cuenta — Registrarme
+            </Link>
           </div>
+        </div>
 
-          {/* Marca PRODE ONE */}
-          <h1
-            className="font-display text-6xl md:text-7xl text-white tracking-wider leading-none mb-3"
-            style={{ textShadow: '0 4px 32px rgba(0,0,0,0.6)' }}
-          >
-            PRODE <span className="text-[var(--color-accent)]">ONE</span>
-          </h1>
-
-          <p className="text-sm text-[var(--color-text-muted)] font-body">
-            Prode empresarial — Mundial 2026
+        {/* ── Footer ── */}
+        <div className="relative z-10 flex flex-col items-center gap-2 mt-6 lp-card" style={{ animationDelay: '.2s' }}>
+          <Link to="/"
+            className="font-body text-sm flex items-center gap-1.5 transition-colors"
+            style={{ color: 'rgba(255,255,255,.38)', textDecoration: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ebc32b' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.38)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Volver al inicio
+          </Link>
+          <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,.22)' }}>
+            Solo mayores de 18 años · Juego responsable
           </p>
         </div>
 
-        {/* Card del formulario */}
-        <div
-          className="rounded-2xl p-7 md:p-8"
-          style={{
-            background: 'linear-gradient(145deg, rgba(15,43,79,0.95) 0%, rgba(15,33,69,0.95) 100%)',
-            border: '1px solid rgba(34,217,223,0.18)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(34,217,223,0.08)'
-          }}
-        >
-          <h2 className="font-display text-3xl md:text-4xl text-white tracking-wide mb-6">
-            INICIAR SESIÓN
-          </h2>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-
-            {/* Email */}
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="email"
-                className="text-[10px] font-body font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                placeholder="tu@empresa.com"
-                required
-                autoFocus
-                autoComplete="email"
-                className="w-full px-4 py-3 rounded-lg text-sm font-body text-white outline-none transition-all placeholder:text-[var(--color-text-faint)]"
-                style={{
-                  background: 'rgba(2,15,39,0.6)',
-                  border: '1px solid var(--color-border)',
-                }}
-                onFocus={e => {
-                  e.target.style.borderColor = 'var(--color-accent)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(34,217,223,0.15)'
-                }}
-                onBlur={e => {
-                  e.target.style.borderColor = 'var(--color-border)'
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-
-            {/* Contraseña */}
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="password"
-                className="text-[10px] font-body font-bold uppercase tracking-[0.18em] text-[var(--color-accent)]"
-              >
-                Contraseña
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={form.password}
-                onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-                className="w-full px-4 py-3 rounded-lg text-sm font-body text-white outline-none transition-all placeholder:text-[var(--color-text-faint)]"
-                style={{
-                  background: 'rgba(2,15,39,0.6)',
-                  border: '1px solid var(--color-border)',
-                }}
-                onFocus={e => {
-                  e.target.style.borderColor = 'var(--color-accent)'
-                  e.target.style.boxShadow = '0 0 0 3px rgba(34,217,223,0.15)'
-                }}
-                onBlur={e => {
-                  e.target.style.borderColor = 'var(--color-border)'
-                  e.target.style.boxShadow = 'none'
-                }}
-              />
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div
-                className="flex items-start gap-2 px-3 py-2.5 rounded-lg text-sm font-body"
-                style={{
-                  background: 'rgba(255,77,109,0.1)',
-                  border: '1px solid rgba(255,77,109,0.3)',
-                  color: 'var(--color-danger)'
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* Botón Entrar */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 font-body font-bold text-base py-3.5 rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              style={{
-                background: loading
-                  ? 'var(--color-accent-dim)'
-                  : 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%)',
-                color: '#020F27',
-                boxShadow: loading ? 'none' : '0 6px 24px rgba(34,217,223,0.35)',
-              }}
-              onMouseEnter={e => {
-                if (!loading) {
-                  e.currentTarget.style.boxShadow = '0 8px 32px rgba(34,217,223,0.55)'
-                  e.currentTarget.style.transform = 'translateY(-1px)'
-                }
-              }}
-              onMouseLeave={e => {
-                if (!loading) {
-                  e.currentTarget.style.boxShadow = '0 6px 24px rgba(34,217,223,0.35)'
-                  e.currentTarget.style.transform = 'translateY(0)'
-                }
-              }}
-            >
-              {loading ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  Verificando...
-                </>
-              ) : (
-                'Entrar'
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Link a registro */}
-        <p className="text-center text-sm text-[var(--color-text-muted)] font-body mt-6">
-          ¿No tenés cuenta?{' '}
-          <Link
-            to="/register"
-            className="text-[var(--color-accent)] font-semibold hover:text-[var(--color-accent-bright)] transition-colors"
-          >
-            Registrate
-          </Link>
-        </p>
-
-        {/* Disclaimer */}
-        <p className="text-center text-[11px] text-[var(--color-text-faint)] font-body mt-8">
-          Solo mayores de 18 años · Juego responsable
-        </p>
       </div>
-    </div>
+    </>
   )
 }

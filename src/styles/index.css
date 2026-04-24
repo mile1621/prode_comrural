@@ -146,7 +146,6 @@ a:hover { color: var(--color-accent-bright); }
     rgba(34, 217, 223, 0.05),
     rgba(11, 74, 110, 0.15)
   );
-  backdrop-filter: blur(12px);
   border: 1px solid var(--color-border-soft);
 }
 
@@ -206,3 +205,70 @@ a.bg-\[var\(--color-accent\)\] {
 a:hover {
   color: inherit;
 }
+
+
+
+/* ═══════════════════════════════════════════════════════════
+   HOME PAGE — Landing Design System
+   Agregar al final de src/styles/index.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* Paleta landing */
+:root {
+  --lnd-navy-deep: #05090f;
+  --lnd-navy:      #0c182b;
+  --lnd-navy-soft: #18243f;
+  --lnd-blue-med:  #425b8b;
+  --lnd-blue-soft: #6e83ad;
+  --lnd-gold:      #ebc32b;
+  --lnd-gold-lt:   #f5d75a;
+  --lnd-gold-dk:   #c99f16;
+  --lnd-cream:     #faf7f0;
+  --lnd-cream-2:   #f0eadb;
+  --lnd-ink-700:   #2b3a5a;
+  --lnd-ink-500:   #5f6e8a;
+  --lnd-ink-300:   #a8b2c4;
+  --lnd-red:       #b8452e;
+}
+
+/* Marquee strip */
+@keyframes marquee-scroll { to { transform: translateX(-50%); } }
+.marquee-wrap {
+  overflow: hidden;
+  -webkit-mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+          mask: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.marquee-track {
+  display: flex;
+  gap: 2.5rem;
+  animation: marquee-scroll 36s linear infinite;
+  width: max-content;
+  align-items: center;
+}
+
+/* Medal float */
+@keyframes float-medal {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(2deg); }
+}
+.float-medal { animation: float-medal 5s ease-in-out infinite; }
+
+/* Pulse dot (green live indicator) */
+@keyframes pulse-dot-anim { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); } }
+.pulse-dot { animation: pulse-dot-anim 1.6s ease infinite; }
+
+/* Gold text glow */
+.gold-glow { text-shadow: 0 0 40px rgba(235,195,43,.45), 0 2px 0 rgba(0,0,0,.2); }
+
+/* Nav link underline hover */
+.home-navlink { position: relative; font-size: .92rem; font-weight: 500; color: rgba(255,255,255,.75); transition: color .2s; text-decoration: none; }
+.home-navlink::after { content: ''; position: absolute; bottom: -5px; left: 0; width: 0; height: 2px; background: var(--lnd-gold); transition: width .25s; }
+.home-navlink:hover { color: var(--lnd-gold); }
+.home-navlink:hover::after { width: 100%; }
+
+/* Wave divider (bottom of hero) */
+.wave-fill-cream { fill: var(--lnd-cream); }
+.wave-fill-white { fill: #fff; }
+
+
+
