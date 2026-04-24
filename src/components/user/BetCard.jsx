@@ -4,35 +4,34 @@ import { useAuth } from '../../hooks/useAuth.jsx'
 /* ── Colores y labels por estado de apuesta ──────────────── */
 const STATE_STYLES = {
   en_vivo: {
-    border: 'rgba(255,61,113,0.4)',
-    glow: '0 0 32px rgba(255,61,113,0.12)',
+    border: 'rgba(224,50,82,.45)',
+    glow: '0 0 32px rgba(224,50,82,.12)',
     label: 'EN VIVO',
-    color: 'var(--color-live)',
-    bg: 'rgba(255,61,113,0.12)',
+    color: '#e03252',
+    bg: 'rgba(224,50,82,.1)',
   },
   abierta: {
-    border: 'rgba(34,217,223,0.25)',
-    glow: '0 0 24px rgba(34,217,223,0.08)',
+    border: 'rgba(66,91,139,.6)',
+    glow: '0 0 24px rgba(66,91,139,.15)',
     label: 'ABIERTA',
-    color: 'var(--color-accent)',
-    bg: 'rgba(34,217,223,0.1)',
+    color: '#7b9fd4',
+    bg: 'rgba(66,91,139,.18)',
   },
   finalizada: {
-    border: 'rgba(244,180,42,0.3)',
-    glow: '0 0 24px rgba(244,180,42,0.1)',
+    border: 'rgba(235,195,43,.35)',
+    glow: '0 0 24px rgba(235,195,43,.08)',
     label: 'FINALIZADA',
-    color: 'var(--color-warn)',
-    bg: 'rgba(244,180,42,0.1)',
+    color: '#c99f16',
+    bg: 'rgba(235,195,43,.1)',
   },
   cerrada: {
-    border: 'var(--color-border)',
+    border: 'rgba(30,59,110,.65)',
     glow: 'none',
     label: 'CERRADA',
-    color: 'var(--color-text-muted)',
-    bg: 'rgba(132,153,194,0.08)',
+    color: '#4a6899',
+    bg: 'rgba(30,59,110,.2)',
   },
 }
-
 /* ── Ícono de trofeo (premio) ───────────────────────────── */
 function TrophyIcon({ size = 14, color = 'var(--color-warn)' }) {
   return (
@@ -140,7 +139,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
     <div
       className="rounded-2xl overflow-hidden transition-all"
       style={{
-        background: 'linear-gradient(145deg, rgba(15,43,79,0.9) 0%, rgba(15,33,69,0.95) 100%)',
+        background: 'linear-gradient(145deg, #0f2145 0%, #0a1830 100%)',
         border: `1px solid ${style.border}`,
         boxShadow: `0 10px 30px rgba(0,0,0,0.35), ${style.glow}`,
       }}
@@ -150,7 +149,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
         {/* Header: título + badges de estado/tipo */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-2xl md:text-3xl text-white tracking-wide leading-tight truncate">
+            <h3 className="font-display text-2xl md:text-3xl style={{ color: '#d0daf0' }} tracking-wide leading-tight truncate">
               {bet.titulo}
             </h3>
             <p className="text-xs text-[var(--color-text-muted)] font-body mt-1">
@@ -293,8 +292,8 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <Bandera url={match.bandera_local} alt={match.equipo_local} />
-                      <span className="font-body font-semibold text-white text-sm truncate">
-                        {match.equipo_local}
+                      <span className="font-body font-semibold  text-sm truncate">
+                        {match.equipo_local}style={{ color: '#d0daf0' }}
                       </span>
                     </div>
 
@@ -303,7 +302,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                     </span>
 
                     <div className="flex items-center gap-2 min-w-0 justify-end">
-                      <span className="font-body font-semibold text-white text-sm truncate text-right">
+                      <span className="font-body font-semibold style={{ color: '#d0daf0' }} text-sm truncate text-right">
                         {match.equipo_visitante}
                       </span>
                       <Bandera url={match.bandera_visitante} alt={match.equipo_visitante} />
@@ -381,7 +380,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
               <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-warn)] mb-0.5">
                 Premio
               </p>
-              <p className="font-body font-semibold text-white text-sm truncate">
+              <p className="font-body font-semibold style={{ color: '#d0daf0' }} text-sm truncate">
                 {bet.premio}
               </p>
             </div>

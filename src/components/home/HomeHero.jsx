@@ -50,7 +50,7 @@ export default function HomeHero() {
         }} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem' }}
-          className="relative z-10 flex items-center min-h-screen pt-28 pb-28 lg:pt-36 lg:pb-32">
+          className="relative z-10 flex items-center min-h-screen pt-28 pb-28 lg:pt-36 lg:pb-20">
           <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center w-full">
 
             {/* ── COPY ── */}
@@ -68,12 +68,12 @@ export default function HomeHero() {
               </div>
 
               <div>
-                <h1 className="font-display leading-none block text-white" style={{ fontSize: 'clamp(3.4rem,9.5vw,7.5rem)', letterSpacing: '.01em' }}>EL MUNDIAL</h1>
+                <h1 className="font-display leading-none block text-white" style={{ fontSize: 'clamp(2.4rem,6.5vw,5rem)', letterSpacing: '.01em' }}>EL MUNDIAL</h1>
                 <h1 className="font-display leading-none block" style={{ fontSize: 'clamp(3.4rem,9.5vw,7.5rem)', letterSpacing: '.01em', color: '#ebc32b', textShadow: '0 0 40px rgba(235,195,43,.4)' }}>SE VIVE</h1>
-                <h1 className="font-display leading-none block text-white" style={{ fontSize: 'clamp(3.4rem,9.5vw,7.5rem)', letterSpacing: '.01em' }}>ACÁ ADENTRO</h1>
+                <h1 className="font-display leading-none block text-white" style={{ fontSize: 'clamp(2.4rem,6.5vw,5rem)', letterSpacing: '.01em' }}>ACÁ ADENTRO</h1>
               </div>
 
-              <p className="font-body text-lg lg:text-xl leading-relaxed max-w-xl" style={{ color: 'rgba(255,255,255,.82)' }}>
+              <p className="font-body text-base lg:text-lg leading-relaxed max-w-xl" style={{ color: 'rgba(255,255,255,.82)' }}>
                 Pronosticá los partidos, sumá puntos y competí con tu equipo.
                 El <strong className="font-bold text-white">prode interno</strong> de tu empresa ya está activo.
               </p>
@@ -130,7 +130,7 @@ export default function HomeHero() {
               <div className="relative mb-6 flex justify-center">
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(235,195,43,.28), transparent 60%)', filter: 'blur(28px)' }} />
                 <img src="./imgprode/one-prode-dorado.png" alt="Prode Talento" className="relative float-medal-el"
-                  style={{ width: 220, filter: 'drop-shadow(0 20px 40px rgba(0,0,0,.6))' }} />
+                  style={{ width: 160, filter: 'drop-shadow(0 16px 32px rgba(0,0,0,.6))' }} />
               </div>
 
               <div className="rounded-2xl p-5 sm:p-6"
