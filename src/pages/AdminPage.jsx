@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import AppLayout from '../components/layout/AppLayout.jsx'
 import CreateBetForm from '../components/admin/CreateBetForm.jsx'
 import { useBets } from '../hooks/useBets.jsx'
+import { useAuth } from '../hooks/useAuth.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
 import sheetsApi from '../services/sheetsApi.js'
 
-const TABS = ['Apuestas', 'Usuarios', 'Áreas']
+const TABS_ALL = ['Apuestas', 'Usuarios', 'Áreas']
+const TABS_BASIC = ['Apuestas', 'Usuarios']
 
 /* ── Helpers ────────────────────────────────────────────── */
 
@@ -26,6 +28,8 @@ function getBetStatusColor(bet) {
 
 export default function AdminPage() {
   const { bets, loading, createBet, matches } = useBets()
+  const { isPro } = useAuth()
+  const TABS = isPro ? TABS_ALL : TABS_BASIC
   const [tab, setTab] = useState('Apuestas')
   const [pendingUsers, setPendingUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(false)
@@ -44,12 +48,12 @@ export default function AdminPage() {
   useEffect(() => {
     if (tab === 'Usuarios') {
       loadPendingUsers()
-      loadAreas()
+      if (isPro) loadAreas()
     }
-    if (tab === 'Áreas') {
+    if (tab === 'Áreas' && isPro) {
       loadAreasAll()
     }
-  }, [tab])
+  }, [tab, isPro])
 
   async function loadAreas() {
     try {
@@ -132,11 +136,17 @@ export default function AdminPage() {
   }
 
   async function confirmApprove(id) {
-    if (!approvingUser.tipo_usuario || !approvingUser.area_id) {
+    // En Plan_basic no se pide rol ni área — el backend lo aprueba como 'general' sin área.
+    // En Plan_pro, ambos campos son obligatorios.
+    if (isPro && (!approvingUser.tipo_usuario || !approvingUser.area_id)) {
       return alert('Debés seleccionar el rol y el área del usuario.')
     }
     try {
-      await sheetsApi.usuarios.aprobar(id, approvingUser.tipo_usuario, approvingUser.area_id)
+      await sheetsApi.usuarios.aprobar(
+        id,
+        isPro ? approvingUser.tipo_usuario : '',
+        isPro ? approvingUser.area_id : ''
+      )
       setApprovingUser(null)
       await loadPendingUsers()
     } catch (err) {
@@ -490,74 +500,91 @@ export default function AdminPage() {
                         className="mt-5 pt-5 flex flex-col gap-4"
                         style={{ borderTop: '1px solid var(--color-border)' }}
                       >
-                        {/* Selector de rol */}
-                        <div>
-                          <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-2">
-                            Rol
-                          </p>
-                          <div className="flex gap-2">
-                            {[
-                              { val: 'general', label: 'Participante', desc: 'Solo observa' },
-                              { val: 'jefe', label: 'Jefe de Área', desc: 'Carga prodes' },
-                            ].map(opt => {
-                              const isActive = approvingUser.tipo_usuario === opt.val
-                              return (
-                                <button
-                                  key={opt.val}
-                                  type="button"
-                                  onClick={() => setApprovingUser({ ...approvingUser, tipo_usuario: opt.val })}
-                                  className="flex-1 px-4 py-3 rounded-lg text-left transition-all"
-                                  style={{
-                                    background: isActive ? 'rgba(34,217,223,0.12)' : 'rgba(2,15,39,0.4)',
-                                    border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                                    color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
-                                  }}
-                                >
-                                  <p className="font-body font-semibold text-sm">{opt.label}</p>
-                                  <p className="font-body text-[10px] text-[var(--color-text-muted)] mt-0.5">{opt.desc}</p>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Selector de área */}
-                        <div>
-                          <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-2">
-                            Área
-                          </p>
-                          {areas.length === 0 ? (
-                            <p className="text-xs text-[var(--color-warn)] font-body p-3 rounded-lg"
-                              style={{
-                                background: 'rgba(244,180,42,0.1)',
-                                border: '1px solid rgba(244,180,42,0.3)',
-                              }}
-                            >
-                              ⚠ Todavía no hay áreas creadas. Creá áreas primero para poder asignar usuarios.
+                        {/* Selector de rol — solo Plan_pro */}
+                        {isPro && (
+                          <div>
+                            <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-2">
+                              Rol
                             </p>
-                          ) : (
-                            <div className="flex flex-wrap gap-2">
-                              {areas.map(a => {
-                                const isActive = approvingUser.area_id === a.id
+                            <div className="flex gap-2">
+                              {[
+                                { val: 'general', label: 'Participante', desc: 'Solo observa' },
+                                { val: 'jefe', label: 'Jefe de Área', desc: 'Carga prodes' },
+                              ].map(opt => {
+                                const isActive = approvingUser.tipo_usuario === opt.val
                                 return (
                                   <button
-                                    key={a.id}
+                                    key={opt.val}
                                     type="button"
-                                    onClick={() => setApprovingUser({ ...approvingUser, area_id: a.id })}
-                                    className="px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-all"
+                                    onClick={() => setApprovingUser({ ...approvingUser, tipo_usuario: opt.val })}
+                                    className="flex-1 px-4 py-3 rounded-lg text-left transition-all"
                                     style={{
-                                      background: isActive ? 'var(--color-accent)' : 'transparent',
+                                      background: isActive ? 'rgba(34,217,223,0.12)' : 'rgba(2,15,39,0.4)',
                                       border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
-                                      color: isActive ? '#020F27' : 'var(--color-text-muted)',
+                                      color: isActive ? 'var(--color-accent)' : 'var(--color-text)',
                                     }}
                                   >
-                                    {a.nombre}
+                                    <p className="font-body font-semibold text-sm">{opt.label}</p>
+                                    <p className="font-body text-[10px] text-[var(--color-text-muted)] mt-0.5">{opt.desc}</p>
                                   </button>
                                 )
                               })}
                             </div>
-                          )}
-                        </div>
+                          </div>
+                        )}
+
+                        {/* Selector de área — solo Plan_pro */}
+                        {isPro && (
+                          <div>
+                            <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-text-muted)] mb-2">
+                              Área
+                            </p>
+                            {areas.length === 0 ? (
+                              <p className="text-xs text-[var(--color-warn)] font-body p-3 rounded-lg"
+                                style={{
+                                  background: 'rgba(244,180,42,0.1)',
+                                  border: '1px solid rgba(244,180,42,0.3)',
+                                }}
+                              >
+                                ⚠ Todavía no hay áreas creadas. Creá áreas primero para poder asignar usuarios.
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {areas.map(a => {
+                                  const isActive = approvingUser.area_id === a.id
+                                  return (
+                                    <button
+                                      key={a.id}
+                                      type="button"
+                                      onClick={() => setApprovingUser({ ...approvingUser, area_id: a.id })}
+                                      className="px-3 py-1.5 rounded-full text-xs font-body font-semibold transition-all"
+                                      style={{
+                                        background: isActive ? 'var(--color-accent)' : 'transparent',
+                                        border: `1px solid ${isActive ? 'var(--color-accent)' : 'var(--color-border)'}`,
+                                        color: isActive ? '#020F27' : 'var(--color-text-muted)',
+                                      }}
+                                    >
+                                      {a.nombre}
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Mensaje informativo para Plan_basic */}
+                        {!isPro && (
+                          <p
+                            className="text-xs font-body text-[var(--color-text-muted)] p-3 rounded-lg"
+                            style={{
+                              background: 'rgba(34,217,223,0.06)',
+                              border: '1px solid rgba(34,217,223,0.2)',
+                            }}
+                          >
+                            Al confirmar, el usuario quedará activo y podrá participar en las apuestas de la empresa.
+                          </p>
+                        )}
 
                         {/* Botones de acción */}
                         <div className="flex gap-2 justify-end">
@@ -574,7 +601,7 @@ export default function AdminPage() {
                           </button>
                           <button
                             onClick={() => confirmApprove(u.id)}
-                            disabled={!approvingUser.tipo_usuario || !approvingUser.area_id}
+                            disabled={isPro && (!approvingUser.tipo_usuario || !approvingUser.area_id)}
                             className="px-5 py-2 rounded-lg text-xs font-body font-bold uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                             style={{
                               background: 'linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-bright) 100%)',

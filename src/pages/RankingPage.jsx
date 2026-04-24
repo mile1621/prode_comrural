@@ -5,11 +5,13 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { useBets } from '../hooks/useBets.jsx'
+import { useAuth } from '../hooks/useAuth.jsx'
 import { isBetOpen } from '../utils/index.js'
 import sheetsApi from '../services/sheetsApi.js'
 
 export default function RankingPage() {
     const { bets, loading: loadingBets } = useBets()
+    const { isPro } = useAuth()
     const [apuestaSel, setApuestaSel] = useState(null)
     const [tabla, setTabla] = useState([])
     const [loadingTabla, setLoadingTabla] = useState(false)
@@ -89,7 +91,8 @@ export default function RankingPage() {
                                                 {bet.titulo}
                                             </p>
                                             <p className="text-xs text-[var(--color-text-muted)] font-body mt-0.5">
-                                                {bet.premio} · {bet.tipo === 'por_equipos' ? 'Equipos' : 'Libre'}
+                                                {bet.premio}
+                                                {isPro && ` · ${bet.tipo === 'grupos' ? 'Equipos' : 'Libre'}`}
                                                 {bet.partidos_ids && ` · ${bet.partidos_ids.split(',').filter(Boolean).length} partidos`}
                                             </p>
                                         </div>
