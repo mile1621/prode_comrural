@@ -3,6 +3,7 @@ import AppLayout from '../components/layout/AppLayout.jsx'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import sheetsApi from '../services/sheetsApi.js'
+import { fmtFecha, diaLocalIso } from '../utils/index.js'
 
 const ORDEN_FASES = ['grupos', '16avos', 'octavos', 'cuartos', 'semis', '3er_puesto', 'final']
 const LABEL_FASE = {
@@ -16,15 +17,6 @@ function isTBD(m) {
     return !m.equipo_local || !m.equipo_visitante ||
         m.equipo_local === 'TBD' || m.equipo_visitante === 'TBD' ||
         m.codigo_local === 'TBD' || m.codigo_visitante === 'TBD'
-}
-
-function fmtFecha(f) {
-    if (!f) return ''
-    try {
-        const d = new Date(f)
-        return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) +
-            ' · ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-    } catch { return '' }
 }
 
 export default function PartidosPage() {
@@ -217,7 +209,7 @@ function Fixture({ partidos }) {
     const agrupados = useMemo(() => {
         const map = {}
         partidosFiltrados.forEach(m => {
-            const dia = m.fecha_partido ? new Date(m.fecha_partido).toISOString().slice(0, 10) : 'sin fecha'
+            const dia = m.fecha_partido ? diaLocalIso(m.fecha_partido) : 'sin fecha'
             if (!map[dia]) map[dia] = []
             map[dia].push(m)
         })
@@ -322,7 +314,7 @@ function PartidoRow({ match }) {
     const isScheduled = match.estado === 'programado'
 
     const badgeVariant = isLive ? 'danger' : isFinished ? 'muted' : 'accent'
-    const badgeLabel = isLive ? 'EN VIVO' : isFinished ? 'FINAL' : fmtFecha(match.fecha_partido)
+    const badgeLabel = isLive ? 'EN VIVO' : isFinished ? 'FINAL' : fmtFecha(match.fecha_partido, ' · ')
 
     return (
         <Card className="flex items-center gap-3 py-2.5 px-3">

@@ -1,19 +1,11 @@
 import { useState, useMemo } from 'react'
 import sheetsApi from '../../services/sheetsApi.js'
+import { fmtFecha } from '../../utils/index.js'
 
 const ORDEN_FASES = ['grupos', '16avos', 'octavos', 'cuartos', 'semis', '3er_puesto', 'final']
 const LABEL_FASE = {
   grupos: 'Fase de Grupos', '16avos': '16avos de Final', octavos: 'Octavos de Final',
   cuartos: 'Cuartos de Final', semis: 'Semifinales', '3er_puesto': '3er Puesto', final: 'Final'
-}
-
-function fmtFecha(f) {
-  if (!f) return '—'
-  try {
-    const d = new Date(f)
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }) +
-      ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
-  } catch { return f }
 }
 
 const ESTADO_COLORS = {
@@ -351,7 +343,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                       style={{ background: s.bg, color: s.color, border: `1px solid ${s.border}` }}
                     >
                       {isLive && <span className="w-1.5 h-1.5 rounded-full bg-[#ff4d6d] animate-pulse-live" />}
-                      {isScheduled ? fmtFecha(match.fecha_partido) : s.label}
+                      {isScheduled ? (fmtFecha(match.fecha_partido) || '—') : s.label}
                     </span>
 
                     {/* Edit button */}
