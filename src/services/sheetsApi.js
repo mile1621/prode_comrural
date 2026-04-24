@@ -126,6 +126,14 @@ const auth = {
   },
   registro: (nombre, email, password) =>
     post('auth.registro', { nombre, email, password }),
+
+  // Recuperación de contraseña (flujo de 3 pasos)
+  resetSolicitar: (email) =>
+    post('auth.reset_solicitar', { email }),
+  resetValidar: (token) =>
+    post('auth.reset_validar', { token }),
+  resetConfirmar: (token, password) =>
+    post('auth.reset_confirmar', { token, password }),
 }
 
 const usuarios = {

@@ -6,6 +6,8 @@ import ProtectedRoute from './components/ui/ProtectedRoute.jsx'
 import HomePage from './pages/HomePage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import RegisterPage from './pages/RegisterPage.jsx'
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx'
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx'
 import DashboardPage from './pages/DashboardPage.jsx'
 import BetsPage from './pages/BetsPage.jsx'
 import PartidosPage from './pages/PartidosPage.jsx'
@@ -23,6 +25,8 @@ export default function App() {
           <Route path="/home" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Raíz: home pública siempre */}
           <Route path="/" element={<HomePage />} />
