@@ -21,18 +21,17 @@ export default function AdminTabs({ tab, setTab, pendingCount, betsCount, areasC
   const badges = {
     Usuarios: pendingCount,
     Apuestas: betsCount,
-    Áreas: areasCount,
+    Áreas:    areasCount,
   }
 
   return (
     <div className="mb-8 animate-fade-in delay-1">
-      {/* Mobile: scrollable row; Desktop: inline pills */}
       <div
-        className="flex gap-1.5 p-1.5 rounded-2xl w-full overflow-x-auto"
+        className="flex gap-1 p-1 rounded-2xl w-full overflow-x-auto"
         style={{
-          background: 'rgba(12,24,43,.8)',
-          border: '1px solid rgba(235,195,43,.15)',
-          backdropFilter: 'blur(12px)',
+          background: '#fff',
+          border: '1px solid #f0eadb',
+          boxShadow: '0 1px 0 rgba(12,24,43,.04)',
         }}
       >
         {TABS.map(({ key, icon }) => {
@@ -46,15 +45,13 @@ export default function AdminTabs({ tab, setTab, pendingCount, betsCount, areasC
               onClick={() => setTab(key)}
               className="relative flex items-center gap-2 px-4 py-2.5 text-xs font-body font-bold uppercase tracking-wider rounded-xl transition-all whitespace-nowrap flex-shrink-0"
               style={{
-                background: active
-                  ? 'linear-gradient(135deg, #ebc32b 0%, #c99f16 100%)'
-                  : 'transparent',
-                color:     active ? '#05090f' : 'rgba(255,255,255,.5)',
-                boxShadow: active ? '0 4px 16px rgba(235,195,43,.3)' : 'none',
+                background: active ? '#0c182b' : 'transparent',
+                color:      active ? '#ebc32b' : '#5f6e8a',
+                boxShadow:  active ? '0 2px 8px rgba(12,24,43,.25)' : 'none',
                 minWidth: 0,
               }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.color = 'rgba(255,255,255,.85)'; e.currentTarget.style.background = 'rgba(255,255,255,.05)' } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.color = 'rgba(255,255,255,.5)';  e.currentTarget.style.background = 'transparent' } }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.color = '#0c182b'; e.currentTarget.style.background = 'rgba(12,24,43,.04)' } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.color = '#5f6e8a'; e.currentTarget.style.background = 'transparent' } }}
             >
               <span style={{ opacity: active ? 1 : 0.7 }}>{icon}</span>
               {key}
@@ -62,9 +59,9 @@ export default function AdminTabs({ tab, setTab, pendingCount, betsCount, areasC
                 <span
                   className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold"
                   style={{
-                    background: key === 'Usuarios' ? '#ff4d6d' : '#ebc32b',
+                    background: key === 'Usuarios' ? '#e03252' : '#ebc32b',
                     color:      key === 'Usuarios' ? '#fff'    : '#05090f',
-                    boxShadow:  key === 'Usuarios' ? '0 2px 8px rgba(255,77,109,.5)' : '0 2px 8px rgba(235,195,43,.4)',
+                    boxShadow:  key === 'Usuarios' ? '0 2px 6px rgba(224,50,82,.4)' : '0 2px 6px rgba(235,195,43,.35)',
                   }}
                 >
                   {badge}
@@ -78,7 +75,7 @@ export default function AdminTabs({ tab, setTab, pendingCount, betsCount, areasC
       {/* Active tab indicator line */}
       <div
         className="h-px mt-0 mb-0"
-        style={{ background: 'linear-gradient(90deg,transparent,rgba(235,195,43,.2) 30%,rgba(235,195,43,.2) 70%,transparent)' }}
+        style={{ background: 'linear-gradient(90deg,transparent,rgba(12,24,43,.08) 30%,rgba(12,24,43,.08) 70%,transparent)' }}
       />
     </div>
   )

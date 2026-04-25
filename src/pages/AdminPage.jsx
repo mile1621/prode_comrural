@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import AppLayout from '../components/layout/AppLayout.jsx'
+import AppShell from '../dashboard/AppShell.jsx'
 import { useBets } from '../hooks/useBets.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { formatDate, isBetOpen } from '../utils/index.js'
@@ -139,7 +139,7 @@ export default function AdminPage() {
 
   /* ── Render ───────────────────────────────────────────── */
   return (
-        <AppLayout>
+        <AppShell>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       <AdminHeader bets={bets} pendingUsers={pendingUsers} />
@@ -459,6 +459,6 @@ export default function AdminPage() {
       {tab === 'Partidos' && (
         <PartidosAdminTab matches={matches} loadBets={loadBets} />
       )}
-        </AppLayout>
+        </AppShell>
   )
 };
