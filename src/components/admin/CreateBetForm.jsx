@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import sheetsApi from '../../services/sheetsApi.js'
 import { useAuth } from '../../hooks/useAuth.jsx'
+import { useToast } from '../../hooks/useToast.jsx'
 import { fmtFecha, inputLocalAIsoUtc } from '../../utils/index.js'
 
 /* ── Constantes ─────────────────────────────────────────── */
@@ -70,6 +71,7 @@ function FilterChip({ active, onClick, children }) {
 /* ── Componente principal ───────────────────────────────── */
 export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   const { isPro } = useAuth()
+  const { toast } = useToast()
   const [form, setForm] = useState(INITIAL)
   const [areas, setAreas] = useState([])
   const [filtroFase, setFiltroFase] = useState('todas')
@@ -160,7 +162,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   async function handleSubmit(e) {
     e.preventDefault()
     if (form.partidos_ids.length === 0) {
-      alert('Seleccioná al menos un partido para la apuesta.')
+      toast.error('Seleccioná al menos un partido para la apuesta.')
       return
     }
     try {
@@ -172,14 +174,14 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         partidos_ids: form.partidos_ids.join(',')
       }
       if (isPro && form.type === 'grupos') {
-        if (form.areas_ids.length < 2) { alert('Para apuestas por áreas seleccioná al menos 2 áreas.'); return }
+        if (form.areas_ids.length < 2) { toast.error('Para apuestas por áreas seleccioná al menos 2 áreas.'); return }
         payload.areas_ids = form.areas_ids.join(',')
       }
       await onSubmit(payload)
-      alert('Apuesta creada exitosamente')
+      toast.success('Apuesta creada exitosamente')
       setForm(INITIAL)
       setFiltroFase('todas'); setFiltroJornada('todas'); setFiltroGrupo('todos'); setBusqueda('')
-    } catch (err) { alert('Error al crear apuesta: ' + err.message) }
+    } catch (err) { toast.error('Error al crear apuesta: ' + err.message) }
   }
 
   const canSubmit = !loading && seleccionados > 0

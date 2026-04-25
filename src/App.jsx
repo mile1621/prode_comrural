@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './hooks/useAuth.jsx'
+import { ToastProvider } from './hooks/useToast.jsx'
 import ProtectedRoute from './components/ui/ProtectedRoute.jsx'
 
 import HomePage           from './pages/HomePage.jsx'
@@ -18,35 +19,37 @@ import RankingPage         from './dashboard/RankingPage.jsx'
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Públicas */}
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/" element={<HomePage />} />
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Públicas */}
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/" element={<HomePage />} />
 
-          {/* Usuario autenticado */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/apuestas" element={<BetsPage />} />
-            <Route path="/partidos" element={<PartidosPage />} />
-            <Route path="/mis-predicciones" element={<MisPrediccionesPage />} />
-            <Route path="/ranking" element={<RankingPage />} />
-          </Route>
+            {/* Usuario autenticado */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/apuestas" element={<BetsPage />} />
+              <Route path="/partidos" element={<PartidosPage />} />
+              <Route path="/mis-predicciones" element={<MisPrediccionesPage />} />
+              <Route path="/ranking" element={<RankingPage />} />
+            </Route>
 
-          {/* Solo admin */}
-          <Route element={<ProtectedRoute requireAdmin />}>
-            <Route path="/admin" element={<AdminPage />} />
-          </Route>
+            {/* Solo admin */}
+            <Route element={<ProtectedRoute requireAdmin />}>
+              <Route path="/admin" element={<AdminPage />} />
+            </Route>
 
-          {/* Fallback */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Fallback */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
   )
 }

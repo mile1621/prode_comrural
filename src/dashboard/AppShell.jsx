@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.jsx'
+import { useToast, useConfirm } from '../hooks/useToast.jsx'
 
 const NAV_ITEMS = [
   { to:'/dashboard',        label:'Dashboard',  icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> },
@@ -45,13 +46,38 @@ function NavLinkMob({ to, label, icon, location, onClick }) {
 
 export default function AppShell({ children }) {
   const { user, logout, isAdmin } = useAuth()
+  const { toast } = useToast()
+  const confirm = useConfirm()
   const location = useLocation()
   const navigate = useNavigate()
   const [mob, setMob] = useState(false)
 
   const esAdmin = isAdmin || user?.rol === 'admin' || user?.es_admin === true || user?.tipo_usuario === 'admin'
 
-  async function doLogout(){ await logout(); navigate('/') }
+  /* ── Logout con confirmación + toast ────────────────── */
+  async function doLogout() {
+    const confirmed = await confirm({
+      titulo: '¿Cerrar sesión?',
+      mensaje: `¿Seguro que querés salir, ${user?.nombre?.split(' ')[0] || 'usuario'}? Vas a tener que volver a iniciar sesión.`,
+      confirmarTxt: 'Sí, cerrar sesión',
+      cancelarTxt: 'Cancelar',
+      tipo: 'danger',
+    })
+    if (!confirmed) return
+
+    // Toast "saliendo..." mientras se procesa
+    const loadingId = toast.loading('Cerrando sesión...')
+    try {
+      await logout()
+      toast.dismiss(loadingId)
+      toast.success('¡Hasta luego!')
+      // pequeña pausa para que el toast se alcance a ver antes de navegar
+      setTimeout(() => navigate('/'), 350)
+    } catch (err) {
+      toast.dismiss(loadingId)
+      toast.error('Error al cerrar sesión: ' + (err.message || 'intentá de nuevo'))
+    }
+  }
 
   return (
     <>

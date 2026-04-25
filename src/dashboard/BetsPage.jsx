@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import AppShell from './AppShell.jsx'
 import { useBets } from '../hooks/useBets.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
+import PredictModal from '../components/user/PredictModal.jsx'
 
 /* ── helpers ── */
 function timeLeft(d){const diff=new Date(d)-Date.now();if(diff<=0)return'Cerrada';const h=Math.floor(diff/3600000);const m=Math.floor((diff%3600000)/60000);if(h>=24)return`${Math.floor(h/24)}d ${h%24}h`;if(h>0)return`${h}h ${m}m`;return`${m}m`}
@@ -153,9 +154,6 @@ export default function BetsPage(){
     }catch(err){showToast(err.message||'Error al guardar',false)}
   }
 
-  // Importar PredictModal existente
-  const PredictModal=activeBet?require('../components/user/PredictModal.jsx').default:null
-
   return(
     <AppShell>
       <style>{`
@@ -169,101 +167,100 @@ export default function BetsPage(){
 
       <div style={{maxWidth:1280,margin:'0 auto',padding:'2rem 1.5rem 3rem'}}>
 
-{/* Header */}
-{/* Header */}
-<div className="mb-4 animate-fade-in flex flex-col md:flex-row md:items-end justify-between gap-5">
-  <div className="flex items-center gap-3">
-    <div>
-      <h1 className="font-display leading-none tracking-wide mb-2"
-        style={{ fontSize: 'clamp(2.8rem,7vw,4rem)', color: '#0c182b' }}>
-        APUESTAS
-      </h1>
-      <p className="font-body text-sm" style={{ color: '#5f6e8a' }}>
-        {bets.length} {bets.length === 1 ? 'apuesta disponible' : 'apuestas disponibles'}
-      </p>
-    </div>
-  </div>
-
-  {/* Filtros */}
-  <div className="inline-flex gap-1 p-1 rounded-xl self-start md:self-auto"
-    style={{ background: '#fff', border: '1px solid #f0eadb', boxShadow: '0 1px 0 rgba(12,24,43,.04)' }}>
-    {FILTERS.map(f => {
-      const active = filter === f.key
-      return (
-        <button key={f.key} onClick={() => setFilter(f.key)}
-          className="px-4 py-2 text-xs font-body font-bold uppercase tracking-wider rounded-lg transition-all"
-          style={{
-            background: active ? '#0c182b' : 'transparent',
-            color: active ? '#ebc32b' : '#5f6e8a',
-            boxShadow: active ? '0 2px 8px rgba(12,24,43,.25)' : 'none',
-          }}
-          onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#0c182b' }}
-          onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#5f6e8a' }}
-        >
-          {f.label}
-        </button>
-      )
-    })}
-  </div>
-</div>
-
-{/* Banner sistema de puntos */}
-<div className="mb-6 animate-fade-in bg-white rounded-2xl border border-[#f0eadb] overflow-hidden">
-
-  {/* Cabecera */}
-  <button
-    onClick={() => setShowPuntos(v => !v)}
-    className="w-full flex items-center justify-between px-5 py-4 bg-transparent border-none cursor-pointer transition-all hover:bg-[rgba(12,24,43,.02)]"
-    style={{ borderBottom: showPuntos ? '1px solid #f0eadb' : 'none' }}
-  >
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ background: 'linear-gradient(135deg,#0c182b,#425b8b)' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ebc32b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-        </svg>
-      </div>
-      <div className="text-left">
-        <p className="font-body font-bold text-sm text-[#0c182b] m-0">Sistema de puntos</p>
-        <p className="font-body text-xs text-[#5f6e8a] m-0">Así se calcula tu puntaje en cada partido</p>
-      </div>
-    </div>
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a8b2c4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-      className="flex-shrink-0 transition-transform duration-200"
-      style={{ transform: showPuntos ? 'rotate(180deg)' : 'rotate(0)' }}>
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  </button>
-
-  {/* Contenido */}
-  {showPuntos && (
-    <div className="px-5 pb-5 pt-4">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { pts: 1, titulo: 'Resultado',       desc: 'Acertás quién gana, pierde o empata',           accent: '#425b8b', bg: 'rgba(66,91,139,.06)',   border: 'rgba(66,91,139,.2)'   },
-          { pts: 3, titulo: 'Res. + diferencia', desc: 'Acertás resultado y diferencia de goles',      accent: '#0c182b', bg: 'rgba(12,24,43,.04)',    border: 'rgba(12,24,43,.12)'   },
-          { pts: 5, titulo: 'Marcador exacto',  desc: 'Acertás el resultado final exacto del partido', accent: '#c99f16', bg: 'rgba(235,195,43,.07)',  border: 'rgba(235,195,43,.28)' },
-        ].map(({ pts, titulo, desc, accent, bg, border }) => (
-          <div key={pts} className="flex items-center gap-3 rounded-xl p-4"
-            style={{ background: bg, border: `1px solid ${border}` }}>
-            <div className="w-13 h-13 rounded-xl flex-shrink-0 bg-white flex flex-col items-center justify-center"
-              style={{ width: 52, height: 52, border: `1.5px solid ${border}` }}>
-              <span className="font-display leading-none" style={{ fontSize: '1.9rem', color: accent }}>{pts}</span>
-              <span className="font-body font-bold uppercase" style={{ fontSize: '.5rem', letterSpacing: '.1em', color: accent, opacity: .7 }}>pts</span>
-            </div>
+        {/* Header */}
+        <div className="mb-4 animate-fade-in flex flex-col md:flex-row md:items-end justify-between gap-5">
+          <div className="flex items-center gap-3">
             <div>
-              <p className="font-body font-bold text-sm m-0 mb-1" style={{ color: '#0c182b' }}>{titulo}</p>
-              <p className="font-body text-xs leading-snug m-0" style={{ color: '#5f6e8a' }}>{desc}</p>
+              <h1 className="font-display leading-none tracking-wide mb-2"
+                style={{ fontSize: 'clamp(2.8rem,7vw,4rem)', color: '#0c182b' }}>
+                APUESTAS
+              </h1>
+              <p className="font-body text-sm" style={{ color: '#5f6e8a' }}>
+                {bets.length} {bets.length === 1 ? 'apuesta disponible' : 'apuestas disponibles'}
+              </p>
             </div>
           </div>
-        ))}
-      </div>
-      <p className="font-body text-center mt-3" style={{ fontSize: '.68rem', color: '#a8b2c4' }}>
-        Los puntos se acreditan automáticamente al finalizar cada partido
-      </p>
-    </div>
-  )}
-</div>
+
+          {/* Filtros */}
+          <div className="inline-flex gap-1 p-1 rounded-xl self-start md:self-auto"
+            style={{ background: '#fff', border: '1px solid #f0eadb', boxShadow: '0 1px 0 rgba(12,24,43,.04)' }}>
+            {FILTERS.map(f => {
+              const active = filter === f.key
+              return (
+                <button key={f.key} onClick={() => setFilter(f.key)}
+                  className="px-4 py-2 text-xs font-body font-bold uppercase tracking-wider rounded-lg transition-all"
+                  style={{
+                    background: active ? '#0c182b' : 'transparent',
+                    color: active ? '#ebc32b' : '#5f6e8a',
+                    boxShadow: active ? '0 2px 8px rgba(12,24,43,.25)' : 'none',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.color = '#0c182b' }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.color = '#5f6e8a' }}
+                >
+                  {f.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Banner sistema de puntos */}
+        <div className="mb-6 animate-fade-in bg-white rounded-2xl border border-[#f0eadb] overflow-hidden">
+
+          {/* Cabecera */}
+          <button
+            onClick={() => setShowPuntos(v => !v)}
+            className="w-full flex items-center justify-between px-5 py-4 bg-transparent border-none cursor-pointer transition-all hover:bg-[rgba(12,24,43,.02)]"
+            style={{ borderBottom: showPuntos ? '1px solid #f0eadb' : 'none' }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: 'linear-gradient(135deg,#0c182b,#425b8b)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ebc32b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              </div>
+              <div className="text-left">
+                <p className="font-body font-bold text-sm text-[#0c182b] m-0">Sistema de puntos</p>
+                <p className="font-body text-xs text-[#5f6e8a] m-0">Así se calcula tu puntaje en cada partido</p>
+              </div>
+            </div>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#a8b2c4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              className="flex-shrink-0 transition-transform duration-200"
+              style={{ transform: showPuntos ? 'rotate(180deg)' : 'rotate(0)' }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {/* Contenido */}
+          {showPuntos && (
+            <div className="px-5 pb-5 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {[
+                  { pts: 1, titulo: 'Resultado',       desc: 'Acertás quién gana, pierde o empata',           accent: '#425b8b', bg: 'rgba(66,91,139,.06)',   border: 'rgba(66,91,139,.2)'   },
+                  { pts: 3, titulo: 'Res. + diferencia', desc: 'Acertás resultado y diferencia de goles',      accent: '#0c182b', bg: 'rgba(12,24,43,.04)',    border: 'rgba(12,24,43,.12)'   },
+                  { pts: 5, titulo: 'Marcador exacto',  desc: 'Acertás el resultado final exacto del partido', accent: '#c99f16', bg: 'rgba(235,195,43,.07)',  border: 'rgba(235,195,43,.28)' },
+                ].map(({ pts, titulo, desc, accent, bg, border }) => (
+                  <div key={pts} className="flex items-center gap-3 rounded-xl p-4"
+                    style={{ background: bg, border: `1px solid ${border}` }}>
+                    <div className="w-13 h-13 rounded-xl flex-shrink-0 bg-white flex flex-col items-center justify-center"
+                      style={{ width: 52, height: 52, border: `1.5px solid ${border}` }}>
+                      <span className="font-display leading-none" style={{ fontSize: '1.9rem', color: accent }}>{pts}</span>
+                      <span className="font-body font-bold uppercase" style={{ fontSize: '.5rem', letterSpacing: '.1em', color: accent, opacity: .7 }}>pts</span>
+                    </div>
+                    <div>
+                      <p className="font-body font-bold text-sm m-0 mb-1" style={{ color: '#0c182b' }}>{titulo}</p>
+                      <p className="font-body text-xs leading-snug m-0" style={{ color: '#5f6e8a' }}>{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="font-body text-center mt-3" style={{ fontSize: '.68rem', color: '#a8b2c4' }}>
+                Los puntos se acreditan automáticamente al finalizar cada partido
+              </p>
+            </div>
+          )}
+        </div>
 
         {/* Lista */}
         {loading?(
@@ -285,8 +282,8 @@ export default function BetsPage(){
         )}
       </div>
 
-      {/* Modal existente */}
-      {activeBet&&PredictModal&&(
+      {/* Modal de predicción */}
+      {activeBet&&(
         <PredictModal bet={activeBet} onSubmit={(id,preds)=>handlePredict(id,preds)} onClose={()=>setActiveBet(null)} loading={loading}/>
       )}
     </AppShell>
