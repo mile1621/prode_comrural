@@ -1,3 +1,10 @@
+/**
+ * DashboardPage.jsx
+ * Ubicación: src/dashboard/DashboardPage.jsx
+ *
+ * CAMBIOS: muestra el minuto de juego en la card "EN VIVO AHORA"
+ * si el backend lo envió (campo `match.minuto`).
+ */
 import AppShell from '../dashboard/AppShell.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useBets } from '../hooks/useBets.jsx'
@@ -63,7 +70,9 @@ function LiveCard({ bet, predictions }) {
       style={{ background: '#fff', border: '1.5px solid rgba(224,50,82,.3)', boxShadow: '0 4px 16px rgba(224,50,82,.08)' }}>
       <div className="flex items-center gap-2 mb-3">
         <span className="w-2 h-2 rounded-full animate-pulse-live" style={{ background: '#e03252' }} />
-        <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#e03252' }}>EN VIVO</span>
+        <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#e03252' }}>
+          {liveMatch?.minuto ? `EN VIVO · ${liveMatch.minuto}'` : 'EN VIVO'}
+        </span>
         <span className="font-body text-xs ml-auto truncate" style={{ color: '#5f6e8a' }}>{bet.titulo}</span>
       </div>
       {liveMatch && (
@@ -148,7 +157,6 @@ export default function DashboardPage() {
     <AppShell>
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
-        {/* ── HERO ── */}
         <div className="rounded-2xl p-6 md:p-8 mb-8 relative overflow-hidden animate-fade-in"
           style={{ background: '#0c182b', border: '1px solid rgba(235,195,43,.2)', boxShadow: '0 12px 40px rgba(12,24,43,.15)' }}>
           <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none"
@@ -193,7 +201,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── STAT CARDS ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-fade-in delay-1">
           <StatCard label="Puntos totales" value="—" sub="Sin partidos finalizados" gold
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>}
@@ -209,7 +216,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* ── LIVE (si hay) ── */}
         {liveBets.length > 0 && (
           <div className="mb-8 animate-fade-in delay-2">
             <SectionHead title="EN VIVO AHORA" />
@@ -219,7 +225,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* ── 2 COLUMNAS ── */}
         <div className="grid lg:grid-cols-3 gap-6 animate-fade-in delay-2">
 
           <div className="lg:col-span-2">

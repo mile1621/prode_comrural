@@ -1,6 +1,11 @@
 /**
  * FixturePage.jsx
  * Ubicación: src/dashboard/FixturePage.jsx
+ *
+ * CAMBIOS en esta versión:
+ *  - Muestra el minuto de juego si el partido está en vivo (ej: "63'").
+ *  - El backend ya normaliza el estado, así que aquí solo se consume
+ *    el campo `match.minuto` que viene junto con `match.estado`.
  */
 import { useState, useMemo } from 'react'
 import AppShell from './AppShell.jsx'
@@ -21,8 +26,6 @@ const FASES = { grupos:'Fase de grupos', '16avos':'16avos de final', octavos:'Oc
 const ORDEN_ELIM = ['16avos','octavos','cuartos','semis','final']
 
 // Estructura de llaves del Mundial 2026
-// Llave A: partidos 1-4 de 16avos → cuartos A1,A2 → semi A → final
-// Llave B: partidos 5-8 de 16avos → cuartos B1,B2 → semi B → final
 const LLAVES_16 = {
   A: [
     { id:'16a1', local:'1° Grupo A', visitante:'2° Grupo B' },
@@ -80,7 +83,11 @@ function PartidoCard({ match }) {
                 <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1rem', color:'#0c182b', letterSpacing:'.04em' }}>{hora||'— : —'}</span>
               </div>
           }
-          {live && <span style={{ display:'block', fontSize:'.58rem', fontWeight:700, color:'#e03252', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>EN VIVO</span>}
+          {live && (
+            <span style={{ display:'block', fontSize:'.58rem', fontWeight:700, color:'#e03252', textTransform:'uppercase', letterSpacing:'.1em', marginTop:2 }}>
+              {match.minuto ? `${match.minuto}'` : 'EN VIVO'}
+            </span>
+          )}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:'.5rem', minWidth:0, justifyContent:'flex-end' }}>
           <span style={{ fontWeight:600, fontSize:'.88rem', color:'#0c182b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'right' }}>{match.equipo_visitante}</span>
@@ -91,7 +98,7 @@ function PartidoCard({ match }) {
         <span style={{ ...MUTED, fontSize:'.7rem' }}>{match.fase ? FASES[match.fase]||match.fase : ''}{match.grupo ? ` · ${match.grupo}` : ''}</span>
         <span style={{ display:'inline-flex', alignItems:'center', gap:'.3rem', padding:'.18rem .6rem', borderRadius:99, fontSize:'.62rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'.07em', background:s.bg, color:s.color, border:`1px solid ${s.border}` }}>
           {live && <span style={{ width:5, height:5, borderRadius:'50%', background:'#e03252', animation:'ldot 1.4s ease infinite', display:'inline-block' }}/>}
-          {s.label}
+          {live && match.minuto ? `${match.minuto}'` : s.label}
         </span>
       </div>
     </div>
@@ -104,7 +111,6 @@ function PartidoCard({ match }) {
 function TablaGrupos({ matches }) {
   const [grupoSel, setGrupoSel] = useState(null)
 
-  // Calcular tabla por grupo desde partidos del backend
   const grupos = useMemo(() => {
     const map = {}
     matches
@@ -153,18 +159,15 @@ function TablaGrupos({ matches }) {
 
   return (
     <div>
-      {/* Selector de grupo */}
       <div style={{ display:'flex', flexWrap:'wrap', gap:'.4rem', marginBottom:'1.5rem' }}>
         <Chip active={!grupoSel} onClick={() => setGrupoSel(null)}>Todos</Chip>
         {letras.map(l => <Chip key={l} active={grupoSel===l} onClick={() => setGrupoSel(l)}>Grupo {l}</Chip>)}
       </div>
 
-      {/* Grid grupos */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(380px,1fr))', gap:'1.25rem' }}>
         {grupos.filter(g => !grupoSel || g.letra === grupoSel).map(g => (
           <div key={g.letra} style={{ background:'#fff', border:'1px solid #f0eadb', borderRadius:16, overflow:'hidden', boxShadow:'0 1px 0 rgba(12,24,43,.04)' }}>
 
-            {/* Header */}
             <div style={{ background:'linear-gradient(135deg,#0c182b 0%,#17376a 100%)', padding:'.85rem 1.2rem', display:'flex', alignItems:'center', gap:'.85rem' }}>
               <div style={{ width:38, height:38, borderRadius:10, background:'rgba(235,195,43,.15)', border:'1px solid rgba(235,195,43,.3)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                 <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.2rem', color:'#ebc32b', lineHeight:1 }}>{g.letra}</span>
@@ -173,7 +176,6 @@ function TablaGrupos({ matches }) {
                 <p style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.05rem', color:'#fff', margin:0, letterSpacing:'.05em', lineHeight:1 }}>GRUPO {g.letra}</p>
                 <p style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'.65rem', color:'rgba(255,255,255,.4)', margin:'.2rem 0 0' }}>{g.sel.length} equipos · {g.partidos.filter(p=>p.estado==='finalizado').length}/{g.partidos.length} partidos jugados</p>
               </div>
-              {/* Progreso barra */}
               <div style={{ marginLeft:'auto', display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'.3rem' }}>
                 <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'.62rem', color:'rgba(255,255,255,.35)', textTransform:'uppercase', letterSpacing:'.08em' }}>
                   {g.partidos.filter(p=>p.estado==='finalizado').length === g.partidos.length && g.partidos.length > 0 ? 'Completado' : 'En curso'}
@@ -184,7 +186,6 @@ function TablaGrupos({ matches }) {
               </div>
             </div>
 
-            {/* Tabla */}
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr style={{ background:'rgba(12,24,43,.025)' }}>
@@ -199,13 +200,11 @@ function TablaGrupos({ matches }) {
                   const ultimo = i === g.sel.length - 1
                   return (
                     <tr key={s.nombre} style={{ background:clasifica?'rgba(235,195,43,.035)':'transparent', borderBottom:ultimo?'none':'1px solid #f5f3ee' }}>
-                      {/* Pos */}
                       <td style={{ padding:'.55rem .8rem', textAlign:'center' }}>
                         <div style={{ width:22, height:22, borderRadius:6, background:clasifica?'rgba(235,195,43,.15)':'rgba(12,24,43,.04)', border:clasifica?'1px solid rgba(235,195,43,.3)':'1px solid #f0eadb', display:'flex', alignItems:'center', justifyContent:'center' }}>
                           <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'.85rem', color:clasifica?'#c99f16':'#a8b2c4', lineHeight:1 }}>{s.pos}</span>
                         </div>
                       </td>
-                      {/* Equipo */}
                       <td style={{ padding:'.55rem .5rem' }}>
                         <div style={{ display:'flex', alignItems:'center', gap:'.55rem', minWidth:0 }}>
                           {s.bandera
@@ -218,15 +217,12 @@ function TablaGrupos({ matches }) {
                           )}
                         </div>
                       </td>
-                      {/* Stats */}
                       {[s.j, s.g, s.e, s.p, s.gf, s.gc].map((v, idx) => (
                         <td key={idx} style={{ padding:'.55rem .35rem', textAlign:'center', fontFamily:"'DM Sans',sans-serif", fontSize:'.78rem', color:'#5f6e8a' }}>{v}</td>
                       ))}
-                      {/* Dif */}
                       <td style={{ padding:'.55rem .35rem', textAlign:'center', fontFamily:"'DM Sans',sans-serif", fontSize:'.78rem', fontWeight:600, color:s.dif>0?'#1b8a5a':s.dif<0?'#e03252':'#5f6e8a' }}>
                         {s.dif > 0 ? `+${s.dif}` : s.dif}
                       </td>
-                      {/* Pts */}
                       <td style={{ padding:'.55rem .8rem', textAlign:'center' }}>
                         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.15rem', color:'#0c182b', lineHeight:1 }}>{s.pts}</span>
                       </td>
@@ -236,7 +232,6 @@ function TablaGrupos({ matches }) {
               </tbody>
             </table>
 
-            {/* Footer leyenda */}
             <div style={{ padding:'.5rem 1rem', borderTop:'1px solid #f5f3ee', display:'flex', alignItems:'center', gap:'.5rem' }}>
               <div style={{ width:10, height:10, borderRadius:3, background:'rgba(235,195,43,.25)', border:'1px solid rgba(235,195,43,.4)' }}/>
               <span style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'.62rem', color:'#a8b2c4' }}>Clasifica a 16avos de final</span>
@@ -252,7 +247,6 @@ function TablaGrupos({ matches }) {
    TAB LLAVES
 ══════════════════════════════════════════════ */
 
-/* Slot de partido en el bracket */
 function BracketSlot({ match, placeholder }) {
   const equipo1 = match ? match.equipo_local   : placeholder?.local      || 'Por definir'
   const equipo2 = match ? match.equipo_visitante : placeholder?.visitante || 'Por definir'
@@ -268,7 +262,6 @@ function BracketSlot({ match, placeholder }) {
 
   return (
     <div style={{ background:'#fff', border:`1px solid ${live?'rgba(224,50,82,.35)':fin?'rgba(235,195,43,.25)':'#f0eadb'}`, borderRadius:12, overflow:'hidden', boxShadow:live?'0 0 0 2px rgba(224,50,82,.12)':'0 1px 0 rgba(12,24,43,.04)', minWidth:190, transition:'box-shadow .15s' }}>
-      {/* Fila equipo 1 */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'.5rem .75rem', borderBottom:'1px solid #f5f3ee', background:win1?'rgba(27,138,90,.04)':'transparent' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'.45rem', minWidth:0, flex:1 }}>
           {band1
@@ -281,7 +274,6 @@ function BracketSlot({ match, placeholder }) {
           {g1 ?? '—'}
         </span>
       </div>
-      {/* Fila equipo 2 */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'.5rem .75rem', background:win2?'rgba(27,138,90,.04)':'transparent' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'.45rem', minWidth:0, flex:1 }}>
           {band2
@@ -294,11 +286,10 @@ function BracketSlot({ match, placeholder }) {
           {g2 ?? '—'}
         </span>
       </div>
-      {/* Estado pill */}
       {(fin || live) && (
         <div style={{ padding:'.3rem .75rem', borderTop:'1px solid #f5f3ee', display:'flex', justifyContent:'flex-end' }}>
           <span style={{ fontSize:'.55rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'.08em', padding:'1px 6px', borderRadius:99, background:live?'rgba(224,50,82,.1)':'rgba(235,195,43,.1)', color:live?'#e03252':'#c99f16', border:`1px solid ${live?'rgba(224,50,82,.25)':'rgba(235,195,43,.25)'}` }}>
-            {live ? 'En vivo' : 'Final'}
+            {live ? (match?.minuto ? `${match.minuto}'` : 'En vivo') : 'Final'}
           </span>
         </div>
       )}
@@ -306,7 +297,6 @@ function BracketSlot({ match, placeholder }) {
   )
 }
 
-/* Header de ronda */
 function RondaHeader({ label, count }) {
   return (
     <div style={{ marginBottom:'.85rem', textAlign:'center' }}>
@@ -316,7 +306,6 @@ function RondaHeader({ label, count }) {
   )
 }
 
-/* Columna de una ronda */
 function RondaCol({ label, slots, count }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', minWidth:200 }}>
@@ -330,7 +319,6 @@ function RondaCol({ label, slots, count }) {
   )
 }
 
-/* Separador vertical entre llave A y B */
 function LlaveSeparador() {
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 1rem', gap:'.5rem' }}>
@@ -347,7 +335,6 @@ function LlaveSeparador() {
 }
 
 function Llaves({ matches }) {
-  // Mapear partidos del backend por fase
   const porFase = useMemo(() => {
     const map = {}
     matches.filter(m => ['16avos','octavos','cuartos','semis','final','3er_puesto'].includes(m.fase))
@@ -365,7 +352,6 @@ function Llaves({ matches }) {
   const hayFin  = porFase['final']?.length   > 0
   const hayAlgo = hay16 || hayOct || hayCuar || haySemi || hayFin
 
-  // Helper: buscar partido real o usar placeholder
   const getSlots16 = (llave) => LLAVES_16[llave].map((ph, i) => {
     const real = porFase['16avos']?.find((m,mi) => llave==='A' ? mi===i : mi===i+4) || null
     return { match: real, placeholder: ph }
@@ -389,7 +375,6 @@ function Llaves({ matches }) {
         La fase eliminatoria comienza cuando finaliza la fase de grupos.<br/>
         Aquí verás el bracket completo del torneo.
       </p>
-      {/* Preview genérico del bracket vacío */}
       <div style={{ marginTop:'2rem', display:'flex', gap:'1rem', justifyContent:'center', flexWrap:'wrap', opacity:.4 }}>
         {['16avos','Cuartos','Semis','Final'].map(r => (
           <div key={r} style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'.4rem' }}>
@@ -409,7 +394,6 @@ function Llaves({ matches }) {
   return (
     <div style={{ overflowX:'auto', paddingBottom:'1.5rem' }}>
 
-      {/* Labels de llave */}
       <div style={{ display:'flex', gap:'1.5rem', minWidth:'max-content', padding:'0 .5rem', marginBottom:'1rem' }}>
         <div style={{ display:'flex', gap:'1.5rem' }}>
           <div style={{ minWidth:200, textAlign:'center' }}><span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'.75rem', color:'#5f6e8a', letterSpacing:'.08em' }}>16AVOS</span></div>
@@ -426,25 +410,20 @@ function Llaves({ matches }) {
         </div>
       </div>
 
-      {/* Llave A | Final | Llave B — todo en la misma fila */}
       <div style={{ display:'flex', gap:'1.5rem', alignItems:'center', minWidth:'max-content', padding:'0 .5rem' }}>
 
-        {/* 16avos A */}
         <div style={{ display:'flex', flexDirection:'column', gap:'1.2rem', minWidth:200 }}>
           {getSlots16('A').map((s,i) => <BracketSlot key={i} match={s.match} placeholder={s.placeholder}/>)}
         </div>
 
-        {/* Cuartos A */}
         <div style={{ display:'flex', flexDirection:'column', gap:'4rem', minWidth:200, justifyContent:'space-around' }}>
           {getSlotsByFase('cuartos',[0,1]).map((s,i) => <BracketSlot key={i} match={s.match} placeholder={s.placeholder}/>)}
         </div>
 
-        {/* Semi A */}
         <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', minWidth:200 }}>
           <BracketSlot match={getSlotsByFase('semis',[0])[0]?.match} placeholder={getSlotsByFase('semis',[0])[0]?.placeholder}/>
         </div>
 
-        {/* FINAL */}
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'.75rem', minWidth:210 }}>
           <BracketSlot match={porFase['final']?.[0] || null} placeholder={{ local:'Ganador Semi A', visitante:'Ganador Semi B' }}/>
           {porFase['3er_puesto']?.length > 0 && (
@@ -455,24 +434,20 @@ function Llaves({ matches }) {
           )}
         </div>
 
-        {/* Semi B */}
         <div style={{ display:'flex', flexDirection:'column', justifyContent:'center', minWidth:200 }}>
           <BracketSlot match={getSlotsByFase('semis',[1])[0]?.match} placeholder={getSlotsByFase('semis',[1])[0]?.placeholder}/>
         </div>
 
-        {/* Cuartos B */}
         <div style={{ display:'flex', flexDirection:'column', gap:'4rem', minWidth:200, justifyContent:'space-around' }}>
           {getSlotsByFase('cuartos',[2,3]).map((s,i) => <BracketSlot key={i} match={s.match} placeholder={s.placeholder}/>)}
         </div>
 
-        {/* 16avos B */}
         <div style={{ display:'flex', flexDirection:'column', gap:'1.2rem', minWidth:200 }}>
           {getSlots16('B').map((s,i) => <BracketSlot key={i} match={s.match} placeholder={s.placeholder}/>)}
         </div>
 
       </div>
 
-      {/* Tags LLAVE A / LLAVE B */}
       <div style={{ display:'flex', justifyContent:'space-between', minWidth:'max-content', padding:'.75rem .5rem 0', borderTop:'1px solid #f0eadb', marginTop:'1rem' }}>
         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'.8rem', color:'rgba(235,195,43,.7)', letterSpacing:'.1em' }}>LLAVE A</span>
         <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'.8rem', color:'rgba(235,195,43,.7)', letterSpacing:'.1em' }}>LLAVE B</span>
@@ -522,13 +497,11 @@ export default function FixturePage() {
 
       <div style={{ maxWidth:1400, margin:'0 auto', padding:'2rem 1.5rem 3rem' }}>
 
-        {/* Header */}
         <div className="din" style={{ marginBottom:'1.5rem' }}>
           <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'clamp(2.4rem,6vw,3.5rem)', color:'#0c182b', margin:'0 0 .3rem', lineHeight:1, letterSpacing:'.02em' }}>FIXTURE</h1>
           <p style={{ fontSize:'.84rem', color:'#5f6e8a', margin:0 }}>{matches.length} partidos del Mundial 2026</p>
         </div>
 
-        {/* Tabs */}
         <div className="din" style={{ display:'flex', gap:'.3rem', padding:'.3rem', background:'#fff', border:'1px solid #f0eadb', borderRadius:14, width:'fit-content', marginBottom:'1.75rem', animationDelay:'40ms' }}>
           <TabBtn active={tab==='fixture'} onClick={()=>setTab('fixture')} label="Fixture"
             icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
@@ -541,14 +514,12 @@ export default function FixturePage() {
           />
         </div>
 
-        {/* Loading skeleton */}
         {loading && (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'1rem' }}>
             {[...Array(6)].map((_,i) => <div key={i} style={{ height:100, borderRadius:14, background:'#fff', border:'1px solid #f0eadb', animation:'skp 1.4s ease-in-out infinite' }}/>)}
           </div>
         )}
 
-        {/* Tab Fixture */}
         {!loading && tab==='fixture' && (
           <div className="din">
             <div style={{ display:'flex', flexWrap:'wrap', gap:'.6rem', marginBottom:'1.5rem' }}>
@@ -581,12 +552,10 @@ export default function FixturePage() {
           </div>
         )}
 
-        {/* Tab Grupos */}
         {!loading && tab==='grupos' && (
           <div className="din"><TablaGrupos matches={matches}/></div>
         )}
 
-        {/* Tab Llaves */}
         {!loading && tab==='llaves' && (
           <div className="din"><Llaves matches={matches}/></div>
         )}
