@@ -9,10 +9,10 @@ const LABEL_FASE = {
 }
 
 const ESTADO_COLORS = {
-  programado:  { color: 'rgba(255,255,255,.45)', bg: 'rgba(255,255,255,.06)', border: 'rgba(255,255,255,.12)', label: 'Programado' },
+  programado:  { color: '#5f6e8a', bg: 'rgba(255,255,255,.06)', border: 'rgba(255,255,255,.12)', label: 'Programado' },
   en_vivo:     { color: '#ff4d6d',               bg: 'rgba(255,77,109,.12)', border: 'rgba(255,77,109,.35)',  label: 'EN VIVO' },
   finalizado:  { color: '#ebc32b',               bg: 'rgba(235,195,43,.1)',  border: 'rgba(235,195,43,.3)',   label: 'Finalizado' },
-  cancelado:   { color: 'rgba(255,255,255,.3)',   bg: 'rgba(255,255,255,.04)', border: 'rgba(255,255,255,.1)', label: 'Cancelado' },
+  cancelado:   { color: '#a8b2c4',   bg: 'rgba(255,255,255,.04)', border: 'rgba(255,255,255,.1)', label: 'Cancelado' },
 }
 
 function EditScoreModal({ match, onClose, onSave }) {
@@ -42,14 +42,14 @@ function EditScoreModal({ match, onClose, onSave }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-      style={{ background: 'rgba(2,15,39,.8)', backdropFilter: 'blur(8px)' }}
+      style={{ background: 'rgba(12,24,43,.7)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <div
         className="w-full max-w-sm rounded-2xl p-6"
         style={{
-          background: 'linear-gradient(145deg,rgba(15,43,79,.98),rgba(15,33,69,.98))',
-          border: '1px solid rgba(235,195,43,.25)',
+          background: '#fff',
+          border: '1px solid #f0eadb',
           boxShadow: '0 25px 80px rgba(0,0,0,.6)',
         }}
         onClick={e => e.stopPropagation()}
@@ -57,7 +57,7 @@ function EditScoreModal({ match, onClose, onSave }) {
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-display text-xl text-white" style={{ letterSpacing: '.02em' }}>EDITAR RESULTADO</h3>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center transition-all"
-            style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.5)' }}
+            style={{ background: '#faf7f0', border: '1px solid #e8dfd0', color: '#5f6e8a' }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,77,109,.1)'; e.currentTarget.style.color = '#ff4d6d' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.06)'; e.currentTarget.style.color = 'rgba(255,255,255,.5)' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -65,33 +65,33 @@ function EditScoreModal({ match, onClose, onSave }) {
         </div>
 
         {/* Equipos */}
-        <p className="font-body text-sm text-center mb-4" style={{ color: 'rgba(255,255,255,.6)' }}>
+        <p className="font-body text-sm text-center mb-4" style={{ color: '#5f6e8a' }}>
           <span className="text-white font-semibold">{match.equipo_local}</span>
-          <span style={{ color: 'rgba(255,255,255,.3)' }}> vs </span>
+          <span style={{ color: '#a8b2c4' }}> vs </span>
           <span className="text-white font-semibold">{match.equipo_visitante}</span>
         </p>
 
         {/* Score inputs */}
         <div className="flex items-center gap-4 mb-5">
           <div className="flex-1 text-center">
-            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: 'rgba(235,195,43,.7)' }}>{match.equipo_local}</p>
+            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: '#5f6e8a' }}>{match.equipo_local}</p>
             <input
               type="number" min="0" max="99" value={local}
               onChange={e => setLocal(e.target.value)}
               className="w-full px-3 py-3 rounded-xl font-display text-2xl text-center outline-none transition-all"
-              style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', color: '#ebc32b' }}
+              style={{ background: '#faf7f0', border: '1px solid #e8dfd0', color: '#ebc32b' }}
               onFocus={e => { e.target.style.borderColor = 'rgba(235,195,43,.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)' }}
               onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,.12)'; e.target.style.boxShadow = 'none' }}
             />
           </div>
-          <span className="font-display text-2xl" style={{ color: 'rgba(255,255,255,.3)' }}>:</span>
+          <span className="font-display text-2xl" style={{ color: '#a8b2c4' }}>:</span>
           <div className="flex-1 text-center">
-            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: 'rgba(235,195,43,.7)' }}>{match.equipo_visitante}</p>
+            <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: '#5f6e8a' }}>{match.equipo_visitante}</p>
             <input
               type="number" min="0" max="99" value={visitante}
               onChange={e => setVisit(e.target.value)}
               className="w-full px-3 py-3 rounded-xl font-display text-2xl text-center outline-none transition-all"
-              style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', color: '#ebc32b' }}
+              style={{ background: '#faf7f0', border: '1px solid #e8dfd0', color: '#ebc32b' }}
               onFocus={e => { e.target.style.borderColor = 'rgba(235,195,43,.5)'; e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)' }}
               onBlur={e  => { e.target.style.borderColor = 'rgba(255,255,255,.12)'; e.target.style.boxShadow = 'none' }}
             />
@@ -100,7 +100,7 @@ function EditScoreModal({ match, onClose, onSave }) {
 
         {/* Estado */}
         <div className="mb-6">
-          <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: 'rgba(235,195,43,.7)' }}>Estado del partido</p>
+          <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: '#5f6e8a' }}>Estado del partido</p>
           <div className="grid grid-cols-2 gap-2">
             {['programado', 'en_vivo', 'finalizado', 'cancelado'].map(est => {
               const s = ESTADO_COLORS[est]
@@ -124,7 +124,7 @@ function EditScoreModal({ match, onClose, onSave }) {
         <div className="flex gap-2">
           <button onClick={onClose}
             className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
-            style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.12)', color: 'rgba(255,255,255,.5)' }}
+            style={{ background: 'transparent', border: '1px solid #e8dfd0', color: '#5f6e8a' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.25)'; e.currentTarget.style.color = '#fff' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,.12)'; e.currentTarget.style.color = 'rgba(255,255,255,.5)' }}>
             Cancelar
@@ -194,7 +194,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                 {liveCount} en vivo
               </span>
             )}
-            <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,.3)' }}>{scheduledCount} programados · {finishedCount} finalizados</span>
+            <span className="font-body text-xs" style={{ color: '#a8b2c4' }}>{scheduledCount} programados · {finishedCount} finalizados</span>
           </div>
         </div>
 
@@ -217,11 +217,11 @@ export default function PartidosAdminTab({ matches, loadBets }) {
       {/* Filtros */}
       <div
         className="rounded-2xl p-4 mb-5 flex flex-col gap-3"
-        style={{ background: 'rgba(12,24,43,.6)', border: '1px solid rgba(235,195,43,.12)' }}
+        style={{ background: '#fff', border: '1px solid #f0eadb' }}
       >
         {fasesDisponibles.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-body font-bold uppercase text-[10px] tracking-widest w-14 flex-shrink-0" style={{ color: 'rgba(255,255,255,.3)' }}>Fase</span>
+            <span className="font-body font-bold uppercase text-[10px] tracking-widest w-14 flex-shrink-0" style={{ color: '#a8b2c4' }}>Fase</span>
             {['todas', ...fasesDisponibles].map(f => (
               <button key={f} type="button"
                 onClick={() => setFiltroFase(f)}
@@ -239,7 +239,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
         )}
 
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-body font-bold uppercase text-[10px] tracking-widest w-14 flex-shrink-0" style={{ color: 'rgba(255,255,255,.3)' }}>Estado</span>
+          <span className="font-body font-bold uppercase text-[10px] tracking-widest w-14 flex-shrink-0" style={{ color: '#a8b2c4' }}>Estado</span>
           {['todos', 'programado', 'en_vivo', 'finalizado'].map(est => {
             const s = est === 'todos' ? null : ESTADO_COLORS[est]
             const isActive = filtroEstado === est
@@ -261,7 +261,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
       </div>
 
       {/* Contador */}
-      <p className="text-xs font-body mb-3" style={{ color: 'rgba(255,255,255,.35)' }}>
+      <p className="text-xs font-body mb-3" style={{ color: '#a8b2c4' }}>
         {filtered.length} {filtered.length === 1 ? 'partido' : 'partidos'}
       </p>
 
@@ -269,7 +269,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
       {filtered.length === 0 ? (
         <div className="rounded-2xl p-12 text-center"
           style={{ background: 'rgba(66,91,139,.08)', border: '1px dashed rgba(235,195,43,.2)' }}>
-          <p className="font-body text-sm font-semibold" style={{ color: 'rgba(255,255,255,.4)' }}>
+          <p className="font-body text-sm font-semibold" style={{ color: '#5f6e8a' }}>
             No hay partidos con estos filtros.
           </p>
         </div>
@@ -287,7 +287,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                 key={match.id}
                 className="rounded-xl px-4 py-3 transition-all group"
                 style={{
-                  background: 'linear-gradient(155deg,rgba(66,91,139,.15),rgba(66,91,139,.04))',
+                  background: '#fff',
                   border: `1px solid ${isLive ? 'rgba(255,77,109,.3)' : 'rgba(255,255,255,.07)'}`,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(235,195,43,.25)'; e.currentTarget.style.background = 'linear-gradient(155deg,rgba(66,91,139,.22),rgba(66,91,139,.08))' }}
@@ -297,12 +297,12 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                   {/* Fase / estado */}
                   <div className="flex flex-col gap-0.5 flex-shrink-0 w-24 hidden sm:flex">
                     {faseLabel && (
-                      <span className="text-[9px] font-semibold uppercase tracking-wider font-body" style={{ color: 'rgba(255,255,255,.35)' }}>
+                      <span className="text-[9px] font-semibold uppercase tracking-wider font-body" style={{ color: '#a8b2c4' }}>
                         {faseLabel}
                       </span>
                     )}
                     {match.grupo && (
-                      <span className="text-[9px] font-body" style={{ color: 'rgba(255,255,255,.25)' }}>
+                      <span className="text-[9px] font-body" style={{ color: '#a8b2c4' }}>
                         Grupo {match.grupo}{match.jornada ? ` · J${match.jornada}` : ''}
                       </span>
                     )}
@@ -312,15 +312,15 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 flex-1 min-w-0">
                     <div className="flex items-center gap-2 justify-end min-w-0">
                       {match.bandera_local && (
-                        <img src={match.bandera_local} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,.1)' }} />
+                        <img src={match.bandera_local} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" style={{ border: '1px solid #e8dfd0' }} />
                       )}
                       <span className="font-body text-sm text-white truncate text-right">{match.equipo_local || '—'}</span>
                     </div>
 
                     <div className="flex-shrink-0 px-3 py-1 rounded-lg text-center"
-                      style={{ background: 'rgba(2,15,39,.5)', border: '1px solid rgba(255,255,255,.1)', minWidth: 56 }}>
+                      style={{ background: 'rgba(2,15,39,.5)', border: '1px solid #e8dfd0', minWidth: 56 }}>
                       {isScheduled ? (
-                        <span className="font-display text-sm" style={{ color: 'rgba(255,255,255,.3)' }}>- : -</span>
+                        <span className="font-display text-sm" style={{ color: '#a8b2c4' }}>- : -</span>
                       ) : (
                         <span className="font-display text-base" style={{ color: isLive ? '#ff4d6d' : '#ebc32b' }}>
                           {match.goles_local ?? 0} : {match.goles_visitante ?? 0}
@@ -331,7 +331,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="font-body text-sm text-white truncate">{match.equipo_visitante || '—'}</span>
                       {match.bandera_visitante && (
-                        <img src={match.bandera_visitante} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" style={{ border: '1px solid rgba(255,255,255,.1)' }} />
+                        <img src={match.bandera_visitante} alt="" className="w-6 h-4 object-cover rounded-sm flex-shrink-0" style={{ border: '1px solid #e8dfd0' }} />
                       )}
                     </div>
                   </div>
@@ -350,7 +350,7 @@ export default function PartidosAdminTab({ matches, loadBets }) {
                     <button
                       onClick={() => setEditingMatch(match)}
                       className="w-7 h-7 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-                      style={{ background: 'rgba(235,195,43,.1)', border: '1px solid rgba(235,195,43,.25)', color: '#ebc32b' }}
+                      style={{ background: 'rgba(235,195,43,.1)', border: '1px solid #f0eadb', color: '#ebc32b' }}
                       onMouseEnter={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.color = '#05090f' }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'rgba(235,195,43,.1)'; e.currentTarget.style.color = '#ebc32b' }}
                       title="Editar resultado"

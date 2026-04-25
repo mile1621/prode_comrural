@@ -9,8 +9,6 @@ import AdminHeader from '../components/admin/AdminHeader.jsx'
 import AdminTabs from '../components/admin/AdminTabs.jsx'
 import BetsTab from '../components/admin/BetsTab.jsx'
 import UsersTab from '../components/admin/UsersTab.jsx'
-import AreasTab from '../components/admin/AreasTab.jsx'
-import PartidosAdminTab from '../components/admin/PartidosAdminTab.jsx'
 
 
 
@@ -137,24 +135,26 @@ export default function AdminPage() {
     } catch (e) { alert(e.message || 'Error al rechazar usuario') }
   }
 
-  /* ── Render ───────────────────────────────────────────── */
+/* ── Render ───────────────────────────────────────────── */
   return (
-        <AppShell>
+    <AppShell>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
-      <AdminHeader bets={bets} pendingUsers={pendingUsers} />
+        <AdminHeader bets={bets} pendingUsers={pendingUsers} />
 
-      {/* Divider */}
-      <div className="mb-6 h-px"
-        style={{ background: 'linear-gradient(90deg,transparent,rgba(235,195,43,.25) 30%,rgba(235,195,43,.25) 70%,transparent)' }} />
+        {/* Divider */}
+        <div className="mb-6 h-px"
+          style={{ background: 'linear-gradient(90deg,transparent,rgba(235,195,43,.25) 30%,rgba(235,195,43,.25) 70%,transparent)' }} />
 
-      <AdminTabs
-        tab={tab}
-        setTab={setTab}
-        pendingCount={pendingUsers.length}
-        betsCount={bets.filter(b => b.estado === 'abierta').length}
-        areasCount={areasAll.length}
-      />
+        <AdminTabs
+          tab={tab}
+          setTab={setTab}
+          pendingCount={pendingUsers.length}
+          betsCount={bets.filter(b => b.estado === 'abierta').length}
+          areasCount={areasAll.length}
+        />
+
 
       {tab === 'Apuestas' && (
         <BetsTab
@@ -440,7 +440,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {tab === 'Áreas' && isPro && (
+      {/* {tab === 'Áreas' && isPro && (
         <AreasTab
           areasAll={areasAll}
           loadingAreas={loadingAreas}
@@ -454,11 +454,12 @@ export default function AdminPage() {
           handleSaveEdit={handleSaveEdit}
           handleToggleArea={handleToggleArea}
         />
-      )}
+      )} */}
 
-      {tab === 'Partidos' && (
+      {/* {tab === 'Partidos' && (
         <PartidosAdminTab matches={matches} loadBets={loadBets} />
-      )}
-        </AppShell>
+      )} */}
+</div>
+    </AppShell>
   )
-};
+}

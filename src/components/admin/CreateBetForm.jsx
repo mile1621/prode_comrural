@@ -26,21 +26,19 @@ function Field({ label, ...props }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="font-body font-bold text-xs uppercase tracking-widest"
-        style={{ color: 'rgba(235,195,43,.75)' }}>
+        style={{ color: '#5f6e8a' }}>
         {label}
       </label>
       <input
         {...props}
         className="w-full px-3 py-2.5 rounded-xl font-body text-sm outline-none transition-all"
-        style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff' }}
+        style={{ background: '#fff', border: '1px solid #e8dfd0', color: '#0c182b' }}
         onFocus={e => {
-          e.target.style.borderColor = 'rgba(235,195,43,.55)'
-          e.target.style.background  = 'rgba(235,195,43,.06)'
-          e.target.style.boxShadow   = '0 0 0 3px rgba(235,195,43,.1)'
+          e.target.style.borderColor = '#ebc32b'
+          e.target.style.boxShadow   = '0 0 0 3px rgba(235,195,43,.12)'
         }}
         onBlur={e => {
-          e.target.style.borderColor = 'rgba(255,255,255,.1)'
-          e.target.style.background  = 'rgba(255,255,255,.06)'
+          e.target.style.borderColor = '#e8dfd0'
           e.target.style.boxShadow   = 'none'
         }}
       />
@@ -56,12 +54,12 @@ function FilterChip({ active, onClick, children }) {
       className="px-2.5 py-1 rounded-full font-body font-semibold transition-all whitespace-nowrap"
       style={{
         fontSize: 11,
-        background: active ? '#ebc32b'    : 'rgba(255,255,255,.06)',
-        border:     `1px solid ${active ? '#ebc32b' : 'rgba(255,255,255,.15)'}`,
-        color:      active ? '#05090f'    : 'rgba(255,255,255,.55)',
+        background: active ? '#0c182b'  : '#fff',
+        border:     `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
+        color:      active ? '#ebc32b'  : '#5f6e8a',
       }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(235,195,43,.4)'; e.currentTarget.style.color = 'rgba(255,255,255,.85)' } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = 'rgba(255,255,255,.15)'; e.currentTarget.style.color = 'rgba(255,255,255,.55)' } }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = '#0c182b'; e.currentTarget.style.color = '#0c182b' } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = '#e8dfd0'; e.currentTarget.style.color = '#5f6e8a' } }}
     >
       {children}
     </button>
@@ -201,12 +199,11 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       {/* Partidos */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="font-body font-bold text-xs uppercase tracking-widest"
-            style={{ color: 'rgba(235,195,43,.75)' }}>
+          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
             Partidos
           </span>
-          <span className="font-body text-xs" style={{ color: 'rgba(255,255,255,.45)' }}>
-            <span className="font-bold" style={{ color: '#ebc32b' }}>{seleccionados}</span>
+          <span className="font-body text-xs" style={{ color: '#a8b2c4' }}>
+            <span className="font-bold" style={{ color: '#c99f16' }}>{seleccionados}</span>
             {' / '}{partidosDisponibles.length} seleccionados
           </span>
         </div>
@@ -215,7 +212,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         {fasesDisponibles.length > 1 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', letterSpacing: '.1em' }}>Fase</span>
+              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Fase</span>
             <FilterChip active={filtroFase === 'todas'} onClick={() => handleChangeFase('todas')}>Todas</FilterChip>
             {fasesDisponibles.map(f => (
               <FilterChip key={f} active={filtroFase === f} onClick={() => handleChangeFase(f)}>
@@ -228,7 +225,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         {jornadasDisponibles.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', letterSpacing: '.1em' }}>Jornada</span>
+              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Jornada</span>
             <FilterChip active={filtroJornada === 'todas'} onClick={() => setFiltroJornada('todas')}>Todas</FilterChip>
             {jornadasDisponibles.map(j => (
               <FilterChip key={j} active={filtroJornada === j} onClick={() => setFiltroJornada(j)}>{j}</FilterChip>
@@ -239,7 +236,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         {gruposDisponibles.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: 'rgba(255,255,255,.3)', letterSpacing: '.1em' }}>Grupo</span>
+              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Grupo</span>
             <FilterChip active={filtroGrupo === 'todos'} onClick={() => setFiltroGrupo('todos')}>Todos</FilterChip>
             {gruposDisponibles.map(g => (
               <FilterChip key={g} active={filtroGrupo === g} onClick={() => setFiltroGrupo(g)}>{g}</FilterChip>
@@ -254,26 +251,26 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar equipo..."
           className="w-full px-3 py-2 rounded-xl font-body text-sm outline-none transition-all"
-          style={{ background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', color: '#fff' }}
-          onFocus={e => { e.target.style.borderColor = 'rgba(235,195,43,.55)'; e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)' }}
-          onBlur={e =>  { e.target.style.borderColor = 'rgba(255,255,255,.1)';  e.target.style.boxShadow = 'none' }}
+          style={{ background: '#fff', border: '1px solid #e8dfd0', color: '#0c182b' }}
+          onFocus={e => { e.target.style.borderColor = '#ebc32b'; e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.12)' }}
+          onBlur={e =>  { e.target.style.borderColor = '#e8dfd0';  e.target.style.boxShadow = 'none' }}
         />
 
         {/* Acciones */}
         <div className="flex items-center justify-between gap-2 text-xs font-body">
           <button type="button" onClick={toggleVisibles} disabled={partidosFiltrados.length === 0}
-            className="transition-colors" style={{ color: '#ebc32b' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#f5d75a' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#ebc32b' }}>
+            className="transition-colors" style={{ color: '#c99f16' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ebc32b' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#c99f16' }}>
             {partidosFiltrados.every(m => form.partidos_ids.includes(m.id)) && partidosFiltrados.length > 0
               ? `✕ Deseleccionar visibles (${partidosFiltrados.length})`
               : `✓ Seleccionar visibles (${partidosFiltrados.length})`}
           </button>
           {seleccionados > 0 && (
             <button type="button" onClick={limpiarSeleccion}
-              className="transition-colors" style={{ color: 'rgba(255,255,255,.4)' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#ff4d6d' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.4)' }}>
+              className="transition-colors" style={{ color: '#a8b2c4' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#e03252' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#a8b2c4' }}>
               Limpiar selección
             </button>
           )}
@@ -281,9 +278,9 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
         {/* Lista de partidos */}
         <div className="max-h-72 overflow-y-auto rounded-xl"
-          style={{ background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)' }}>
+          style={{ background: '#faf7f0', border: '1px solid #e8dfd0' }}>
           {agrupados.length === 0 ? (
-            <p className="font-body text-xs text-center p-4" style={{ color: 'rgba(255,255,255,.3)' }}>
+            <p className="font-body text-xs text-center p-4" style={{ color: '#a8b2c4' }}>
               No hay partidos que coincidan.
             </p>
           ) : agrupados.map(gr => {
@@ -292,12 +289,12 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
               <div key={`${gr.fase}-${gr.jornada}-${gr.grupo}`}>
                 {/* Subheader de grupo */}
                 <div className="px-3 py-1.5 flex items-center justify-between sticky top-0 z-10"
-                  style={{ background: 'rgba(12,24,43,.9)', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+                  style={{ background: '#0c182b', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                   <span className="font-body font-semibold uppercase"
-                    style={{ fontSize: 10, color: 'rgba(235,195,43,.6)', letterSpacing: '.1em' }}>
+                    style={{ fontSize: 10, color: 'rgba(235,195,43,.8)', letterSpacing: '.1em' }}>
                     {header}
                   </span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.3)' }}>{gr.partidos.length}</span>
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{gr.partidos.length}</span>
                 </div>
 
                 {gr.partidos.map(m => {
@@ -306,16 +303,16 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                     <label key={m.id}
                       className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
                       style={{
-                        background: checked ? 'rgba(235,195,43,.1)' : 'transparent',
-                        borderBottom: '1px solid rgba(255,255,255,.04)',
+                        background: checked ? 'rgba(235,195,43,.08)' : 'transparent',
+                        borderBottom: '1px solid #f0eadb',
                       }}
-                      onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(255,255,255,.04)' }}
+                      onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(12,24,43,.04)' }}
                       onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent' }}
                     >
                       {/* Custom checkbox visual */}
                       <span className="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center"
                         style={{
-                          border: `1.5px solid ${checked ? '#ebc32b' : 'rgba(255,255,255,.25)'}`,
+                          border: `1.5px solid ${checked ? '#ebc32b' : '#e8dfd0'}`,
                           background: checked ? '#ebc32b' : 'transparent',
                           transition: 'all .15s',
                         }}>
@@ -332,15 +329,15 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                         className="sr-only"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 font-body text-sm" style={{ color: '#fff' }}>
+                        <div className="flex items-center gap-1.5 font-body text-sm" style={{ color: '#0c182b' }}>
                           {m.bandera_local && <img src={m.bandera_local} alt="" className="w-5 h-3.5 object-cover rounded-[2px]" />}
                           <span className="truncate">{m.equipo_local}</span>
-                          <span style={{ color: 'rgba(255,255,255,.3)', fontSize: 11 }}>vs</span>
+                          <span style={{ color: '#a8b2c4', fontSize: 11 }}>vs</span>
                           {m.bandera_visitante && <img src={m.bandera_visitante} alt="" className="w-5 h-3.5 object-cover rounded-[2px]" />}
                           <span className="truncate">{m.equipo_visitante}</span>
                         </div>
                       </div>
-                      <span className="font-body whitespace-nowrap" style={{ fontSize: 10, color: 'rgba(255,255,255,.35)' }}>
+                      <span className="font-body whitespace-nowrap" style={{ fontSize: 10, color: '#a8b2c4' }}>
                         {fmtFecha(m.fecha_partido)}
                       </span>
                     </label>
@@ -355,8 +352,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       {/* Tipo — solo Plan Pro */}
       {isPro && (
         <div className="flex flex-col gap-1.5">
-          <span className="font-body font-bold text-xs uppercase tracking-widest"
-            style={{ color: 'rgba(235,195,43,.75)' }}>
+          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
             Tipo
           </span>
           <div className="flex gap-2">
@@ -367,9 +363,9 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                   onClick={() => setForm(p => ({ ...p, type: t }))}
                   className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
                   style={{
-                    background: active ? 'rgba(235,195,43,.12)' : 'rgba(255,255,255,.04)',
-                    border: `1px solid ${active ? 'rgba(235,195,43,.5)' : 'rgba(255,255,255,.1)'}`,
-                    color: active ? '#ebc32b' : 'rgba(255,255,255,.55)',
+                    background: active ? '#0c182b' : '#fff',
+                    border: `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
+                    color: active ? '#ebc32b' : '#5f6e8a',
                   }}>
                   {t === 'grupos' ? 'Por Áreas' : 'Libre'}
                 </button>
@@ -382,9 +378,8 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       {/* Áreas — solo Plan Pro y tipo grupos */}
       {isPro && form.type === 'grupos' && (
         <div className="flex flex-col gap-2 p-3 rounded-xl"
-          style={{ border: '1px solid rgba(235,195,43,.2)', background: 'rgba(235,195,43,.04)' }}>
-          <span className="font-body font-bold text-xs uppercase tracking-widest"
-            style={{ color: 'rgba(235,195,43,.75)' }}>
+          style={{ border: '1px solid rgba(235,195,43,.25)', background: 'rgba(235,195,43,.04)' }}>
+          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
             Áreas participantes (Mín. 2)
           </span>
           <div className="flex flex-wrap gap-2">
@@ -430,15 +425,15 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         disabled={!canSubmit}
         className="w-full mt-1 py-3.5 rounded-full font-body font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          background: canSubmit ? '#ebc32b' : 'rgba(235,195,43,.3)',
-          color: '#05090f',
-          boxShadow: canSubmit ? '0 6px 24px rgba(235,195,43,.28)' : 'none',
+          background: canSubmit ? '#0c182b' : 'rgba(12,24,43,.2)',
+          color: canSubmit ? '#ebc32b' : '#a8b2c4',
+          boxShadow: canSubmit ? '0 4px 16px rgba(12,24,43,.2)' : 'none',
         }}
-        onMouseEnter={e => { if (canSubmit) { e.currentTarget.style.background = '#f5d75a'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-        onMouseLeave={e => { if (canSubmit) { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.transform = '' } }}
+        onMouseEnter={e => { if (canSubmit) { e.currentTarget.style.background = '#17376a'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+        onMouseLeave={e => { if (canSubmit) { e.currentTarget.style.background = '#0c182b'; e.currentTarget.style.transform = '' } }}
       >
         {loading
-          ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full" style={{ animation: 'spin .8s linear infinite' }} />Creando...</>
+          ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />Creando...</>
           : <>Crear Apuesta{seleccionados > 0 && ` · ${seleccionados} partidos`}</>
         }
       </button>

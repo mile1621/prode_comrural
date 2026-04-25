@@ -64,8 +64,8 @@ async function doLogout(){ await logout(); navigate('/') }
         @media(max-width:860px){.dnav{display:none!important}.mhb{display:flex!important}}
       `}</style>
 
-      <div style={{minHeight:'100vh',background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif"}}>
-
+      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif"}}>
+  
         {/* NAV */}
         <nav style={{background:'#0c182b',position:'sticky',top:0,zIndex:50,borderBottom:'1px solid rgba(235,195,43,.14)'}}>
           <div style={{maxWidth:1280,margin:'0 auto',padding:'0 1.5rem',height:62,display:'flex',alignItems:'center'}}>
@@ -119,12 +119,12 @@ async function doLogout(){ await logout(); navigate('/') }
           )}
         </nav>
 
-        <main className="sh-in" style={{flex:1}}>{children}</main>
+        <main className="sh-in" style={{flex:1, minHeight:0}}>{children}</main>
 
         <footer style={{background:'#0c182b',padding:'.85rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'.4rem',borderTop:'1px solid rgba(235,195,43,.08)'}}>
           <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Prode Talento © 2026 · Escencial Consultora</span>
           <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Juego responsable</span>
-        </footer>
+</footer>
       </div>
     </>
   )
