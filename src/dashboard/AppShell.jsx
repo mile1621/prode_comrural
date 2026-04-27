@@ -1,6 +1,12 @@
 /**
  * AppShell.jsx — Navbar navy + fondo crema (#faf7f0)
  * Ubicación: src/dashboard/AppShell.jsx
+ *
+ * v2 (logout mejorado):
+ *  - Confirmación inline al apretar "Salir" (pequeño popover, no alert nativo)
+ *  - Feedback visual durante el logout: botón cambia a "Saliendo..." con spinner
+ *  - Overlay sutil de fondo mientras se procesa
+ *  - Animación suave de salida antes del redirect
  */
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -49,10 +55,36 @@ export default function AppShell({ children }) {
   const navigate = useNavigate()
   const [mob, setMob] = useState(false)
 
+  // ── Estado del logout ────────────────────────────────────────
+  // 'idle'      : nada pasó
+  // 'confirm'   : esperando que el usuario confirme
+  // 'logging'   : llamando al backend (botón muestra spinner)
+  // 'redirect'  : sesión cerrada, mostrando overlay y redirigiendo
+  const [logoutState, setLogoutState] = useState('idle')
+
   const esAdmin = isAdmin || user?.rol === 'admin' || user?.es_admin === true || user?.tipo_usuario === 'admin'
 
-  /* ── Logout con confirmación + toast ────────────────── */
-async function doLogout(){ await logout(); navigate('/') }
+  /* ── Logout: pide confirmación, muestra feedback, redirige ───── */
+  function pedirConfirmacion() {
+    setLogoutState('confirm')
+  }
+  function cancelarLogout() {
+    setLogoutState('idle')
+  }
+  async function confirmarLogout() {
+    setLogoutState('logging')
+    try {
+      await logout()
+    } catch (e) {
+      // Aunque falle, seguimos con el redirect — el token ya fue limpiado igualmente
+      console.warn('Logout falló pero seguimos:', e.message)
+    }
+    // Mostramos el overlay de "Sesión cerrada" un momentito antes de redirigir
+    setLogoutState('redirect')
+    setTimeout(() => {
+      navigate('/')
+    }, 700)
+  }
 
   return (
     <>
@@ -61,11 +93,17 @@ async function doLogout(){ await logout(); navigate('/') }
         .sh-in{animation:sh-in .38s ease both}
         @keyframes ldot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.38;transform:scale(.68)}}
         .ldot{animation:ldot 1.6s ease infinite}
+        @keyframes spin-out{to{transform:rotate(360deg)}}
+        .spin-out{animation:spin-out .9s linear infinite}
+        @keyframes fade-in{from{opacity:0}to{opacity:1}}
+        .fade-in{animation:fade-in .25s ease both}
+        @keyframes pop-in{from{opacity:0;transform:scale(.92) translateY(-4px)}to{opacity:1;transform:scale(1) translateY(0)}}
+        .pop-in{animation:pop-in .2s ease both}
         @media(max-width:860px){.dnav{display:none!important}.mhb{display:flex!important}}
       `}</style>
 
-      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",minHeight:'100vh',flex:1}}>
-  
+      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif"}}>
+
         {/* NAV */}
         <nav style={{background:'#0c182b',position:'sticky',top:0,zIndex:50,borderBottom:'1px solid rgba(235,195,43,.14)'}}>
           <div style={{maxWidth:1280,margin:'0 auto',padding:'0 1.5rem',height:62,display:'flex',alignItems:'center'}}>
@@ -95,11 +133,132 @@ async function doLogout(){ await logout(); navigate('/') }
                   {user?.nombre||user?.name||'Usuario'}
                 </span>
               </div>
-              <button onClick={doLogout} style={{background:'transparent',border:'1px solid rgba(255,255,255,.1)',borderRadius:7,padding:'.3rem .68rem',fontSize:'.74rem',fontWeight:600,color:'rgba(255,255,255,.35)',cursor:'pointer',transition:'all .16s'}}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor='rgba(255,77,109,.45)';e.currentTarget.style.color='#ff4d6d'}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor='rgba(255,255,255,.1)';e.currentTarget.style.color='rgba(255,255,255,.35)'}}>
-                Salir
-              </button>
+
+              {/* ── Botón Salir con feedback ────────────────────── */}
+              <div style={{position:'relative'}}>
+                <button
+                  onClick={logoutState === 'idle' ? pedirConfirmacion : undefined}
+                  disabled={logoutState === 'logging' || logoutState === 'redirect'}
+                  style={{
+                    background: logoutState === 'logging' ? 'rgba(255,77,109,.12)' : 'transparent',
+                    border: `1px solid ${logoutState === 'logging' ? 'rgba(255,77,109,.4)' : 'rgba(255,255,255,.1)'}`,
+                    borderRadius: 7,
+                    padding: '.3rem .68rem',
+                    fontSize: '.74rem',
+                    fontWeight: 600,
+                    color: logoutState === 'logging' ? '#ff4d6d' : 'rgba(255,255,255,.35)',
+                    cursor: logoutState === 'logging' || logoutState === 'redirect' ? 'wait' : 'pointer',
+                    transition: 'all .16s',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '.4rem',
+                    minWidth: 64,
+                    justifyContent: 'center'
+                  }}
+                  onMouseEnter={e => {
+                    if (logoutState === 'idle') {
+                      e.currentTarget.style.borderColor = 'rgba(255,77,109,.45)'
+                      e.currentTarget.style.color = '#ff4d6d'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (logoutState === 'idle') {
+                      e.currentTarget.style.borderColor = 'rgba(255,255,255,.1)'
+                      e.currentTarget.style.color = 'rgba(255,255,255,.35)'
+                    }
+                  }}>
+                  {logoutState === 'logging' ? (
+                    <>
+                      <svg className="spin-out" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      Saliendo...
+                    </>
+                  ) : 'Salir'}
+                </button>
+
+                {/* Mini-popover de confirmación */}
+                {logoutState === 'confirm' && (
+                  <>
+                    {/* Capa invisible que cierra al click fuera */}
+                    <div
+                      onClick={cancelarLogout}
+                      style={{
+                        position: 'fixed', inset: 0, zIndex: 60, background: 'transparent'
+                      }}
+                    />
+                    <div className="pop-in" style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                      zIndex: 61, minWidth: 240,
+                      background: '#fff', borderRadius: 12,
+                      boxShadow: '0 12px 32px rgba(12,24,43,.22), 0 0 0 1px rgba(12,24,43,.06)',
+                      padding: '.85rem .95rem',
+                      border: '1px solid #f0eadb'
+                    }}>
+                      {/* Flechita */}
+                      <div style={{
+                        position: 'absolute', top: -6, right: 22,
+                        width: 12, height: 12, background: '#fff',
+                        transform: 'rotate(45deg)',
+                        borderTop: '1px solid #f0eadb',
+                        borderLeft: '1px solid #f0eadb'
+                      }}/>
+
+                      <p style={{
+                        fontFamily:"'Bebas Neue',sans-serif",
+                        fontSize: '1rem', color: '#0c182b',
+                        margin: '0 0 .15rem',
+                        letterSpacing: '.02em'
+                      }}>
+                        ¿Cerrar sesión?
+                      </p>
+                      <p style={{
+                        fontSize: '.76rem', color: '#5f6e8a',
+                        margin: '0 0 .85rem', lineHeight: 1.4
+                      }}>
+                        Vas a volver a la pantalla de inicio.
+                      </p>
+
+                      <div style={{display:'flex', gap:'.45rem', justifyContent:'flex-end'}}>
+                        <button
+                          onClick={cancelarLogout}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid #f0eadb',
+                            borderRadius: 7,
+                            padding: '.4rem .8rem',
+                            fontSize: '.74rem', fontWeight: 600,
+                            color: '#5f6e8a',
+                            cursor: 'pointer',
+                            transition: 'all .14s'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#0c182b'; e.currentTarget.style.color = '#0c182b' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#f0eadb'; e.currentTarget.style.color = '#5f6e8a' }}>
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={confirmarLogout}
+                          style={{
+                            background: '#ff4d6d',
+                            border: '1px solid #ff4d6d',
+                            borderRadius: 7,
+                            padding: '.4rem .9rem',
+                            fontSize: '.74rem', fontWeight: 700,
+                            color: '#fff',
+                            cursor: 'pointer',
+                            transition: 'all .14s',
+                            letterSpacing: '.02em'
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#e0354f'; e.currentTarget.style.borderColor = '#e0354f' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = '#ff4d6d'; e.currentTarget.style.borderColor = '#ff4d6d' }}>
+                          Sí, salir
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <button className="mhb" onClick={()=>setMob(v=>!v)} style={{display:'none',background:'transparent',border:'1px solid rgba(255,255,255,.14)',borderRadius:7,padding:'.36rem',cursor:'pointer',color:'rgba(255,255,255,.6)',alignItems:'center'}}>
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                   {mob?<><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>:<><line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/></>}
@@ -124,8 +283,43 @@ async function doLogout(){ await logout(); navigate('/') }
         <footer style={{background:'#0c182b',padding:'.85rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'.4rem',borderTop:'1px solid rgba(235,195,43,.08)'}}>
           <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Prode Talento © 2026 · Escencial Consultora</span>
           <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Juego responsable</span>
-</footer>
+        </footer>
       </div>
+
+      {/* ── Overlay de "Sesión cerrada" antes del redirect ───────── */}
+      {logoutState === 'redirect' && (
+        <div className="fade-in" style={{
+          position: 'fixed', inset: 0, zIndex: 999,
+          background: 'rgba(12,24,43,.92)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{textAlign:'center', color:'#fff'}}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'rgba(235,195,43,.15)',
+              border: '1px solid rgba(235,195,43,.4)',
+              margin: '0 auto 1rem',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ebc32b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <p style={{
+              fontFamily:"'Bebas Neue',sans-serif",
+              fontSize: '1.6rem',
+              margin: '0 0 .25rem',
+              letterSpacing: '.04em'
+            }}>Sesión cerrada</p>
+            <p style={{
+              fontSize: '.82rem',
+              color: 'rgba(255,255,255,.55)',
+              margin: 0
+            }}>Te llevamos al inicio...</p>
+          </div>
+        </div>
+      )}
     </>
   )
 }
