@@ -50,15 +50,12 @@ export default function AdminPage() {
   const [savingArea, setSavingArea] = useState(false)
 
   /* ── Efectos ──────────────────────────────────────────── */
-  useEffect(() => {
-    if (tab === 'Usuarios') {
-      loadPendingUsers()
-      if (isPro) loadAreas()
-    }
-    if (tab === 'Áreas' && isPro) {
-      loadAreasAll()
-    }
-  }, [tab, isPro])
+useEffect(() => {
+  if (tab === 'Usuarios') {
+    loadPendingUsers()
+    if (isPro) loadAreas()
+  }
+}, [tab, isPro])
 
   /* ── Funciones: Áreas ─────────────────────────────────── */
   async function loadAreas() {
@@ -147,13 +144,12 @@ export default function AdminPage() {
         <div className="mb-6 h-px"
           style={{ background: 'linear-gradient(90deg,transparent,rgba(235,195,43,.25) 30%,rgba(235,195,43,.25) 70%,transparent)' }} />
 
-        <AdminTabs
-          tab={tab}
-          setTab={setTab}
-          pendingCount={pendingUsers.length}
-          betsCount={bets.filter(b => b.estado === 'abierta').length}
-          areasCount={areasAll.length}
-        />
+<AdminTabs
+  tab={tab}
+  setTab={setTab}
+  pendingCount={pendingUsers.length}
+  betsCount={bets.filter(b => b.estado === 'abierta').length}
+/>
 
 
       {tab === 'Apuestas' && (

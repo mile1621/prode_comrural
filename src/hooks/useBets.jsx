@@ -1,101 +1,127 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import sheetsApi from '../services/sheetsApi.js'
 
 /* ── Hook de Apuestas ───────────────────────────────────────
    Conectado a sheetsApi → Apps Script → Google Sheets.
+
+   autoLoad:
+   - true  => mantiene el comportamiento actual para páginas de usuario.
+   - false => evita cargar backend automáticamente. Útil en AdminPage.
+
+   autoLoadPredictions:
+   - true  => carga predicciones propias al iniciar.
+   - false => evita pedir predicciones propias. Útil en AdminPage.
    ─────────────────────────────────────────────────────────── */
 
-export function useBets() {
+export function useBets({
+  autoLoad = true,
+  autoLoadPredictions = true,
+} = {}) {
   const [bets, setBets] = useState([])
-  const [matches, setMatches] = useState([]) // Todos los partidos para selects admin
-  const [predictions, setPredictions] = useState({}) // { partido_id: prediccion }
+  const [matches, setMatches] = useState([])
+  const [predictions, setPredictions] = useState({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  // Carga inicial de apuestas, partidos y predicciones del usuario
-  useEffect(() => {
-    loadBets()
-    loadMyPredictions()
-  }, [])
+  const initialLoadStartedRef = useRef(false)
 
   const loadBets = useCallback(async (estado = '') => {
     setLoading(true)
     setError(null)
+
     try {
       const [dataApuestas, dataPartidos] = await Promise.all([
         sheetsApi.apuestas.listar(estado),
-        sheetsApi.partidos.listar()
+        sheetsApi.partidos.listar(),
       ])
 
       const allMatches = dataPartidos.partidos || []
       setMatches(allMatches)
 
       const enrichedBets = (dataApuestas.apuestas || []).map(a => {
-        const pIds = a.partidos_ids ? a.partidos_ids.split(',').map(id => id.trim()) : []
-        const mappedMatches = pIds.map(id => allMatches.find(pm => pm.id === id)).filter(Boolean)
+        const pIds = a.partidos_ids
+          ? a.partidos_ids.split(',').map(id => id.trim()).filter(Boolean)
+          : []
+
+        const mappedMatches = pIds
+          .map(id => allMatches.find(pm => pm.id === id))
+          .filter(Boolean)
+
         return {
           ...a,
-          partidos: mappedMatches
+          partidos: mappedMatches,
         }
       })
 
       setBets(enrichedBets)
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error cargando apuestas')
     } finally {
       setLoading(false)
     }
   }, [])
 
   const loadMyPredictions = useCallback(async (apuesta_id = '') => {
+    setError(null)
+
     try {
       const data = await sheetsApi.predicciones.mias(apuesta_id)
-      // Convertir array a mapa { partido_id: prediccion }
       const map = {}
-        ; (data.predicciones || []).forEach(p => { map[p.partido_id] = p })
+
+      ;(data.predicciones || []).forEach(p => {
+        map[p.partido_id] = p
+      })
+
       setPredictions(map)
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error cargando predicciones')
     }
   }, [])
 
-  /**
-   * Guarda o actualiza una predicción.
-   * @param {{ apuesta_id, partido_id, pred_local, pred_visitante }} data
-   */
+  useEffect(() => {
+    if (!autoLoad) return
+    if (initialLoadStartedRef.current) return
+
+    initialLoadStartedRef.current = true
+
+    loadBets()
+
+    if (autoLoadPredictions) {
+      loadMyPredictions()
+    }
+  }, [autoLoad, autoLoadPredictions, loadBets, loadMyPredictions])
+
   const savePrediction = useCallback(async (data) => {
     setLoading(true)
     setError(null)
+
     try {
       await sheetsApi.predicciones.guardar(data)
-      // Actualizar estado local optimistamente
+
       setPredictions(prev => ({
         ...prev,
         [data.partido_id]: {
           ...data,
           puntos: '',
-        }
+        },
       }))
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error guardando predicción')
       throw err
     } finally {
       setLoading(false)
     }
   }, [])
 
-  /**
-   * Crea una nueva apuesta (admin).
-   * @param {{ titulo, tipo, premio, fecha_cierre, partidos_ids, ... }} data
-   */
   const createBet = useCallback(async (data) => {
     setLoading(true)
     setError(null)
+
     try {
       await sheetsApi.apuestas.crear(data)
-      await loadBets() // Recargar lista
+      await loadBets()
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error creando apuesta')
       throw err
     } finally {
       setLoading(false)
@@ -104,11 +130,13 @@ export function useBets() {
 
   const closeBet = useCallback(async (apuesta_id) => {
     setLoading(true)
+    setError(null)
+
     try {
       await sheetsApi.apuestas.cerrar(apuesta_id)
       await loadBets()
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error cerrando apuesta')
       throw err
     } finally {
       setLoading(false)
@@ -117,11 +145,13 @@ export function useBets() {
 
   const finalizeBet = useCallback(async (apuesta_id) => {
     setLoading(true)
+    setError(null)
+
     try {
       await sheetsApi.apuestas.finalizar(apuesta_id)
       await loadBets()
     } catch (err) {
-      setError(err.message)
+      setError(err.message || 'Error finalizando apuesta')
       throw err
     } finally {
       setLoading(false)

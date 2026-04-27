@@ -265,19 +265,27 @@ a:hover {
 .wave-fill-white { fill: #fff; }
 
 
-
-html, body {
+html,
+body {
   margin: 0;
+  min-height: 100%;
 }
 
 body:has(.sh-in) {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-image: none;
+  background-color: #faf7f0;
 }
 
 #root:has(.sh-in) {
-  height: 100vh;
-  overflow-y: auto;
+  min-height: 100vh;
+  height: auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Fix sr-only — algunos checkboxes con esta clase generaban
