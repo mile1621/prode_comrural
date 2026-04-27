@@ -64,7 +64,7 @@ async function doLogout(){ await logout(); navigate('/') }
         @media(max-width:860px){.dnav{display:none!important}.mhb{display:flex!important}}
       `}</style>
 
-      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif"}}>
+      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",minHeight:'100vh',flex:1}}>
   
         {/* NAV */}
         <nav style={{background:'#0c182b',position:'sticky',top:0,zIndex:50,borderBottom:'1px solid rgba(235,195,43,.14)'}}>
