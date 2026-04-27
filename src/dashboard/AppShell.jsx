@@ -20,8 +20,7 @@ const NAV_ITEMS = [
   { to:'/ranking',          label:'Ranking',    icon:<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
 ]
 
-const ADMIN_ICON = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-
+const ADMIN_ICON = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
 function initials(name=''){return name.trim().split(/\s+/).slice(0,2).map(n=>n[0]?.toUpperCase()||'').join('')}
 
 function NavLink({ to, label, icon, location }) {
@@ -117,7 +116,7 @@ export default function AppShell({ children }) {
               {NAV_ITEMS.map(({to,label,icon}) => (
                 <NavLink key={to} to={to} label={label} icon={icon} location={location}/>
               ))}
-              {esAdmin && <NavLink to="/admin" label="Admin" icon={ADMIN_ICON} location={location}/>}
+              {esAdmin && <NavLink to="/admin" label="Configuración" icon={ADMIN_ICON} location={location}/>}
             </div>
 
             <div style={{display:'flex',alignItems:'center',gap:'.6rem',marginLeft:'auto'}}>
@@ -273,17 +272,46 @@ export default function AppShell({ children }) {
               {NAV_ITEMS.map(({to,label,icon}) => (
                 <NavLinkMob key={to} to={to} label={label} icon={icon} location={location} onClick={()=>setMob(false)}/>
               ))}
-              {esAdmin && <NavLinkMob to="/admin" label="Admin" icon={ADMIN_ICON} location={location} onClick={()=>setMob(false)}/>}
+              {esAdmin && <NavLinkMob to="/admin" label="Configuración" icon={ADMIN_ICON} location={location} onClick={()=>setMob(false)}/>}
             </div>
           )}
         </nav>
 
         <main className="sh-in" style={{flex:1, minHeight:0}}>{children}</main>
 
-        <footer style={{background:'#0c182b',padding:'.85rem 1.5rem',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'.4rem',borderTop:'1px solid rgba(235,195,43,.08)'}}>
-          <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Prode Talento © 2026 · Escencial Consultora</span>
-          <span style={{fontSize:'.7rem',color:'rgba(255,255,255,.2)'}}>Juego responsable</span>
-        </footer>
+
+<footer style={{
+  background:'#080f1e',
+  borderTop:'2px solid #ebb32b',
+  padding:'.4rem 2rem',
+}}>
+  <div style={{maxWidth:1280,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:'.75rem'}}>
+
+    {/* Izq */}
+    <div style={{display:'flex',alignItems:'center',gap:'.65rem'}}>
+      <img src="/img/one-logoletra.png" alt="ONE" style={{height:20,width:'auto',display:'block'}}/>
+      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'.75rem',color:'rgba(255,255,255,.7)',fontWeight:400}}>
+        | Todos los derechos reservados. © {new Date().getFullYear()}
+      </span>
+    </div>
+
+    {/* Der */}
+    <div style={{display:'flex',alignItems:'center',gap:'.5rem'}}>
+      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'.75rem',color:'rgba(255,255,255,.7)',fontWeight:400}}>
+        Desarrollado por
+      </span>
+      <img src="/img/one-logocolor.png" alt="ONE" style={{height:25,width:'auto',display:'block'}}/>
+      <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:'.75rem',color:'rgba(255,255,255,.7)',fontWeight:400}}>by</span>
+      <img
+        src="/img/escencial-logoblanco.png"
+        alt="Escencial"
+        style={{height:40,width:'auto',display:'block',cursor:'pointer'}}
+        onClick={() => window.open('https://escencialconsultora.com.ar/', '_blank')}
+      />
+    </div>
+
+  </div>
+</footer>
       </div>
 
       {/* ── Overlay de "Sesión cerrada" antes del redirect ───────── */}
