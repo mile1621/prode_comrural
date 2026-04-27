@@ -268,14 +268,16 @@ a:hover {
 
 html, body {
   margin: 0;
-  height: 100%;
+}
+
+body:has(.sh-in) {
+  height: 100vh;
   overflow: hidden;
 }
 
-#root {
+#root:has(.sh-in) {
   height: 100vh;
   overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* Fix sr-only — algunos checkboxes con esta clase generaban
