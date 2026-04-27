@@ -139,7 +139,7 @@ export default function AdminPage() {
   return (
     <AppShell>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem', color: '#0c182b' }}>
 
         <AdminHeader bets={bets} pendingUsers={pendingUsers} />
 

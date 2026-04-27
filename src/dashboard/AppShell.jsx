@@ -102,7 +102,7 @@ export default function AppShell({ children }) {
         @media(max-width:860px){.dnav{display:none!important}.mhb{display:flex!important}}
       `}</style>
 
-      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",flex:1,minHeight:0}}>
+      <div style={{background:'#faf7f0',display:'flex',flexDirection:'column',fontFamily:"'DM Sans',sans-serif",minHeight:'100vh'}}>
   
         {/* NAV */}
         <nav style={{background:'#0c182b',position:'sticky',top:0,zIndex:50,borderBottom:'1px solid rgba(235,195,43,.14)'}}>
