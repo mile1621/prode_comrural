@@ -16,6 +16,7 @@ import BetsPage            from './dashboard/BetsPage.jsx'
 import PartidosPage        from './dashboard/FixturePage.jsx'
 import MisPrediccionesPage from './dashboard/MisPredesPage.jsx'
 import RankingPage         from './dashboard/RankingPage.jsx'
+import ManualPage          from './dashboard/ManualPage.jsx'
 
 export default function App() {
   return (
@@ -24,25 +25,26 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             {/* Públicas */}
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/" element={<HomePage />} />
+            <Route path="/home"             element={<HomePage />} />
+            <Route path="/login"            element={<LoginPage />} />
+            <Route path="/register"         element={<RegisterPage />} />
+            <Route path="/forgot-password"  element={<ForgotPasswordPage />} />
+            <Route path="/reset-password"   element={<ResetPasswordPage />} />
+            <Route path="/"                 element={<HomePage />} />
 
             {/* Usuario autenticado */}
             <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/apuestas" element={<BetsPage />} />
-              <Route path="/partidos" element={<PartidosPage />} />
+              <Route path="/dashboard"        element={<DashboardPage />} />
+              <Route path="/apuestas"         element={<BetsPage />} />
+              <Route path="/partidos"         element={<PartidosPage />} />
               <Route path="/mis-predicciones" element={<MisPrediccionesPage />} />
-              <Route path="/ranking" element={<RankingPage />} />
+              <Route path="/ranking"          element={<RankingPage />} />
             </Route>
 
             {/* Solo admin */}
             <Route element={<ProtectedRoute requireAdmin />}>
-              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin"        element={<AdminPage />} />
+              <Route path="/manual-admin" element={<ManualPage />} />
             </Route>
 
             {/* Fallback */}
