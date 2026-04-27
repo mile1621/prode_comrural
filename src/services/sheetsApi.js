@@ -4,11 +4,12 @@
    - Cachea respuestas GET en memoria del cliente.
    - Invalida caché en cada POST.
    - Soporta limit en ranking (top N).
+   - v2: predicciones.deUsuario(apuesta_id, user_id) para admin/ranking expandido.
    ============================================================ */
 
 // URL directa del deploy de Apps Script.
 // Si hacés un nuevo deploy, actualizá esta URL.
-const API_URL = 'https://script.google.com/macros/s/AKfycbzH_fetouM6WPRvAVM2yHJNuc7hhUM9uMTyKl3Zz_dqeLvbQet8Ni9QmWN7NHVPAPU7/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbzhoyHToOltVyil0ogx-80vlopIvH0OafPcY00ZJ0wkO4co8FuDxGy75M5VMJjGDjXx/exec'
 
 // ── Caché de cliente en memoria ────────────────────────────
 const CLIENT_CACHE = new Map()
@@ -169,6 +170,16 @@ const partidos = {
 const predicciones = {
   guardar: (data) => post('predicciones.guardar', data),
   mias: (apuesta_id = '') => get('predicciones.mis', apuesta_id ? { apuesta_id } : {}),
+
+  /**
+   * NUEVO v2: predicciones de un usuario específico para una apuesta.
+   * - Si user_id es el propio: funciona para cualquier rol.
+   * - Si user_id es de otro: solo funciona si el caller es admin (lo valida el backend).
+   * Usado por el ranking expandido.
+   */
+  deUsuario: (apuesta_id, user_id) =>
+    get('predicciones.mis', { apuesta_id, user_id }, { useCache: false }),
+
   // Ranking: acepta { limit } para top N. Default 50.
   // Devuelve: { tabla, total, mi_posicion, esta_en_top, apuesta_titulo }
   tabla: (apuesta_id, opciones = {}) => {
