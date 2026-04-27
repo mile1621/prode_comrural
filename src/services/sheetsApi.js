@@ -92,8 +92,84 @@ async function handleResponse(res) {
   } catch {
     throw new Error('Respuesta inválida del servidor')
   }
-  if (!data.ok) throw new Error(data.error || 'Error desconocido en el servidor')
+  if (!data.ok) {
+    // Detectar errores de sesión expirada o inválida
+    const error = String(data.error || '').toLowerCase()
+    const esSesionExpirada =
+      error.includes('sesión inválida') ||
+      error.includes('sesion invalida') ||
+      error.includes('sesión expirada') ||
+      error.includes('sesion expirada') ||
+      error.includes('se requiere session_token') ||
+      error.includes('cuenta no está activa')
+
+    if (esSesionExpirada) {
+      // Limpiar todo lo relacionado a la sesión
+      try {
+        localStorage.removeItem(TOKEN_KEY)
+        sessionStorage.removeItem('prode_user')
+        invalidateClientCache()
+      } catch (e) { /* noop */ }
+
+      // Si estamos en la app (no en login), avisar y redirigir
+      const path = window.location.pathname
+      const yaEnLogin = path === '/login' || path === '/' || path === '/home' || path.startsWith('/forgot-password') || path.startsWith('/reset-password')
+      if (!yaEnLogin) {
+        // Pequeño aviso visual antes del redirect (toast simple)
+        mostrarAvisoSesionExpirada()
+        setTimeout(() => {
+          window.location.href = '/login'
+        }, 1200)
+        // Igualmente lanzamos el error para frenar el flujo del caller
+        throw new Error('Sesión expirada — redirigiendo al login')
+      }
+    }
+    throw new Error(data.error || 'Error desconocido en el servidor')
+  }
   return data
+}
+
+// ── Aviso visual cuando expira la sesión ─────────────────
+let avisoSesionMostrado = false
+function mostrarAvisoSesionExpirada() {
+  if (avisoSesionMostrado) return // evitar duplicados si varias requests fallan a la vez
+  avisoSesionMostrado = true
+
+  const overlay = document.createElement('div')
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 99999;
+    background: rgba(12,24,43,.85);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    animation: fadeInOverlay .25s ease both;
+  `
+  overlay.innerHTML = `
+    <style>
+      @keyframes fadeInOverlay { from{opacity:0} to{opacity:1} }
+    </style>
+    <div style="text-align: center; color: #fff; max-width: 320px; padding: 1.5rem;">
+      <div style="
+        width: 56px; height: 56px; border-radius: 50%;
+        background: rgba(235,195,43,.15);
+        border: 1px solid rgba(235,195,43,.4);
+        margin: 0 auto 1rem;
+        display: flex; align-items: center; justify-content: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ebc32b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <p style="
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 1.6rem; margin: 0 0 .35rem;
+        letter-spacing: .04em;">Sesión expirada</p>
+      <p style="font-size: .85rem; color: rgba(255,255,255,.6); margin: 0;">
+        Por seguridad, te llevamos al login para que vuelvas a entrar.
+      </p>
+    </div>
+  `
+  document.body.appendChild(overlay)
 }
 
 // ── Gestión de sesión ─────────────────────────────────────
@@ -151,6 +227,12 @@ const apuestas = {
   crear: (data) => post('apuestas.crear', data),
   cerrar: (apuesta_id) => post('apuestas.cerrar', { apuesta_id }),
   finalizar: (apuesta_id) => post('apuestas.finalizar', { apuesta_id }),
+  /**
+   * NUEVO: Finaliza en lote todas las apuestas cerradas que tengan
+   * todos sus partidos finalizados con resultados cargados.
+   * Devuelve { finalizadas, no_listas, resumen }.
+   */
+  finalizar_listas: () => post('apuestas.finalizar_listas', {}),
 }
 
 const partidos = {
