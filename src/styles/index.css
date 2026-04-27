@@ -266,11 +266,6 @@ a:hover {
 
 
 
-body {
-  min-height: unset;
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
+html, body {
+  margin: 0;
 }
