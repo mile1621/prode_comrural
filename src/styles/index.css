@@ -82,9 +82,7 @@ body:has(.sh-in) {
 }
 
 #root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  display: contents;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────── */
