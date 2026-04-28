@@ -138,7 +138,7 @@ useEffect(() => {
   return (
     <AppShell>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
         <AdminHeader bets={bets} pendingUsers={pendingUsers} />
 

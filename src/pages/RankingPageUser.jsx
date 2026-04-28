@@ -25,8 +25,8 @@ const CSS = `
 .rk-in { animation: rk-in .28s ease both }
 
 /* Panel izquierdo */
-.rk-sidebar { width:272px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:#fcfaf6;border-right:1px solid #f0eadb }
-.rk-sidebar-scroll { overflow-y:auto;flex:1 }
+.rk-sidebar { width:380px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:#fcfaf6;border-right:1px solid #f0eadb }
+<div className="rk-in" style={{marginBottom:'1.25rem'}}>
 .rk-sidebar-scroll::-webkit-scrollbar { width:2px }
 .rk-sidebar-scroll::-webkit-scrollbar-thumb { background:#e2ddd6;border-radius:99px }
 
@@ -85,13 +85,12 @@ export default function RankingPageUser() {
     <AppShell>
       <style>{CSS}</style>
 
-      <div style={{maxWidth:1200,margin:'0 auto',padding:'20px 20px 40px'}}>
+      <div style={{maxWidth:1280,margin:'0 auto',padding:'20px 20px 40px'}}>
 
         {/* Título página */}
-        <div className="rk-in" style={{marginBottom:18}}>
-          <div style={{display:'flex',alignItems:'baseline',gap:12}}>
-            <h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'clamp(32px,5vw,48px)',color:'#0c182b',margin:0,lineHeight:1,letterSpacing:'.02em'}}>RANKING</h1>
-            {sel && <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#94a3b8',fontWeight:500}}>— {sel.titulo}</span>}
+<div className="rk-in" style={{marginBottom:'1.25rem'}}>
+              <div style={{display:'flex',alignItems:'baseline',gap:12}}>
+<h1 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'clamp(2.4rem,6vw,3.5rem)',color:'#0c182b',margin:'0 0 .3rem',lineHeight:1,letterSpacing:'.02em'}}>RANKING</h1>            {sel && <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:13,color:'#94a3b8',fontWeight:500}}>— {sel.titulo}</span>}
           </div>
         </div>
 
@@ -134,7 +133,7 @@ export default function RankingPageUser() {
           </div>
 
           {/* ══ CONTENIDO DERECHO ══ */}
-          <div className="rk-content" style={{padding:'24px 28px 32px'}}>
+          <div className="rk-content" style={{padding:'24px 32px 32px'}}>
 
             {!sel ? (
               <EmptySelect/>

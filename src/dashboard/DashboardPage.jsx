@@ -155,7 +155,7 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
         <div className="rounded-2xl p-6 md:p-8 mb-8 relative overflow-hidden animate-fade-in"
           style={{ background: '#0c182b', border: '1px solid rgba(235,195,43,.2)', boxShadow: '0 12px 40px rgba(12,24,43,.15)' }}>

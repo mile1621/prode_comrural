@@ -104,6 +104,14 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text);
 }
 
+/* Agregar DESPUÉS de la regla h1-h6 existente */
+body:has(.shell-in) h1,
+body:has(.shell-in) h2,
+body:has(.shell-in) h3,
+body:has(.shell-in) h4 {
+  color: #0c182b;
+}
+
 a {
   color: var(--color-accent);
   text-decoration: none;

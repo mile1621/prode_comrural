@@ -183,7 +183,7 @@ export default function MisPredesPage(){
         .din{animation:din .38s ease both}
         @keyframes skp{0%,100%{opacity:.7}50%{opacity:.3}}
       `}</style>
-      <div style={{maxWidth:1100,margin:'0 auto',padding:'2rem 1.5rem 3rem'}}>
+      <div style={{maxWidth:1400,margin:'0 auto',padding:'2rem 1.5rem 3rem'}}>
 
         {/* Header */}
         <div className="din" style={{marginBottom:'1.6rem'}}>

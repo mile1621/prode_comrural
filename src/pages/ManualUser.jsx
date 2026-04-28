@@ -345,7 +345,7 @@ export default function ManualUser() {
                 textTransform:'uppercase', letterSpacing:'.2em',
                 color:C.ink500, marginBottom:12,
               }}>
-                Prode Talnto · Mundial 2026
+                Prode Talento · Mundial 2026
               </div>
               <span style={{
                 display:'inline-flex', alignItems:'center', gap:6,

@@ -16,9 +16,17 @@ export default function AdminHeader({ bets = [], pendingUsers = [] }) {
 
       {/* Título estilo Fixture */}
       <div style={{ marginBottom:'1.25rem' }}>
-        <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'clamp(2.4rem,6vw,3.5rem)', color:'#0c182b', margin:'0 0 .3rem', lineHeight:1, letterSpacing:'.02em' }}>
-          PANEL DE <span style={{ color:'#ebc32b' }}>CONFIGURACIÓN</span>
-        </h1>
+<h1 style={{ 
+  fontFamily:"'Bebas Neue',sans-serif", 
+  fontSize:'clamp(2.4rem,6vw,3.5rem)', 
+  color:'#0c182b', 
+  margin:'0 0 .3rem', 
+  lineHeight:1, 
+  letterSpacing:'.02em',
+  textAlign: 'left'   // ← AGREGAR ESTO
+}}>
+  PANEL DE <span style={{ color:'#ebc32b' }}>CONFIGURACIÓN</span>
+</h1>
       </div>
 
       {/* Stats cards */}

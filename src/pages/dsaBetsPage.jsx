@@ -36,7 +36,7 @@ export default function BetsPage() {
 
   return (
     <AppShell>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
+      <div style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
         {/* Header */}
         <div className="mb-8 animate-fade-in flex flex-col md:flex-row md:items-end justify-between gap-5">

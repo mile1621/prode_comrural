@@ -111,9 +111,9 @@ export default function AppShell({ children }) {
 
   const esAdmin = isAdmin || user?.rol === 'admin' || user?.es_admin === true || user?.tipo_usuario === 'admin'
 
-  // ✅ FILTRAR NAV_ITEMS: ocultar "Apuestas" y "Mis Prodes" para admins
+// ✅ FILTRAR NAV_ITEMS: ocultar "Apuestas", "Mis Prodes" y "Manual" para admins
   const filteredNavItems = NAV_ITEMS.filter(item => {
-    if (esAdmin && (item.to === '/apuestas' || item.to === '/mis-predicciones')) {
+    if (esAdmin && (item.to === '/apuestas' || item.to === '/mis-predicciones' || item.to === '/manual')) {
       return false
     }
     return true
@@ -196,13 +196,12 @@ export default function AppShell({ children }) {
         }
       `}</style>
 
-      <div
+<div
         style={{
           background: '#faf7f0',
           display: 'flex',
           flexDirection: 'column',
           fontFamily: "'DM Sans',sans-serif",
-          height: '100dvh',
           minHeight: '100dvh',
           overflow: 'hidden',
         }}
@@ -215,15 +214,16 @@ export default function AppShell({ children }) {
             borderBottom: '1px solid rgba(235,195,43,.14)',
           }}
         >
-          <div
-            style={{
-              maxWidth: 1280,
-              margin: '0 auto',
-              padding: '0 1.5rem',
-              height: 62,
-              display: 'flex',
-              alignItems: 'center',
-            }}
+<div
+  style={{
+    maxWidth: 1200,  // ← cambiar de 896 a 1200
+    margin: '0 auto',
+    padding: '0 1.5rem',
+    height: 62,
+    display: 'flex',
+    alignItems: 'center',
+  }}
+
           >
             <Link to="/dashboard" style={{ textDecoration: 'none', flexShrink: 0, marginRight: '1.8rem' }}>
               <img
