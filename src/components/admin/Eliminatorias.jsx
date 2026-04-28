@@ -7,6 +7,7 @@ import { fmtFecha, inputLocalAIsoUtc } from '../../utils/index.js'
 /* ── Constantes ─────────────────────────────────────────── */
 const INITIAL = { titulo: '', type: 'libre', premio: '', fecha_cierre: '', partidos_ids: [], areas_ids: [] }
 
+// ✅ Mundial 2026 tiene 48 equipos: Fase de Grupos → 16avos (32 equipos) → Octavos (16 equipos) → etc.
 const ORDEN_FASES = ['grupos', '16avos', 'octavos', 'cuartos', 'semis', '3er_puesto', 'final']
 const LABEL_FASE = {
   grupos: 'Fase de Grupos', 
@@ -26,21 +27,17 @@ function isTBD(m) {
 
 function estaDisponible(m) { return m.estado === 'programado' }
 
-// ✅ Verificar si el partido ya terminó
 function partidoYaTerminado(partido) {
   if (!partido.fecha_partido) return false
   const fechaPartido = new Date(partido.fecha_partido)
   const ahora = new Date()
-  // Asumimos que un partido dura aprox 2 horas
   const partidoTerminado = new Date(fechaPartido.getTime() + (2 * 60 * 60 * 1000))
   return ahora >= partidoTerminado
 }
 
-// ✅ Verificar si una fase completa ya terminó
 function faseYaTerminada(partidos, fase) {
   const partidosDeFase = partidos.filter(p => p.fase === fase)
   if (partidosDeFase.length === 0) return false
-  // Si todos los partidos de la fase ya terminaron
   return partidosDeFase.every(p => partidoYaTerminado(p) || p.estado === 'finalizado')
 }
 
@@ -118,7 +115,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   }, [])
 
   const partidosDisponibles = useMemo(
-    () => matches.filter(m => !isTBD(m) && estaDisponible(m)),
+    () => matches.filter(m => estaDisponible(m)),
     [matches]
   )
 
@@ -169,7 +166,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
   const seleccionados = form.partidos_ids.length
 
-  // ✅ Validar fecha límite vs partidos seleccionados
   useEffect(() => {
     if (!form.fecha_cierre || form.partidos_ids.length === 0) {
       setErrorFecha('')
@@ -179,7 +175,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
     const fechaLimite = new Date(form.fecha_cierre)
     const partidosSeleccionados = partidosDisponibles.filter(m => form.partidos_ids.includes(m.id))
     
-    // Buscar el partido más temprano
     const partidoMasTemprano = partidosSeleccionados.reduce((earliest, current) => {
       const currentDate = new Date(current.fecha_partido)
       const earliestDate = new Date(earliest.fecha_partido)
@@ -188,7 +183,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
     const fechaPrimerPartido = new Date(partidoMasTemprano.fecha_partido)
 
-    // La fecha límite NO puede ser posterior al inicio del primer partido
     if (fechaLimite >= fechaPrimerPartido) {
       setErrorFecha(`La fecha límite debe ser ANTES del ${fmtFecha(partidoMasTemprano.fecha_partido)} (${partidoMasTemprano.equipo_local} vs ${partidoMasTemprano.equipo_visitante})`)
     } else {
@@ -235,7 +229,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       return
     }
 
-    // ✅ VALIDACIÓN CRÍTICA: Verificar que la fecha límite sea válida
     if (errorFecha) {
       toast.error('Corregí la fecha límite antes de continuar.')
       return
@@ -274,17 +267,71 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-      {/* Título */}
-      <Field
-        label="Título de la apuesta"
-        value={form.titulo}
-        onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
-        required
-        placeholder="Ej: Fase de grupos · Jornada 1"
-      />
+      {/* Título + Tipo en una fila */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-4">
+        <Field
+          label="Título de la apuesta"
+          value={form.titulo}
+          onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))}
+          required
+          placeholder="Ej: Fase de grupos · Jornada 1"
+        />
+
+        {/* Tipo — solo Plan Pro */}
+        {isPro && (
+          <div className="flex flex-col gap-1.5">
+            <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
+              Tipo
+            </span>
+            <div className="flex gap-2">
+              {['libre', 'grupos'].map(t => {
+                const active = form.type === t
+                return (
+                  <button key={t} type="button"
+                    onClick={() => setForm(p => ({ ...p, type: t }))}
+                    className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
+                    style={{
+                      background: active ? '#0c182b' : '#fff',
+                      border: `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
+                      color: active ? '#ebc32b' : '#5f6e8a',
+                    }}>
+                    {t === 'grupos' ? 'Por Áreas' : 'Libre'}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Áreas — solo Plan Pro y tipo grupos */}
+      {isPro && form.type === 'grupos' && (
+        <div className="flex flex-col gap-2 p-3 rounded-xl"
+          style={{ border: '1px solid rgba(235,195,43,.25)', background: 'rgba(235,195,43,.04)' }}>
+          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
+            Áreas participantes (Mín. 2)
+          </span>
+          <div className="flex flex-wrap gap-2">
+            {areas.map(a => {
+              const active = form.areas_ids.includes(a.id)
+              return (
+                <FilterChip key={a.id} active={active}
+                  onClick={() => setForm(p => ({
+                    ...p,
+                    areas_ids: active
+                      ? p.areas_ids.filter(id => id !== a.id)
+                      : [...p.areas_ids, a.id]
+                  }))}>
+                  {a.nombre}
+                </FilterChip>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Partidos */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
             Partidos
@@ -295,12 +342,12 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           </span>
         </div>
 
-        {/* Filtros de Fase */}
+        {/* Filtros de Fase - ahora en 4 columnas */}
         {fasesDisponibles.length > 0 && (
           <div className="flex flex-col gap-2">
             <span className="font-body font-semibold text-xs uppercase tracking-wider"
               style={{ color: '#a8b2c4' }}>Fases</span>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => handleChangeFase('todas')}
@@ -346,29 +393,30 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           </div>
         )}
 
-        {/* Filtros de Jornada */}
-        {jornadasDisponibles.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Jornada</span>
-            <FilterChip active={filtroJornada === 'todas'} onClick={() => setFiltroJornada('todas')}>Todas</FilterChip>
-            {jornadasDisponibles.map(j => (
-              <FilterChip key={j} active={filtroJornada === j} onClick={() => setFiltroJornada(j)}>{j}</FilterChip>
-            ))}
-          </div>
-        )}
+        {/* Filtros de Jornada y Grupo en una fila */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {jornadasDisponibles.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-body font-semibold uppercase w-14"
+                style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Jornada</span>
+              <FilterChip active={filtroJornada === 'todas'} onClick={() => setFiltroJornada('todas')}>Todas</FilterChip>
+              {jornadasDisponibles.map(j => (
+                <FilterChip key={j} active={filtroJornada === j} onClick={() => setFiltroJornada(j)}>{j}</FilterChip>
+              ))}
+            </div>
+          )}
 
-        {/* Filtros de Grupo */}
-        {gruposDisponibles.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Grupo</span>
-            <FilterChip active={filtroGrupo === 'todos'} onClick={() => setFiltroGrupo('todos')}>Todos</FilterChip>
-            {gruposDisponibles.map(g => (
-              <FilterChip key={g} active={filtroGrupo === g} onClick={() => setFiltroGrupo(g)}>{g}</FilterChip>
-            ))}
-          </div>
-        )}
+          {gruposDisponibles.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-body font-semibold uppercase w-14"
+                style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Grupo</span>
+              <FilterChip active={filtroGrupo === 'todos'} onClick={() => setFiltroGrupo('todos')}>Todos</FilterChip>
+              {gruposDisponibles.map(g => (
+                <FilterChip key={g} active={filtroGrupo === g} onClick={() => setFiltroGrupo(g)}>{g}</FilterChip>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Búsqueda */}
         <input
@@ -402,8 +450,8 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           )}
         </div>
 
-        {/* Lista de partidos */}
-        <div className="max-h-72 overflow-y-auto rounded-xl"
+        {/* Lista de partidos - más alta */}
+        <div className="max-h-80 overflow-y-auto rounded-xl"
           style={{ background: '#faf7f0', border: '1px solid #e8dfd0' }}>
           {agrupados.length === 0 ? (
             <p className="font-body text-xs text-center p-4" style={{ color: '#a8b2c4' }}>
@@ -413,7 +461,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
             const header = [LABEL_FASE[gr.fase] || gr.fase, gr.jornada, gr.grupo].filter(Boolean).join(' · ')
             return (
               <div key={`${gr.fase}-${gr.jornada}-${gr.grupo}`}>
-                {/* Subheader de grupo */}
                 <div className="px-3 py-1.5 flex items-center justify-between sticky top-0 z-10"
                   style={{ background: '#0c182b', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
                   <span className="font-body font-semibold uppercase"
@@ -435,7 +482,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                       onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(12,24,43,.04)' }}
                       onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent' }}
                     >
-                      {/* Custom checkbox */}
                       <span className="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center"
                         style={{
                           border: `1.5px solid ${checked ? '#ebc32b' : '#e8dfd0'}`,
@@ -474,58 +520,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           })}
         </div>
       </div>
-
-      {/* Tipo — solo Plan Pro */}
-      {isPro && (
-        <div className="flex flex-col gap-1.5">
-          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
-            Tipo
-          </span>
-          <div className="flex gap-2">
-            {['libre', 'grupos'].map(t => {
-              const active = form.type === t
-              return (
-                <button key={t} type="button"
-                  onClick={() => setForm(p => ({ ...p, type: t }))}
-                  className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
-                  style={{
-                    background: active ? '#0c182b' : '#fff',
-                    border: `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
-                    color: active ? '#ebc32b' : '#5f6e8a',
-                  }}>
-                  {t === 'grupos' ? 'Por Áreas' : 'Libre'}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Áreas — solo Plan Pro y tipo grupos */}
-      {isPro && form.type === 'grupos' && (
-        <div className="flex flex-col gap-2 p-3 rounded-xl"
-          style={{ border: '1px solid rgba(235,195,43,.25)', background: 'rgba(235,195,43,.04)' }}>
-          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
-            Áreas participantes (Mín. 2)
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {areas.map(a => {
-              const active = form.areas_ids.includes(a.id)
-              return (
-                <FilterChip key={a.id} active={active}
-                  onClick={() => setForm(p => ({
-                    ...p,
-                    areas_ids: active
-                      ? p.areas_ids.filter(id => id !== a.id)
-                      : [...p.areas_ids, a.id]
-                  }))}>
-                  {a.nombre}
-                </FilterChip>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Premio + Fecha */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

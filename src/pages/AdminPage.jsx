@@ -7,8 +7,9 @@ import sheetsApi from '../services/sheetsApi.js'
 
 import AdminHeader from '../components/admin/AdminHeader.jsx'
 import AdminTabs from '../components/admin/AdminTabs.jsx'
-import BetsTab from '../components/admin/BetsTab.jsx'
-import UsersTab from '../components/admin/UsersTab.jsx'
+// ✅ NUEVOS IMPORTS
+import CreateBetTab from '../components/admin/CreateBetTab.jsx'
+import BetsListTab from '../components/admin/BetsListTab.jsx'
 
 
 
@@ -34,7 +35,8 @@ export default function AdminPage() {
   const { bets, loading, createBet, closeBet, finalizeBet, matches, loadBets } = useBets()
   const { isPro } = useAuth()
 
-  const [tab, setTab] = useState('Apuestas')
+  // ✅ CAMBIO: Tab inicial ahora es 'NuevaApuesta'
+  const [tab, setTab] = useState('NuevaApuesta')
 
   /* ── Usuarios ─────────────────────────────────────────── */
   const [pendingUsers, setPendingUsers] = useState([])
@@ -144,25 +146,34 @@ useEffect(() => {
         <div className="mb-6 h-px"
           style={{ background: 'linear-gradient(90deg,transparent,rgba(235,195,43,.25) 30%,rgba(235,195,43,.25) 70%,transparent)' }} />
 
+{/* ✅ CAMBIO: activeBetsCount en lugar de betsCount */}
 <AdminTabs
   tab={tab}
   setTab={setTab}
   pendingCount={pendingUsers.length}
-  betsCount={bets.filter(b => b.estado === 'abierta').length}
+  activeBetsCount={bets.filter(b => b.estado === 'abierta').length}
 />
 
+{/* ✅ TAB 1: Nueva Apuesta */}
+{tab === 'NuevaApuesta' && (
+  <CreateBetTab
+    createBet={createBet}
+    loading={loading}
+    matches={matches}
+  />
+)}
 
-      {tab === 'Apuestas' && (
-        <BetsTab
-          bets={bets}
-          loading={loading}
-          createBet={createBet}
-          matches={matches}
-          closeBet={closeBet}
-          finalizeBet={finalizeBet}
-        />
-      )}
+{/* ✅ TAB 2: Apuestas Creadas */}
+{tab === 'ApuestasCreadas' && (
+  <BetsListTab
+    bets={bets}
+    loading={loading}
+    closeBet={closeBet}
+    finalizeBet={finalizeBet}
+  />
+)}
 
+      {/* ✅ TAB 3: Usuarios - SE MANTIENE TODO IGUAL */}
       {tab === 'Usuarios' && (
         <div className="animate-fade-in delay-2">
           <div className="flex justify-between items-center mb-5">

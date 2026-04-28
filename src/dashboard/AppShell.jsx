@@ -109,6 +109,14 @@ export default function AppShell({ children }) {
 
   const esAdmin = isAdmin || user?.rol === 'admin' || user?.es_admin === true || user?.tipo_usuario === 'admin'
 
+  // ✅ FILTRAR NAV_ITEMS: ocultar "Apuestas" y "Mis Prodes" para admins
+  const filteredNavItems = NAV_ITEMS.filter(item => {
+    if (esAdmin && (item.to === '/apuestas' || item.to === '/mis-predicciones')) {
+      return false
+    }
+    return true
+  })
+
   function pedirConfirmacion() {
     setLogoutState('confirm')
   }
@@ -228,7 +236,7 @@ export default function AppShell({ children }) {
             </Link>
 
 <div className="dnav" style={{ display: 'flex', alignItems: 'center', gap: '.15rem', flex: 1 }}>
-  {NAV_ITEMS.map(({ to, label, icon }) => (
+  {filteredNavItems.map(({ to, label, icon }) => (
     <NavLink key={to} to={to} label={label} icon={icon} location={location} />
   ))}
 
@@ -558,7 +566,7 @@ export default function AppShell({ children }) {
                 gap: '.18rem',
               }}
             >
-              {NAV_ITEMS.map(({ to, label, icon }) => (
+              {filteredNavItems.map(({ to, label, icon }) => (
                 <NavLinkMob key={to} to={to} label={label} icon={icon} location={location} onClick={() => setMob(false)} />
               ))}
 

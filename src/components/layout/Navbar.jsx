@@ -13,6 +13,13 @@ const ADMIN_LINKS = [{ to: '/admin', label: 'Admin' }, { to: '/ranking', label: 
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth()
 
+  // ✅ Filtrar "Apuestas" si es admin
+  const filteredNavLinks = NAV_LINKS.filter(link => {
+    // Si es admin y el link es "Apuestas", ocultarlo
+    if (isAdmin && link.to === '/apuestas') return false
+    return true
+  })
+
   const linkClass = ({ isActive }) =>
     `px-3 py-1.5 rounded-lg text-sm font-body font-medium whitespace-nowrap transition-all ${
       isActive
@@ -50,7 +57,7 @@ export default function Navbar() {
 
         {/* ── Links ── */}
         <div className="flex items-center gap-1 flex-1 min-w-0 overflow-x-auto">
-          {NAV_LINKS.map(link => (
+          {filteredNavLinks.map(link => (
             <NavLink key={link.to} to={link.to}
               className={({ isActive }) => linkClass({ isActive })}
               style={({ isActive }) => linkStyle(isActive)}
@@ -59,7 +66,7 @@ export default function Navbar() {
             </NavLink>
           ))}
 
-          {/* usuario normal */}
+          {/* ✅ Mis Predicciones: solo usuarios normales */}
           {user && !isAdmin && USER_LINKS.map(link => (
             <NavLink key={link.to} to={link.to}
               className={({ isActive }) => linkClass({ isActive })}
@@ -69,7 +76,7 @@ export default function Navbar() {
             </NavLink>
           ))}
 
-          {/* admin */}
+          {/* ✅ Admin y Ranking: solo admins */}
           {isAdmin && ADMIN_LINKS.map(link => (
             <NavLink key={link.to} to={link.to}
               className={({ isActive }) => linkClass({ isActive })}

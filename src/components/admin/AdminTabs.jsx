@@ -1,15 +1,20 @@
 import { useEffect } from 'react'
+
 export default function AdminTabs({
   tab,
   setTab,
   pendingCount = 0,
-  betsCount = 0,
+  activeBetsCount = 0,
 }) {
   const tabs = [
     {
-      key: 'Apuestas',
-      label: 'Apuestas',
-      count: betsCount,
+      key: 'NuevaApuesta',
+      label: 'Nueva Apuesta',
+    },
+    {
+      key: 'ApuestasCreadas',
+      label: 'Apuestas Creadas',
+      count: activeBetsCount,
     },
     {
       key: 'Usuarios',
