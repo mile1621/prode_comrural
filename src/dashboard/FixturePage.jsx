@@ -39,6 +39,9 @@ function PartidoCard({ match }) {
   const d    = match.fecha_partido ? new Date(match.fecha_partido) : null
   const fecha = d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) : ''
   const hora  = d ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : ''
+  // ✅ Penales: solo se muestran si están cargados (eliminatoria + empate definido por penales)
+  const tienePenales = match.penales_local != null && match.penales_local !== '' &&
+                       match.penales_visit != null && match.penales_visit !== ''
   return (
     <div style={{ background:'#fff', border:'1px solid #f0eadb', borderRadius:14, padding:'.9rem 1.1rem', boxShadow:'0 1px 0 rgba(12,24,43,.04)', transition:'transform .18s,box-shadow .18s' }}
       onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 22px rgba(12,24,43,.09)' }}
@@ -50,7 +53,14 @@ function PartidoCard({ match }) {
         </div>
         <div style={{ textAlign:'center', minWidth:70 }}>
           {(fin||live)
-            ? <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.4rem', color:live?'#e03252':'#0c182b', letterSpacing:'.05em', lineHeight:1 }}>{match.goles_local??0} : {match.goles_visitante??0}</span>
+            ? <>
+                <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.4rem', color:live?'#e03252':'#0c182b', letterSpacing:'.05em', lineHeight:1 }}>{match.goles_local??0} : {match.goles_visitante??0}</span>
+                {tienePenales && (
+                  <span style={{ display:'block', fontFamily:"'DM Sans',sans-serif", fontSize:'.6rem', fontWeight:700, color:'#c99f16', textTransform:'uppercase', letterSpacing:'.07em', marginTop:2 }}>
+                    pen {match.penales_local}-{match.penales_visit}
+                  </span>
+                )}
+              </>
             : <div><span style={{ fontSize:'.7rem',color:'#5f6e8a',display:'block' }}>{fecha}</span><span style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',color:'#0c182b',letterSpacing:'.04em' }}>{hora||'— : —'}</span></div>
           }
           {live && <span style={{ display:'block',fontSize:'.58rem',fontWeight:700,color:'#e03252',textTransform:'uppercase',letterSpacing:'.1em',marginTop:2 }}>{match.minuto?`${match.minuto}'`:'EN VIVO'}</span>}

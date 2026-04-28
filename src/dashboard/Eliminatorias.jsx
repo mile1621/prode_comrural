@@ -35,7 +35,8 @@ function formatFecha(iso) {
   } catch { return '' }
 }
 
-function EquipoRow({ nombre, bandera, goles, ganador, pendiente }) {
+function EquipoRow({ nombre, bandera, goles, golesPenales, ganador, pendiente }) {
+  const tienePenales = golesPenales != null && golesPenales !== ''
   return (
     <div style={{
       display: 'flex',
@@ -63,17 +64,34 @@ function EquipoRow({ nombre, bandera, goles, ganador, pendiente }) {
         }}>
           {nombre || 'Por definir'}
         </span>
+        {ganador && <span title="Clasifica" style={{ fontSize: '.7rem', color: '#c99f16', flexShrink: 0 }}>▶</span>}
       </div>
-      <span style={{
-        fontFamily: "'DM Sans',sans-serif",
-        fontSize: '.95rem',
-        fontWeight: 800,
-        color: ganador ? '#c99f16' : '#5f6e8a',
-        minWidth: 18,
-        textAlign: 'right',
-      }}>
-        {goles != null && goles !== '' ? goles : '–'}
-      </span>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '.3rem', flexShrink: 0 }}>
+        <span style={{
+          fontFamily: "'DM Sans',sans-serif",
+          fontSize: '.95rem',
+          fontWeight: 800,
+          color: ganador ? '#c99f16' : '#5f6e8a',
+          minWidth: 18,
+          textAlign: 'right',
+        }}>
+          {goles != null && goles !== '' ? goles : '–'}
+        </span>
+        {tienePenales && (
+          <span style={{
+            fontFamily: "'DM Sans',sans-serif",
+            fontSize: '.65rem',
+            fontWeight: 700,
+            color: ganador ? '#c99f16' : '#a8b2c4',
+            background: ganador ? 'rgba(235,195,43,.15)' : 'rgba(168,178,196,.12)',
+            padding: '.1rem .35rem',
+            borderRadius: 4,
+            border: `1px solid ${ganador ? 'rgba(235,195,43,.3)' : 'rgba(168,178,196,.2)'}`,
+          }} title="Penales">
+            {golesPenales}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
@@ -84,8 +102,22 @@ function MatchCard({ match }) {
   const fin  = match.estado === 'finalizado'
   const gl = match.goles_local
   const gv = match.goles_visitante
-  const ganaLocal = fin && gl != null && gv != null && Number(gl) > Number(gv)
-  const ganaVisit = fin && gl != null && gv != null && Number(gv) > Number(gl)
+  const pl = match.penales_local
+  const pv = match.penales_visit
+  const tienePenales = pl != null && pl !== '' && pv != null && pv !== ''
+
+  // Clasificado real: por goles si hay diferencia, por penales si empatado en 90'
+  let ganaLocal = false
+  let ganaVisit = false
+  if (fin && gl != null && gv != null) {
+    if (Number(gl) > Number(gv))      ganaLocal = true
+    else if (Number(gv) > Number(gl)) ganaVisit = true
+    else if (tienePenales) {
+      // Empate en 90' → desempate por penales
+      if (Number(pl) > Number(pv))      ganaLocal = true
+      else if (Number(pv) > Number(pl)) ganaVisit = true
+    }
+  }
   const sinEquipos = !match.equipo_local || !match.equipo_visitante
 
   return (
@@ -134,9 +166,27 @@ function MatchCard({ match }) {
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.15rem' }}>
-        <EquipoRow nombre={match.equipo_local} bandera={match.bandera_local} goles={gl} ganador={ganaLocal} pendiente={!match.equipo_local}/>
-        <EquipoRow nombre={match.equipo_visitante} bandera={match.bandera_visitante} goles={gv} ganador={ganaVisit} pendiente={!match.equipo_visitante}/>
+        <EquipoRow nombre={match.equipo_local} bandera={match.bandera_local} goles={gl} golesPenales={tienePenales ? pl : null} ganador={ganaLocal} pendiente={!match.equipo_local}/>
+        <EquipoRow nombre={match.equipo_visitante} bandera={match.bandera_visitante} goles={gv} golesPenales={tienePenales ? pv : null} ganador={ganaVisit} pendiente={!match.equipo_visitante}/>
       </div>
+      {tienePenales && (
+        <div style={{
+          marginTop: '.4rem',
+          padding: '.25rem .5rem',
+          fontFamily: "'DM Sans',sans-serif",
+          fontSize: '.6rem',
+          fontWeight: 700,
+          color: '#c99f16',
+          textTransform: 'uppercase',
+          letterSpacing: '.05em',
+          textAlign: 'center',
+          background: 'rgba(235,195,43,.08)',
+          borderRadius: 4,
+          border: '1px solid rgba(235,195,43,.2)',
+        }}>
+          Definido por penales
+        </div>
+      )}
       {sinEquipos && (
         <div style={{
           marginTop: '.4rem',
