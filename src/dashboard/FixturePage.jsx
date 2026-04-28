@@ -32,151 +32,910 @@ function TabBtn({ active, onClick, icon, label }) {
   )
 }
 
+// Solo reemplazá la función PartidoCard (línea ~50):
 function PartidoCard({ match }) {
-  const s    = ESTADO[match.estado] || ESTADO.programado
+  // Paleta (agregar solo estas constantes DENTRO de la función)
+  const C = {
+    cream:    '#f7f1e1',
+    creamHi:  '#fcf8ec',
+    ink:      '#0a1226',
+    inkSoft:  '#1a2540',
+    steel:    '#5f6e8a',
+    mute:     '#a8b2c4',
+    line:     '#e7dec6',
+    gold:     '#d4a017',
+    goldHi:   '#ebc32b',
+    goldDeep: '#a87a0b',
+    red:      '#e03252',
+  }
+
+  const s = ESTADO[match.estado] || ESTADO.programado  // Usa el ESTADO que ya existe
   const live = match.estado === 'en_vivo'
-  const fin  = match.estado === 'finalizado'
-  const d    = match.fecha_partido ? new Date(match.fecha_partido) : null
-  const fecha = d ? d.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}) : ''
-  const hora  = d ? d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}) : ''
-  // ✅ Penales: solo se muestran si están cargados (eliminatoria + empate definido por penales)
+  const fin = match.estado === 'finalizado'
+  const d = match.fecha_partido ? new Date(match.fecha_partido) : null
+  
+  const fecha = d ? {
+    dia: d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', ''),
+    hora: d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+  } : null
+
   const tienePenales = match.penales_local != null && match.penales_local !== '' &&
                        match.penales_visit != null && match.penales_visit !== ''
+
   return (
-    <div style={{ background:'#fff', border:'1px solid #f0eadb', borderRadius:14, padding:'.9rem 1.1rem', boxShadow:'0 1px 0 rgba(12,24,43,.04)', transition:'transform .18s,box-shadow .18s' }}
-      onMouseEnter={e=>{ e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 8px 22px rgba(12,24,43,.09)' }}
-      onMouseLeave={e=>{ e.currentTarget.style.transform=''; e.currentTarget.style.boxShadow='0 1px 0 rgba(12,24,43,.04)' }}>
-      <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', gap:'.6rem' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:'.5rem', minWidth:0 }}>
-          {match.bandera_local && <img src={match.bandera_local} alt="" style={{ width:24,height:17,objectFit:'cover',borderRadius:3,border:'1px solid #f0eadb',flexShrink:0 }}/>}
-          <span style={{ fontWeight:600, fontSize:'.88rem', color:'#0c182b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{match.equipo_local}</span>
+    <div
+      className="group relative overflow-hidden rounded-[14px] transition-all duration-300"
+      style={{
+        background: '#fff',
+        border: `1px solid ${fin ? C.gold + '55' : C.line}`,
+        boxShadow: fin
+          ? `0 1px 0 ${C.line}, 0 18px 40px -22px ${C.gold}55`
+          : '0 1px 0 rgba(12,24,43,.04)',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = fin
+          ? `0 1px 0 ${C.line}, 0 18px 40px -22px ${C.gold}55`
+          : '0 8px 22px rgba(12,24,43,.09)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'none'
+        e.currentTarget.style.boxShadow = fin
+          ? `0 1px 0 ${C.line}, 0 18px 40px -22px ${C.gold}55`
+          : '0 1px 0 rgba(12,24,43,.04)'
+      }}
+    >
+      {/* Acento dorado lateral en partidos finalizados */}
+      {fin && (
+        <span
+          className="absolute left-0 top-3 bottom-3 w-[3px] rounded-r"
+          style={{ background: `linear-gradient(to bottom, ${C.goldHi}, ${C.goldDeep})` }}
+        />
+      )}
+
+      {/* Header */}
+      <div
+        style={{
+          background: `linear-gradient(180deg, ${C.creamHi} 0%, #ffffff 100%)`,
+          borderBottom: `1px solid ${C.line}`,
+          padding: '8px 14px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+          <span
+            style={{
+              fontFamily: "'DM Sans',sans-serif",
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '.12em',
+              color: C.steel,
+            }}
+          >
+            {match.fase ? FASES[match.fase] || match.fase : 'Sin fase'}
+          </span>
+          {match.grupo && (
+            <>
+              <span
+                style={{
+                  width: 3,
+                  height: 3,
+                  borderRadius: '50%',
+                  background: C.line,
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontSize: '0.62rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.12em',
+                  color: C.steel,
+                }}
+              >
+                {match.grupo}
+              </span>
+            </>
+          )}
         </div>
-        <div style={{ textAlign:'center', minWidth:70 }}>
-          {(fin||live)
-            ? <>
-                <span style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'1.4rem', color:live?'#e03252':'#0c182b', letterSpacing:'.05em', lineHeight:1 }}>{match.goles_local??0} : {match.goles_visitante??0}</span>
-                {tienePenales && (
-                  <span style={{ display:'block', fontFamily:"'DM Sans',sans-serif", fontSize:'.6rem', fontWeight:700, color:'#c99f16', textTransform:'uppercase', letterSpacing:'.07em', marginTop:2 }}>
-                    pen {match.penales_local}-{match.penales_visit}
+
+        {/* Status pill */}
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '3px 8px',
+            borderRadius: 99,
+            fontSize: '0.58rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '.1em',
+            color: s.color,
+            background: s.bg,
+            border: `1px solid ${s.border}`,
+            fontFamily: "'DM Sans',sans-serif",
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: s.color,
+              animation: live ? 'ldot 1.4s ease infinite' : 'none',
+            }}
+          />
+          {live && match.minuto ? `${match.minuto}'` : s.label}
+        </span>
+      </div>
+
+      {/* Contenido principal */}
+      <div style={{ padding: '14px 16px' }}>
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          {/* Equipo Local */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            {match.bandera_local ? (
+              <img
+                src={match.bandera_local}
+                alt=""
+                style={{
+                  width: 26,
+                  height: 18,
+                  objectFit: 'cover',
+                  borderRadius: 3,
+                  border: `1px solid ${C.line}`,
+                  flexShrink: 0,
+                  boxShadow: '0 1px 3px rgba(12,24,43,.08)',
+                }}
+              />
+            ) : (
+              <div style={{ width: 26, height: 18, borderRadius: 3, background: C.line, flexShrink: 0 }} />
+            )}
+            <span
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                color: C.ink,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {match.equipo_local || 'TBD'}
+            </span>
+          </div>
+
+          {/* Marcador */}
+          <div style={{ textAlign: 'center', minWidth: 80 }}>
+            {fin || live ? (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, justifyContent: 'center' }}>
+                  <span
+                    style={{
+                      fontFamily: "'Bebas Neue',sans-serif",
+                      fontSize: '1.5rem',
+                      color: live ? C.red : C.ink,
+                      letterSpacing: '.05em',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {match.goles_local ?? 0}
                   </span>
+                  <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: C.mute, fontWeight: 600 }}>:</span>
+                  <span
+                    style={{
+                      fontFamily: "'Bebas Neue',sans-serif",
+                      fontSize: '1.5rem',
+                      color: live ? C.red : C.ink,
+                      letterSpacing: '.05em',
+                      lineHeight: 1,
+                    }}
+                  >
+                    {match.goles_visitante ?? 0}
+                  </span>
+                </div>
+                {tienePenales && (
+                  <div
+                    style={{
+                      marginTop: 4,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      background: `${C.gold}15`,
+                      border: `1px solid ${C.gold}30`,
+                      display: 'inline-block',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "'DM Sans',sans-serif",
+                        fontSize: '0.62rem',
+                        fontWeight: 700,
+                        color: C.goldDeep,
+                        textTransform: 'uppercase',
+                        letterSpacing: '.08em',
+                      }}
+                    >
+                      PEN {match.penales_local}-{match.penales_visit}
+                    </span>
+                  </div>
                 )}
-              </>
-            : <div><span style={{ fontSize:'.7rem',color:'#5f6e8a',display:'block' }}>{fecha}</span><span style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'1rem',color:'#0c182b',letterSpacing:'.04em' }}>{hora||'— : —'}</span></div>
-          }
-          {live && <span style={{ display:'block',fontSize:'.58rem',fontWeight:700,color:'#e03252',textTransform:'uppercase',letterSpacing:'.1em',marginTop:2 }}>{match.minuto?`${match.minuto}'`:'EN VIVO'}</span>}
-        </div>
-        <div style={{ display:'flex', alignItems:'center', gap:'.5rem', minWidth:0, justifyContent:'flex-end' }}>
-          <span style={{ fontWeight:600, fontSize:'.88rem', color:'#0c182b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', textAlign:'right' }}>{match.equipo_visitante}</span>
-          {match.bandera_visitante && <img src={match.bandera_visitante} alt="" style={{ width:24,height:17,objectFit:'cover',borderRadius:3,border:'1px solid #f0eadb',flexShrink:0 }}/>}
+              </div>
+            ) : (
+              <div>
+                {fecha ? (
+                  <>
+                    <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: C.steel, marginBottom: 2 }}>
+                      {fecha.dia}
+                    </div>
+                    <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.1rem', color: C.ink, letterSpacing: '.04em' }}>
+                      {fecha.hora}
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.1rem', color: C.mute, letterSpacing: '.04em' }}>
+                    — : —
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Equipo Visitante */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, justifyContent: 'flex-end' }}>
+            <span
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                fontWeight: 600,
+                fontSize: '0.88rem',
+                color: C.ink,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                textAlign: 'right',
+              }}
+            >
+              {match.equipo_visitante || 'TBD'}
+            </span>
+            {match.bandera_visitante ? (
+              <img
+                src={match.bandera_visitante}
+                alt=""
+                style={{
+                  width: 26,
+                  height: 18,
+                  objectFit: 'cover',
+                  borderRadius: 3,
+                  border: `1px solid ${C.line}`,
+                  flexShrink: 0,
+                  boxShadow: '0 1px 3px rgba(12,24,43,.08)',
+                }}
+              />
+            ) : (
+              <div style={{ width: 26, height: 18, borderRadius: 3, background: C.line, flexShrink: 0 }} />
+            )}
+          </div>
         </div>
       </div>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:'.55rem', paddingTop:'.55rem', borderTop:'1px solid #f5f3ee' }}>
-        <span style={{ fontSize:'.7rem', color:'#5f6e8a' }}>{match.fase?FASES[match.fase]||match.fase:''}{match.grupo?` · ${match.grupo}`:''}</span>
-        <span style={{ display:'inline-flex', alignItems:'center', gap:'.3rem', padding:'.18rem .6rem', borderRadius:99, fontSize:'.62rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'.07em', background:s.bg, color:s.color, border:`1px solid ${s.border}` }}>
-          {live && <span style={{ width:5,height:5,borderRadius:'50%',background:'#e03252',animation:'ldot 1.4s ease infinite',display:'inline-block' }}/>}
-          {live&&match.minuto?`${match.minuto}'`:s.label}
+    </div>
+  )
+}
+
+/**
+ * TablaGrupos — Componente rediseñado
+ * Mismo estilo visual que Eliminatorias.jsx
+ * 
+ * Paleta: cream (#f7f1e1) · navy (#0a1226) · gold (#d4a017)
+ */
+
+// ──────────────────────────────────────────────────────────────────
+// 🎨 PALETA — Misma que Eliminatorias
+// ──────────────────────────────────────────────────────────────────
+const C = {
+  cream:    '#f7f1e1',
+  creamHi:  '#fcf8ec',
+  ink:      '#0a1226',
+  inkSoft:  '#1a2540',
+  steel:    '#5f6e8a',
+  mute:     '#a8b2c4',
+  line:     '#e7dec6',
+  gold:     '#d4a017',
+  goldHi:   '#ebc32b',
+  goldDeep: '#a87a0b',
+  red:      '#e03252',
+  green:    '#1b8a5a',
+}
+
+function TablaGrupos({ matches }) {
+  const [grupoSel, setGrupoSel] = useState(null)
+  
+  const grupos = useMemo(() => {
+    const map = {}
+    matches.filter(m => m.fase === 'grupos' && m.grupo).forEach(m => {
+      const g = m.grupo
+      if (!map[g]) map[g] = { letra: g, equipos: {}, partidos: [] }
+      map[g].partidos.push(m)
+      
+      const proc = (nombre, bandera, gf, gc) => {
+        if (!nombre) return
+        if (!map[g].equipos[nombre]) {
+          map[g].equipos[nombre] = { nombre, bandera, j: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }
+        }
+        const eq = map[g].equipos[nombre]
+        if (m.estado === 'finalizado' && gf != null && gc != null) {
+          eq.j++
+          eq.gf += Number(gf)
+          eq.gc += Number(gc)
+          if (Number(gf) > Number(gc)) { eq.g++; eq.pts += 3 }
+          else if (Number(gf) === Number(gc)) { eq.e++; eq.pts += 1 }
+          else { eq.p++ }
+        }
+      }
+      
+      proc(m.equipo_local, m.bandera_local, m.goles_local, m.goles_visitante)
+      proc(m.equipo_visitante, m.bandera_visitante, m.goles_visitante, m.goles_local)
+    })
+    
+    return Object.values(map)
+      .sort((a, b) => a.letra.localeCompare(b.letra))
+      .map(g => ({
+        ...g,
+        sel: Object.values(g.equipos)
+          .sort((a, b) => 
+            b.pts - a.pts || 
+            (b.gf - b.gc) - (a.gf - a.gc) || 
+            b.gf - a.gf
+          )
+          .map((s, i) => ({ ...s, pos: i + 1, dif: s.gf - s.gc })),
+      }))
+  }, [matches])
+
+  if (!grupos.length) {
+    return (
+      <div
+        className="relative overflow-hidden rounded-[20px] px-8 py-16 text-center"
+        style={{
+          background: `linear-gradient(135deg, ${C.ink} 0%, ${C.inkSoft} 100%)`,
+          color: C.cream,
+        }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, transparent, ${C.gold}, transparent)` }}
+        />
+        <div
+          className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full"
+          style={{ background: `${C.gold}20`, border: `1px solid ${C.gold}50` }}
+        >
+          <span className="text-xl" style={{ color: C.goldHi }}>📊</span>
+        </div>
+        <p
+          className="mb-1 text-[1.05rem] font-black tracking-tight"
+          style={{ fontFamily: "'DM Sans',sans-serif", color: C.creamHi, letterSpacing: '-0.02em' }}
+        >
+          Tablas no disponibles
+        </p>
+        <p
+          className="text-[0.78rem]"
+          style={{ fontFamily: "'DM Sans',sans-serif", color: C.mute }}
+        >
+          Se calcularán automáticamente con los partidos del backend
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="overflow-hidden rounded-[20px]" style={{ background: C.cream }}>
+      {/* HERO HEADER */}
+      <div
+        className="relative overflow-hidden px-6 py-5"
+        style={{
+          background: `linear-gradient(120deg, ${C.ink} 0%, ${C.inkSoft} 60%, ${C.ink} 100%)`,
+        }}
+      >
+        <div
+          className="absolute inset-x-0 top-0 h-[2px]"
+          style={{ background: `linear-gradient(90deg, ${C.gold}, ${C.goldHi}, ${C.gold})` }}
+        />
+        <div
+          className="absolute inset-x-0 bottom-0 h-px"
+          style={{ background: `${C.gold}60` }}
+        />
+
+        <div className="relative flex items-end justify-between gap-4 flex-wrap">
+          <div className="min-w-0">
+            <div
+              className="mb-1 text-[0.62rem] font-extrabold uppercase tracking-[0.3em]"
+              style={{ color: C.goldHi, fontFamily: "'DM Sans',sans-serif" }}
+            >
+              FIFA World Cup · 2026
+            </div>
+            <h2
+              className="text-[1.6rem] font-black leading-none tracking-tight"
+              style={{
+                fontFamily: "'DM Sans',sans-serif",
+                color: C.creamHi,
+                letterSpacing: '-0.035em',
+              }}
+            >
+              Fase de Grupos - <span style={{ color: C.goldHi }}>Clasificación</span>
+            </h2>
+            <p
+              className="mt-1.5 text-[0.72rem] font-medium"
+              style={{ color: C.mute, fontFamily: "'DM Sans',sans-serif" }}
+            >
+              48 equipos · 12 grupos · Clasifican los 2 primeros
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* FILTROS DE GRUPOS */}
+      <div className="px-6 py-4" style={{ borderBottom: `1px solid ${C.line}` }}>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setGrupoSel(null)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 99,
+              border: `1px solid ${!grupoSel ? C.gold : C.cream2}`,
+              background: !grupoSel ? C.gold : '#fff',
+              color: !grupoSel ? '#fff' : C.steel,
+              fontFamily: "'DM Sans',sans-serif",
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '.06em',
+              cursor: 'pointer',
+              transition: 'all .2s ease',
+            }}
+            onMouseEnter={e => {
+              if (grupoSel !== null) {
+                e.currentTarget.style.borderColor = C.gold
+                e.currentTarget.style.color = C.goldDeep
+              }
+            }}
+            onMouseLeave={e => {
+              if (grupoSel !== null) {
+                e.currentTarget.style.borderColor = C.line
+                e.currentTarget.style.color = C.steel
+              }
+            }}
+          >
+            Todos los grupos
+          </button>
+          {grupos.map(g => (
+            <button
+              key={g.letra}
+              onClick={() => setGrupoSel(g.letra)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: 99,
+                border: `1px solid ${grupoSel === g.letra ? C.gold : C.line}`,
+                background: grupoSel === g.letra ? C.gold : '#fff',
+                color: grupoSel === g.letra ? '#fff' : C.steel,
+                fontFamily: "'DM Sans',sans-serif",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '.06em',
+                cursor: 'pointer',
+                transition: 'all .2s ease',
+              }}
+              onMouseEnter={e => {
+                if (grupoSel !== g.letra) {
+                  e.currentTarget.style.borderColor = C.gold
+                  e.currentTarget.style.color = C.goldDeep
+                }
+              }}
+              onMouseLeave={e => {
+                if (grupoSel !== g.letra) {
+                  e.currentTarget.style.borderColor = C.line
+                  e.currentTarget.style.color = C.steel
+                }
+              }}
+            >
+              Grupo {g.letra}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* GRID DE TABLAS */}
+      <div className="px-6 py-6">
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+            gap: '1.25rem',
+          }}
+        >
+          {grupos
+            .filter(g => !grupoSel || g.letra === grupoSel)
+            .map(g => (
+              <GrupoCard key={g.letra} grupo={g} />
+            ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div
+        className="flex items-center justify-between px-6 py-3"
+        style={{
+          background: C.creamHi,
+          borderTop: `1px solid ${C.line}`,
+        }}
+      >
+        <span
+          className="text-[0.62rem] font-bold uppercase tracking-[0.16em]"
+          style={{ color: C.steel, fontFamily: "'DM Sans',sans-serif" }}
+        >
+          Actualización automática
+        </span>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <div
+              style={{
+                width: 10,
+                height: 10,
+                borderRadius: 3,
+                background: `${C.gold}25`,
+                border: `1px solid ${C.gold}40`,
+              }}
+            />
+            <span
+              className="text-[0.6rem] font-semibold uppercase tracking-[0.1em]"
+              style={{ color: C.steel, fontFamily: "'DM Sans',sans-serif" }}
+            >
+              Clasifica
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Card individual de grupo
+// ──────────────────────────────────────────────────────────────────
+function GrupoCard({ grupo }) {
+  const g = grupo
+  const partidosJugados = g.partidos.filter(p => p.estado === 'finalizado').length
+
+  return (
+    <div
+      className="overflow-hidden rounded-[14px] transition-all duration-300"
+      style={{
+        background: '#fff',
+        border: `1px solid ${C.line}`,
+        boxShadow: '0 1px 0 rgba(12,24,43,.04)',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-2px)'
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(12,24,43,.12)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'none'
+        e.currentTarget.style.boxShadow = '0 1px 0 rgba(12,24,43,.04)'
+      }}
+    >
+      {/* Header del grupo */}
+      <div
+        style={{
+          background: `linear-gradient(135deg, ${C.ink}, ${C.inkSoft})`,
+          padding: '14px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          borderBottom: `1px solid ${C.line}`,
+        }}
+      >
+        <div
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            background: `${C.gold}15`,
+            border: `1px solid ${C.gold}30`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Bebas Neue',sans-serif",
+              fontSize: '1.3rem',
+              color: C.goldHi,
+              lineHeight: 1,
+            }}
+          >
+            {g.letra}
+          </span>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p
+            style={{
+              fontFamily: "'Bebas Neue',sans-serif",
+              fontSize: '1.1rem',
+              color: C.creamHi,
+              margin: 0,
+              letterSpacing: '.05em',
+              lineHeight: 1,
+            }}
+          >
+            GRUPO {g.letra}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans',sans-serif",
+              fontSize: '0.65rem',
+              color: 'rgba(255,255,255,.5)',
+              margin: '4px 0 0',
+            }}
+          >
+            {g.sel.length} equipos · {partidosJugados}/{g.partidos.length} jugados
+          </p>
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
+          <thead>
+            <tr style={{ background: C.creamHi }}>
+              <th
+                style={{
+                  width: '36px',
+                  padding: '8px 4px',
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.1em',
+                  color: C.mute,
+                  textAlign: 'center',
+                  borderBottom: `1px solid ${C.line}`,
+                }}
+              >
+                #
+              </th>
+              <th
+                style={{
+                  padding: '8px 8px',
+                  fontFamily: "'DM Sans',sans-serif",
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.1em',
+                  color: C.mute,
+                  textAlign: 'left',
+                  borderBottom: `1px solid ${C.line}`,
+                }}
+              >
+                Equipo
+              </th>
+              {['J', 'G', 'E', 'P', 'GF', 'GC', 'DIF', 'PTS'].map((h, i) => (
+                <th
+                  key={h}
+                  style={{
+                    width: h === 'PTS' ? '46px' : h === 'DIF' ? '42px' : '32px',
+                    padding: '8px 2px',
+                    fontFamily: "'DM Sans',sans-serif",
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '.1em',
+                    color: C.mute,
+                    textAlign: 'center',
+                    borderBottom: `1px solid ${C.line}`,
+                  }}
+                >
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {g.sel.map((s, i) => {
+              const clasifica = s.pos <= 2
+              return (
+                <tr
+                  key={s.nombre}
+                  style={{
+                    background: clasifica ? `${C.gold}05` : 'transparent',
+                    borderBottom: i === g.sel.length - 1 ? 'none' : `1px solid ${C.line}`,
+                  }}
+                >
+                  {/* Posición */}
+                  <td style={{ padding: '10px 4px', textAlign: 'center' }}>
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        background: clasifica ? `${C.gold}15` : `${C.ink}04`,
+                        border: clasifica ? `1px solid ${C.gold}30` : `1px solid ${C.line}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        margin: '0 auto',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'Bebas Neue',sans-serif",
+                          fontSize: '0.9rem',
+                          color: clasifica ? C.goldDeep : C.mute,
+                        }}
+                      >
+                        {s.pos}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Equipo */}
+                  <td style={{ padding: '10px 8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      {s.bandera ? (
+                        <img
+                          src={s.bandera}
+                          alt=""
+                          style={{
+                            width: 20,
+                            height: 14,
+                            objectFit: 'cover',
+                            borderRadius: 2,
+                            border: `1px solid ${C.line}`,
+                            flexShrink: 0,
+                          }}
+                        />
+                      ) : (
+                        <div
+                          style={{
+                            width: 20,
+                            height: 14,
+                            borderRadius: 2,
+                            background: C.line,
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                      <span
+                        style={{
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          color: C.ink,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          fontFamily: "'DM Sans',sans-serif",
+                        }}
+                      >
+                        {s.nombre}
+                      </span>
+                      {clasifica && (
+                        <span
+                          style={{
+                            fontSize: '0.5rem',
+                            fontWeight: 700,
+                            color: C.goldDeep,
+                            background: `${C.gold}12`,
+                            border: `1px solid ${C.gold}25`,
+                            borderRadius: 3,
+                            padding: '1px 4px',
+                            fontFamily: "'DM Sans',sans-serif",
+                            flexShrink: 0,
+                          }}
+                        >
+                          CL
+                        </span>
+                      )}
+                    </div>
+                  </td>
+
+                  {/* Estadísticas */}
+                  {[s.j, s.g, s.e, s.p, s.gf, s.gc].map((v, idx) => (
+                    <td
+                      key={idx}
+                      style={{
+                        padding: '10px 2px',
+                        textAlign: 'center',
+                        fontSize: '0.75rem',
+                        color: C.steel,
+                        fontFamily: "'DM Sans',sans-serif",
+                      }}
+                    >
+                      {v}
+                    </td>
+                  ))}
+
+                  {/* Diferencia */}
+                  <td
+                    style={{
+                      padding: '10px 2px',
+                      textAlign: 'center',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      color: s.dif > 0 ? C.green : s.dif < 0 ? C.red : C.steel,
+                      fontFamily: "'DM Sans',sans-serif",
+                    }}
+                  >
+                    {s.dif > 0 ? `+${s.dif}` : s.dif}
+                  </td>
+
+                  {/* Puntos */}
+                  <td style={{ padding: '10px 4px', textAlign: 'center' }}>
+                    <span
+                      style={{
+                        fontFamily: "'Bebas Neue',sans-serif",
+                        fontSize: '1.15rem',
+                        color: C.ink,
+                      }}
+                    >
+                      {s.pts}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer card */}
+      <div
+        style={{
+          padding: '8px 14px',
+          borderTop: `1px solid ${C.line}`,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          background: C.creamHi,
+        }}
+      >
+        <div
+          style={{
+            width: 10,
+            height: 10,
+            borderRadius: 3,
+            background: `${C.gold}25`,
+            border: `1px solid ${C.gold}40`,
+          }}
+        />
+        <span
+          style={{
+            fontSize: '0.62rem',
+            color: C.mute,
+            fontFamily: "'DM Sans',sans-serif",
+          }}
+        >
+          Clasifica a 16avos de final
         </span>
       </div>
     </div>
   )
 }
 
-function TablaGrupos({ matches }) {
-  const [grupoSel, setGrupoSel] = useState(null)
-  const grupos = useMemo(() => {
-    const map = {}
-    matches.filter(m=>m.fase==='grupos'&&m.grupo).forEach(m=>{
-      const g=m.grupo
-      if(!map[g]) map[g]={letra:g,equipos:{},partidos:[]}
-      map[g].partidos.push(m)
-      const proc=(nombre,bandera,gf,gc)=>{
-        if(!nombre) return
-        if(!map[g].equipos[nombre]) map[g].equipos[nombre]={nombre,bandera,j:0,g:0,e:0,p:0,gf:0,gc:0,pts:0}
-        const eq=map[g].equipos[nombre]
-        if(m.estado==='finalizado'&&gf!=null&&gc!=null){
-          eq.j++;eq.gf+=Number(gf);eq.gc+=Number(gc)
-          if(Number(gf)>Number(gc)){eq.g++;eq.pts+=3}
-          else if(Number(gf)===Number(gc)){eq.e++;eq.pts+=1}
-          else{eq.p++}
-        }
-      }
-      proc(m.equipo_local,m.bandera_local,m.goles_local,m.goles_visitante)
-      proc(m.equipo_visitante,m.bandera_visitante,m.goles_visitante,m.goles_local)
-    })
-    return Object.values(map).sort((a,b)=>a.letra.localeCompare(b.letra)).map(g=>({
-      ...g,sel:Object.values(g.equipos).sort((a,b)=>b.pts-a.pts||(b.gf-b.gc)-(a.gf-a.gc)||b.gf-a.gf).map((s,i)=>({...s,pos:i+1,dif:s.gf-s.gc})),
-    }))
-  },[matches])
-
-  if(!grupos.length) return (
-    <div style={{ borderRadius:16,padding:'3rem 2rem',textAlign:'center',background:'#fff',border:'1.5px dashed #f0eadb' }}>
-      <p style={{ fontWeight:700,fontSize:'.9rem',color:'#5f6e8a',margin:'0 0 .35rem' }}>Tablas de grupos no disponibles</p>
-      <p style={{ fontSize:'.78rem',color:'#a8b2c4',margin:0 }}>Se calcularán automáticamente con los partidos del backend</p>
-    </div>
-  )
-  return (
-    <div>
-      <div style={{ display:'flex',flexWrap:'wrap',gap:'.4rem',marginBottom:'1.5rem' }}>
-        <Chip active={!grupoSel} onClick={()=>setGrupoSel(null)}>Todos</Chip>
-        {grupos.map(g=><Chip key={g.letra} active={grupoSel===g.letra} onClick={()=>setGrupoSel(g.letra)}>Grupo {g.letra}</Chip>)}
-      </div>
-      <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(380px,1fr))',gap:'1.25rem' }}>
-        {grupos.filter(g=>!grupoSel||g.letra===grupoSel).map(g=>(
-          <div key={g.letra} style={{ background:'#fff',border:'1px solid #f0eadb',borderRadius:16,overflow:'hidden' }}>
-            <div style={{ background:'linear-gradient(135deg,#0c182b,#17376a)',padding:'.85rem 1.2rem',display:'flex',alignItems:'center',gap:'.85rem' }}>
-              <div style={{ width:38,height:38,borderRadius:10,background:'rgba(235,195,43,.15)',border:'1px solid rgba(235,195,43,.3)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
-                <span style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',color:'#ebc32b',lineHeight:1 }}>{g.letra}</span>
-              </div>
-              <div>
-                <p style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.05rem',color:'#fff',margin:0,letterSpacing:'.05em' }}>GRUPO {g.letra}</p>
-                <p style={{ fontFamily:"'DM Sans',sans-serif",fontSize:'.65rem',color:'rgba(255,255,255,.4)',margin:'.2rem 0 0' }}>{g.sel.length} equipos · {g.partidos.filter(p=>p.estado==='finalizado').length}/{g.partidos.length} jugados</p>
-              </div>
-            </div>
-            <table style={{ width:'100%',borderCollapse:'collapse' }}>
-              <thead>
-                <tr style={{ background:'rgba(12,24,43,.025)' }}>
-                  {['#','Equipo','J','G','E','P','GF','GC','DIF','PTS'].map((h,i)=>(
-                    <th key={h} style={{ padding:'.42rem .35rem',fontFamily:"'DM Sans',sans-serif",fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'#a8b2c4',textAlign:i===1?'left':'center',borderBottom:'1px solid #f0eadb',paddingLeft:i===0||i===1?'.8rem':'.35rem',paddingRight:i===9?'.8rem':'.35rem' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {g.sel.map((s,i)=>{
-                  const cl=s.pos<=2
-                  return (
-                    <tr key={s.nombre} style={{ background:cl?'rgba(235,195,43,.035)':'transparent',borderBottom:i===g.sel.length-1?'none':'1px solid #f5f3ee' }}>
-                      <td style={{ padding:'.55rem .8rem',textAlign:'center' }}>
-                        <div style={{ width:22,height:22,borderRadius:6,background:cl?'rgba(235,195,43,.15)':'rgba(12,24,43,.04)',border:cl?'1px solid rgba(235,195,43,.3)':'1px solid #f0eadb',display:'flex',alignItems:'center',justifyContent:'center' }}>
-                          <span style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'.85rem',color:cl?'#c99f16':'#a8b2c4' }}>{s.pos}</span>
-                        </div>
-                      </td>
-                      <td style={{ padding:'.55rem .5rem' }}>
-                        <div style={{ display:'flex',alignItems:'center',gap:'.55rem' }}>
-                          {s.bandera?<img src={s.bandera} alt="" style={{ width:22,height:15,objectFit:'cover',borderRadius:3,border:'1px solid #f0eadb',flexShrink:0 }}/>:<div style={{ width:22,height:15,borderRadius:3,background:'#f0eadb',flexShrink:0 }}/>}
-                          <span style={{ fontWeight:600,fontSize:'.82rem',color:'#0c182b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{s.nombre}</span>
-                          {cl&&<span style={{ fontSize:'.52rem',fontWeight:700,color:'#c99f16',background:'rgba(235,195,43,.12)',border:'1px solid rgba(235,195,43,.25)',borderRadius:4,padding:'1px 5px' }}>CL</span>}
-                        </div>
-                      </td>
-                      {[s.j,s.g,s.e,s.p,s.gf,s.gc].map((v,idx)=><td key={idx} style={{ padding:'.55rem .35rem',textAlign:'center',fontSize:'.78rem',color:'#5f6e8a' }}>{v}</td>)}
-                      <td style={{ padding:'.55rem .35rem',textAlign:'center',fontSize:'.78rem',fontWeight:600,color:s.dif>0?'#1b8a5a':s.dif<0?'#e03252':'#5f6e8a' }}>{s.dif>0?`+${s.dif}`:s.dif}</td>
-                      <td style={{ padding:'.55rem .8rem',textAlign:'center' }}>
-                        <span style={{ fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.15rem',color:'#0c182b' }}>{s.pts}</span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-            <div style={{ padding:'.5rem 1rem',borderTop:'1px solid #f5f3ee',display:'flex',alignItems:'center',gap:'.5rem' }}>
-              <div style={{ width:10,height:10,borderRadius:3,background:'rgba(235,195,43,.25)',border:'1px solid rgba(235,195,43,.4)' }}/>
-              <span style={{ fontSize:'.62rem',color:'#a8b2c4',fontFamily:"'DM Sans',sans-serif" }}>Clasifica a 16avos de final</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+export { TablaGrupos }
 
 export default function FixturePage() {
   const { matches, loading } = useBets()

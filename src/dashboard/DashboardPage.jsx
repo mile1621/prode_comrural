@@ -180,12 +180,12 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <Link to="/apuestas"
+              <Link to="/partidos"
                 className="inline-flex items-center gap-2 font-body font-bold text-sm px-5 py-3 rounded-full transition-all"
                 style={{ background: '#ebc32b', color: '#05090f', boxShadow: '0 6px 20px rgba(235,195,43,.3)', textDecoration: 'none' }}
                 onMouseEnter={e => { e.currentTarget.style.background = '#f5d75a'; e.currentTarget.style.transform = 'translateY(-1px)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.transform = '' }}>
-                Pronosticar
+                Fixture
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
