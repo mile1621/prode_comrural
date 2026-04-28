@@ -1,6 +1,11 @@
 /**
  * MisPredesPage.jsx — Fondo crema, cards blancas, navy+gold
  * Ubicación: src/dashboard/MisPredesPage.jsx
+ *
+ * CAMBIOS respecto al original:
+ *  - PartidoRow ahora muestra "Pasa: <equipo>" cuando la predicción tiene
+ *    pred_clasificado, y "Real: pasa <equipo> (pen X-Y)" cuando el partido
+ *    fue de eliminación directa y ya tiene resultado/penales.
  */
 import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
@@ -13,6 +18,31 @@ const CARD={background:'#fff',border:'1px solid #f0eadb',borderRadius:14,boxShad
 const MUTED={fontSize:'.76rem',color:'#5f6e8a'}
 
 function timeLeft(d){const diff=new Date(d)-Date.now();if(diff<=0)return'Cerrada';const h=Math.floor(diff/3600000);const m=Math.floor((diff%3600000)/60000);if(h>=24)return`${Math.floor(h/24)}d ${h%24}h`;if(h>0)return`${h}h ${m}m`;return`${m}m`}
+
+// ─── Helper: obtener nombre de equipo a partir de un código (AR / FRA / ...) ─
+// El backend siempre nos da match.codigo_local / match.codigo_visitante junto
+// con match.equipo_local / match.equipo_visitante (los nombres ya resueltos).
+// Por eso, traducir un código → nombre solo requiere mirar al partido mismo.
+function nombreDesdeCodigo(match, codigo) {
+  if (!codigo) return ''
+  if (match.codigo_local === codigo) return match.equipo_local
+  if (match.codigo_visitante === codigo) return match.equipo_visitante
+  return codigo // fallback: mostrar el código si no matchea
+}
+
+// Devuelve qué selección clasifica realmente, según goles + penales.
+// Devuelve null si todavía no hay datos suficientes (empate sin penales).
+function clasificadoReal(match) {
+  const gl = parseInt(match.goles_local)
+  const gv = parseInt(match.goles_visitante)
+  if (isNaN(gl) || isNaN(gv)) return null
+  if (gl > gv) return match.codigo_local
+  if (gv > gl) return match.codigo_visitante
+  const pl = parseInt(match.penales_local)
+  const pv = parseInt(match.penales_visit)
+  if (isNaN(pl) || isNaN(pv)) return null
+  return pl > pv ? match.codigo_local : match.codigo_visitante
+}
 
 function StatCard({label,value,color='#0c182b'}){
   return(
@@ -27,6 +57,12 @@ function PartidoRow({match,pred}){
   const fin=match.estado==='finalizado'
   const live=match.estado==='en_vivo'
   const pts=pred?.puntos
+  const esElim = match.es_eliminatoria || (match.fase && String(match.fase).toLowerCase() !== 'grupos')
+  const tienePenales = match.penales_local != null && match.penales_local !== '' &&
+                       match.penales_visit != null && match.penales_visit !== ''
+  const clasifPred = pred?.pred_clasificado
+  const clasifRealCode = clasificadoReal(match)
+  const aciertoClasif = clasifPred && clasifRealCode && String(clasifPred).trim() === String(clasifRealCode).trim()
 
   return(
     <div style={{padding:'.7rem .85rem',borderRadius:10,background:pts>0?'rgba(27,138,90,.04)':'rgba(12,24,43,.02)',border:`1px solid ${pts>0?'rgba(27,138,90,.2)':'#f0eadb'}`}}>
@@ -42,8 +78,9 @@ function PartidoRow({match,pred}){
           {match.bandera_visitante&&<img src={match.bandera_visitante} alt="" style={{width:22,height:16,objectFit:'cover',borderRadius:2,border:'1px solid #f0eadb',flexShrink:0}}/>}
         </div>
       </div>
+
       {/* Scores */}
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1.2rem',paddingTop:'.45rem',borderTop:'1px solid #f5f3ee'}}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'1.2rem',paddingTop:'.45rem',borderTop:'1px solid #f5f3ee',flexWrap:'wrap'}}>
         {pred?(
           <div style={{textAlign:'center'}}>
             <p style={{fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'#a8b2c4',margin:'0 0 2px'}}>{pred.es_grupal?'Área':'Tu predicción'}</p>
@@ -58,6 +95,11 @@ function PartidoRow({match,pred}){
             <div style={{textAlign:'center'}}>
               <p style={{fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em',color:'#a8b2c4',margin:'0 0 2px'}}>{live?'En vivo':'Resultado'}</p>
               <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.2rem',color:live?'#e03252':'#0c182b',margin:0,lineHeight:1}}>{match.goles_local} - {match.goles_visitante}</p>
+              {tienePenales && (
+                <p style={{fontSize:'.6rem',fontWeight:700,color:'#c99f16',margin:'2px 0 0',textTransform:'uppercase',letterSpacing:'.06em'}}>
+                  pen {match.penales_local}-{match.penales_visit}
+                </p>
+              )}
             </div>
           </>
         )}
@@ -71,6 +113,34 @@ function PartidoRow({match,pred}){
           </>
         )}
       </div>
+
+      {/* ★ NUEVO: línea de "clasificado" para fases eliminatorias */}
+      {esElim && (clasifPred || clasifRealCode) && (
+        <div style={{marginTop:'.45rem',paddingTop:'.45rem',borderTop:'1px dashed #f0eadb',display:'flex',flexWrap:'wrap',gap:'.4rem .9rem',alignItems:'center',justifyContent:'center'}}>
+          {clasifPred && (
+            <span style={{display:'inline-flex',alignItems:'center',gap:'.3rem',fontSize:'.7rem',fontFamily:"'DM Sans',sans-serif"}}>
+              <span style={{fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',color:'#a8b2c4'}}>
+                Tu clasif.:
+              </span>
+              <span style={{fontWeight:700, color: clasifRealCode ? (aciertoClasif ? '#1b8a5a' : '#e03252') : '#c99f16'}}>
+                {nombreDesdeCodigo(match, clasifPred)}
+              </span>
+              {clasifRealCode && (aciertoClasif
+                ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1b8a5a" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#e03252" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              )}
+            </span>
+          )}
+          {clasifRealCode && (
+            <span style={{display:'inline-flex',alignItems:'center',gap:'.3rem',fontSize:'.7rem',fontFamily:"'DM Sans',sans-serif"}}>
+              <span style={{fontSize:'.58rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.08em',color:'#a8b2c4'}}>
+                Pasó:
+              </span>
+              <span style={{fontWeight:700, color:'#0c182b'}}>{nombreDesdeCodigo(match, clasifRealCode)}</span>
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

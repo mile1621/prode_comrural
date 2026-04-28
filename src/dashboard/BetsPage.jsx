@@ -1,6 +1,12 @@
 /**
  * BetsPage.jsx — Fondo crema, cards blancas, navy+gold
  * Ubicación: src/dashboard/BetsPage.jsx
+ *
+ * CAMBIOS respecto al original:
+ *  - handlePredict ahora envía pred_clasificado al backend cuando viene del modal
+ *    (necesario para puntuar fases eliminatorias).
+ *  - El banner del "Sistema de puntos" ahora muestra una sección extra
+ *    explicando la regla del +1 por acertar al clasificado.
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -144,10 +150,19 @@ export default function BetsPage(){
     return true
   })
 
+  // ★ CAMBIO: el payload ahora incluye pred_clasificado cuando el modal lo envía
+  // (lo hace solo en partidos de fase eliminatoria).
   async function handlePredict(betId,preds){
     try{
       for(const p of preds){
-        await savePrediction({apuesta_id:betId,partido_id:p.partido_id,pred_local:p.pred_local,pred_visitante:p.pred_visitante})
+        const payload = {
+          apuesta_id: betId,
+          partido_id: p.partido_id,
+          pred_local: p.pred_local,
+          pred_visitante: p.pred_visitante,
+        }
+        if (p.pred_clasificado) payload.pred_clasificado = p.pred_clasificado
+        await savePrediction(payload)
       }
       setActiveBet(null)
       showToast('Predicciones guardadas exitosamente',true)
@@ -235,6 +250,10 @@ export default function BetsPage(){
           {/* Contenido */}
           {showPuntos && (
             <div className="px-5 pb-5 pt-4">
+              {/* Bloque grupos */}
+              <p className="font-body font-bold uppercase mb-2" style={{ fontSize: '.6rem', letterSpacing: '.12em', color: '#5f6e8a' }}>
+                Fase de grupos
+              </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {[
                   { pts: 1, titulo: 'Resultado',       desc: 'Acertás quién gana, pierde o empata',           accent: '#425b8b', bg: 'rgba(66,91,139,.06)',   border: 'rgba(66,91,139,.2)'   },
@@ -255,6 +274,37 @@ export default function BetsPage(){
                   </div>
                 ))}
               </div>
+
+              {/* Bloque eliminatorias */}
+              <p className="font-body font-bold uppercase mt-5 mb-2" style={{ fontSize: '.6rem', letterSpacing: '.12em', color: '#5f6e8a' }}>
+                Fase eliminatoria · Eliminación directa
+              </p>
+              <div className="rounded-xl p-4" style={{ background: 'rgba(244,180,42,.06)', border: '1px solid rgba(244,180,42,.25)' }}>
+                <p className="font-body text-xs mb-3" style={{ color: '#0c182b' }}>
+                  En 16avos, octavos, cuartos, semis, 3er puesto y final tenés que predecir <strong>el marcador (90')</strong> y <strong>quién clasifica</strong>.
+                  Si terminan empatados, el clasificado se define por <strong>penales</strong>.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {[
+                    { pts: 5, titulo: 'Exacto + clasificado', desc: 'Marcador exacto Y acertás quién pasa' },
+                    { pts: 3, titulo: 'Diferencia + clasif.',  desc: 'Misma diferencia (no empate) Y acertás quién pasa' },
+                    { pts: 3, titulo: 'Exacto sin clasif.',    desc: 'Marcador exacto pero errás el clasificado por penales' },
+                    { pts: 1, titulo: 'Solo clasificado',      desc: 'Acertás quién pasa aunque no le pegues al marcador' },
+                  ].map(({ pts, titulo, desc }) => (
+                    <div key={titulo} className="flex items-center gap-3 rounded-lg p-2.5" style={{ background: '#fff', border: '1px solid #f0eadb' }}>
+                      <div className="flex flex-col items-center justify-center flex-shrink-0"
+                        style={{ width: 38, height: 38, borderRadius: 8, background: 'rgba(244,180,42,.1)', border: '1px solid rgba(244,180,42,.3)' }}>
+                        <span className="font-display leading-none" style={{ fontSize: '1.25rem', color: '#c99f16' }}>{pts}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-body font-bold text-xs m-0 mb-0.5" style={{ color: '#0c182b' }}>{titulo}</p>
+                        <p className="font-body m-0" style={{ fontSize: '.7rem', color: '#5f6e8a', lineHeight: 1.3 }}>{desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <p className="font-body text-center mt-3" style={{ fontSize: '.68rem', color: '#a8b2c4' }}>
                 Los puntos se acreditan automáticamente al finalizar cada partido
               </p>

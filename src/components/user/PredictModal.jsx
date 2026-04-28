@@ -4,10 +4,18 @@ import { useBets } from '../../hooks/useBets.jsx'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { timeLeft, isBetOpen } from '../../utils/index.js'
 
+// ─── Detección de eliminatoria (cualquier fase distinta de 'grupos') ─
+function esEliminatoria(fase) {
+  if (!fase) return false
+  return String(fase).trim().toLowerCase() !== 'grupos'
+}
+
 export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const { predictions } = useBets()
   const { user } = useAuth()
   const [scores, setScores] = useState({})
+  // ★ NUEVO: estado para guardar el clasificado predicho por partido (solo eliminatorias)
+  const [clasificados, setClasificados] = useState({})
 
   const esApuestaGrupos = bet?.tipo === 'grupos' || bet?.type === 'grupos'
   const esJefe = user?.tipo_usuario === 'jefe'
@@ -33,15 +41,18 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
   useEffect(() => {
     if (bet?.partidos) {
-      const initial = {}
+      const initialScores = {}
+      const initialClasif = {}
       bet.partidos.forEach(p => {
         const existingPred = predictions?.[p.id]
-        initial[p.id] = {
+        initialScores[p.id] = {
           local: existingPred?.pred_local != null ? String(existingPred.pred_local) : '',
           visitante: existingPred?.pred_visitante != null ? String(existingPred.pred_visitante) : '',
         }
+        initialClasif[p.id] = existingPred?.pred_clasificado || ''
       })
-      setScores(initial)
+      setScores(initialScores)
+      setClasificados(initialClasif)
     }
   }, [bet, predictions])
 
@@ -66,33 +77,101 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const isClosingSoon = open && remaining !== 'Cerrada' && !remaining.includes('d')
 
   const totalMatches = bet.partidos?.length || 0
-  const filledCount = Object.values(scores).filter(v => v.local !== '' && v.visitante !== '').length
+
+  // ★ Una predicción se considera "completa" si:
+  //   - tiene marcador, Y
+  //   - si es eliminatoria CON EMPATE predicho, también tiene clasificado.
+  //   En eliminatorias con ganador claro, el clasificado se deduce del marcador.
+  function predicionCompleta(match) {
+    const sc = scores[match.id]
+    if (!sc || sc.local === '' || sc.visitante === '') return false
+    if (esEliminatoria(match.fase)) {
+      const pl = parseInt(sc.local, 10)
+      const pv = parseInt(sc.visitante, 10)
+      // Solo si hay empate predicho exigimos clasificado
+      if (!isNaN(pl) && !isNaN(pv) && pl === pv && !clasificados[match.id]) return false
+    }
+    return true
+  }
+
+  const filledCount = bet.partidos?.filter(predicionCompleta).length || 0
   const hadPredictions = bet.partidos?.some(p => predictions?.[p.id]) ?? false
 
   function handleSubmit(e) {
     e.preventDefault()
     if (estaBloqueado) return
-    const matchPredictions = Object.entries(scores).map(([partido_id, vals]) => ({
-      partido_id,
-      pred_local: parseInt(vals.local, 10),
-      pred_visitante: parseInt(vals.visitante, 10),
-    })).filter(p => !isNaN(p.pred_local) && !isNaN(p.pred_visitante))
-    if (matchPredictions.length === 0) { alert('Ingresá al menos una predicción válida.'); return }
+
+    const matchPredictions = []
+    const empatesSinClasificado = []
+
+    for (const match of (bet.partidos || [])) {
+      const vals = scores[match.id]
+      if (!vals) continue
+      const pl = parseInt(vals.local, 10)
+      const pv = parseInt(vals.visitante, 10)
+      if (isNaN(pl) || isNaN(pv)) continue
+
+      const item = { partido_id: match.id, pred_local: pl, pred_visitante: pv }
+
+      if (esEliminatoria(match.fase)) {
+        if (pl !== pv) {
+          // Ganador claro en el marcador → deducimos el clasificado automáticamente
+          item.pred_clasificado = pl > pv ? match.codigo_local : match.codigo_visitante
+        } else {
+          // Empate predicho → el usuario tiene que haber elegido manualmente
+          const clasif = clasificados[match.id]
+          if (!clasif) {
+            empatesSinClasificado.push(match.equipo_local + ' vs ' + match.equipo_visitante)
+            continue
+          }
+          item.pred_clasificado = clasif
+        }
+      }
+      matchPredictions.push(item)
+    }
+
+    if (empatesSinClasificado.length > 0) {
+      alert(
+        'Predijiste un empate y no indicaste quién pasa por penales.\n\nFalta el clasificado en:\n• ' +
+        empatesSinClasificado.join('\n• ')
+      )
+      return
+    }
+
+    if (matchPredictions.length === 0) {
+      alert('Ingresá al menos una predicción válida.')
+      return
+    }
     onSubmit(bet.id, matchPredictions)
   }
 
   function updateScore(partidoId, side, value) {
     if (value !== '' && !/^\d{1,2}$/.test(value)) return
     setScores(prev => ({ ...prev, [partidoId]: { ...prev[partidoId], [side]: value } }))
+    // Si el usuario cambia un marcador empatado a un marcador con ganador claro,
+    // limpiamos el clasificado manualmente elegido (porque ya no aplica).
+    // Lo recalculamos solo cuando vuelve a haber empate.
+    setClasificados(prev => {
+      const match = bet.partidos?.find(p => p.id === partidoId)
+      if (!match || !esEliminatoria(match.fase)) return prev
+      const otherSide = side === 'local' ? 'visitante' : 'local'
+      const otherVal = scores[partidoId]?.[otherSide]
+      const newPl = side === 'local' ? parseInt(value, 10) : parseInt(otherVal, 10)
+      const newPv = side === 'visitante' ? parseInt(value, 10) : parseInt(otherVal, 10)
+      // Si el nuevo marcador deja un ganador claro, limpiamos el clasificado guardado
+      // (en empates, lo elige el usuario; con ganador claro, lo deduce el sistema)
+      if (!isNaN(newPl) && !isNaN(newPv) && newPl !== newPv && prev[partidoId]) {
+        const next = { ...prev }
+        delete next[partidoId]
+        return next
+      }
+      return prev
+    })
   }
 
-  /* ══════════════════════════════════════════════════════════
-     SOLUCIÓN: React Portal a document.body
-     Al renderizar el modal directamente en <body>, queda fuera
-     de cualquier ancestor con transform/filter/contain que pueda
-     romper el position: fixed. Esto garantiza que se centre
-     correctamente respecto al VIEWPORT y no respecto a un frame.
-     ══════════════════════════════════════════════════════════ */
+  function updateClasificado(partidoId, codigo) {
+    setClasificados(prev => ({ ...prev, [partidoId]: codigo }))
+  }
 
   const modalContent = (
     <>
@@ -145,6 +224,38 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
             animation: pm-slideup .28s ease both;
           }
         }
+        .pm-clasif-radio {
+          flex: 1;
+          padding: .55rem .5rem;
+          border-radius: 8px;
+          font-family: 'DM Sans', sans-serif;
+          font-size: .78rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all .15s;
+          border: 1px solid rgba(132,153,194,.2);
+          background: rgba(2,15,39,.4);
+          color: #8499c2;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: .4rem;
+        }
+        .pm-clasif-radio.active {
+          background: rgba(244,180,42,.15);
+          border-color: #f4b42a;
+          color: #f4b42a;
+          box-shadow: 0 0 0 3px rgba(244,180,42,.1);
+        }
+        .pm-clasif-radio:hover:not(:disabled) {
+          border-color: rgba(244,180,42,.5);
+          color: #fff;
+        }
+        .pm-clasif-radio:disabled {
+          cursor: not-allowed;
+          opacity: .5;
+        }
       `}</style>
 
       <div className="pm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="predict-modal-title">
@@ -196,7 +307,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                 {open
                   ? hadPredictions
                     ? 'Revisá tus predicciones o ajustalas antes del cierre.'
-                    : 'Ingresá el resultado exacto de cada partido.'
+                    : 'Ingresá el resultado de cada partido.'
                   : 'Podés ver tus predicciones pero ya no se pueden editar.'}
               </p>
             </div>
@@ -259,20 +370,40 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                 const isLive     = match.estado === 'en_vivo'
                 const isFinished = match.estado === 'finalizado'
                 const isDisabled = !open || isLive || isFinished || estaBloqueado
-                const hasPred    = scores[match.id]?.local !== '' && scores[match.id]?.visitante !== ''
+                const sc         = scores[match.id] || { local: '', visitante: '' }
+                const hasScore   = sc.local !== '' && sc.visitante !== ''
                 const matchState = isLive ? 'EN VIVO' : isFinished ? 'FINALIZADO' : null
+                const elim       = esEliminatoria(match.fase)
+                const pl         = sc.local !== '' ? parseInt(sc.local, 10) : null
+                const pv         = sc.visitante !== '' ? parseInt(sc.visitante, 10) : null
+                const empate     = hasScore && pl === pv
+                const clasifElegido = clasificados[match.id] || ''
+                const completo   = predicionCompleta(match)
 
                 return (
                   <div key={match.id} style={{
                     borderRadius: 12, padding: '1rem 1.25rem',
                     background: 'rgba(2,15,39,0.45)',
-                    border: `1px solid ${isLive ? 'rgba(255,61,113,0.35)' : hasPred ? 'rgba(34,217,223,0.3)' : 'rgba(132,153,194,0.2)'}`,
+                    border: `1px solid ${isLive ? 'rgba(255,61,113,0.35)' : completo ? 'rgba(34,217,223,0.3)' : 'rgba(132,153,194,0.2)'}`,
                     transition: 'all .2s',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem' }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                        Partido {idx + 1}
-                      </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem', gap: '.5rem', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
+                          Partido {idx + 1}
+                        </span>
+                        {elim && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center',
+                            padding: '.1rem .45rem', borderRadius: 4,
+                            fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em',
+                            background: 'rgba(244,180,42,.12)', color: '#f4b42a',
+                            border: '1px solid rgba(244,180,42,.3)', fontFamily: "'DM Sans',sans-serif",
+                          }}>
+                            Eliminación directa
+                          </span>
+                        )}
+                      </div>
 
                       {matchState && (
                         <span style={{
@@ -289,7 +420,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                         </span>
                       )}
 
-                      {!matchState && hasPred && (
+                      {!matchState && completo && (
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#22d9df', fontFamily: "'DM Sans',sans-serif" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="20 6 9 17 4 12" />
@@ -305,7 +436,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                       </span>
 
                       <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
-                        value={scores[match.id]?.local ?? ''}
+                        value={sc.local}
                         onChange={e => updateScore(match.id, 'local', e.target.value)}
                         placeholder="—" disabled={isDisabled}
                         aria-label={`Goles ${match.equipo_local}`}
@@ -324,7 +455,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                       <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.3rem', color: '#f4b42a', padding: '0 .25rem' }}>vs</span>
 
                       <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
-                        value={scores[match.id]?.visitante ?? ''}
+                        value={sc.visitante}
                         onChange={e => updateScore(match.id, 'visitante', e.target.value)}
                         placeholder="—" disabled={isDisabled}
                         aria-label={`Goles ${match.equipo_visitante}`}
@@ -345,14 +476,88 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                       </span>
                     </div>
 
+                    {/* ★ Selector de clasificado: SOLO cuando hay empate predicho.
+                       En ganador claro, mostramos un badge sutil indicando quién pasa según el marcador. */}
+                    {elim && empate && (
+                      <div style={{ marginTop: '.85rem', paddingTop: '.85rem', borderTop: '1px solid rgba(132,153,194,0.15)' }}>
+                        <p style={{
+                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em',
+                          color: '#f4b42a', fontFamily: "'DM Sans',sans-serif",
+                          margin: '0 0 .5rem', display: 'flex', alignItems: 'center', gap: '.4rem',
+                        }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f4b42a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                          </svg>
+                          ¿Quién pasa por penales?
+                        </p>
+                        <div style={{ display: 'flex', gap: '.5rem' }}>
+                          <button
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => updateClasificado(match.id, match.codigo_local)}
+                            className={`pm-clasif-radio ${clasifElegido === match.codigo_local ? 'active' : ''}`}
+                          >
+                            {match.bandera_local && (
+                              <img src={match.bandera_local} alt="" style={{ width: 16, height: 11, objectFit: 'cover', borderRadius: 2 }} />
+                            )}
+                            {match.equipo_local}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => updateClasificado(match.id, match.codigo_visitante)}
+                            className={`pm-clasif-radio ${clasifElegido === match.codigo_visitante ? 'active' : ''}`}
+                          >
+                            {match.bandera_visitante && (
+                              <img src={match.bandera_visitante} alt="" style={{ width: 16, height: 11, objectFit: 'cover', borderRadius: 2 }} />
+                            )}
+                            {match.equipo_visitante}
+                          </button>
+                        </div>
+                        {!clasifElegido && (
+                          <p style={{ fontSize: 10, color: '#ff4d6d', marginTop: '.4rem', marginBottom: 0, fontFamily: "'DM Sans',sans-serif" }}>
+                            Tenés que elegir quién pasa
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* En eliminatoria con ganador claro: mostrar quién pasa según el marcador (informativo) */}
+                    {elim && hasScore && !empate && (
+                      <div style={{ marginTop: '.7rem', paddingTop: '.5rem', borderTop: '1px dashed rgba(132,153,194,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.45rem' }}>
+                        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
+                          Pasa según tu marcador:
+                        </span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', fontSize: 11, fontWeight: 700, color: '#22d9df', fontFamily: "'DM Sans',sans-serif" }}>
+                          {(() => {
+                            const ganador = pl > pv ? { nombre: match.equipo_local, bandera: match.bandera_local } : { nombre: match.equipo_visitante, bandera: match.bandera_visitante }
+                            return (
+                              <>
+                                {ganador.bandera && <img src={ganador.bandera} alt="" style={{ width: 14, height: 10, objectFit: 'cover', borderRadius: 2 }} />}
+                                {ganador.nombre}
+                              </>
+                            )
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
                     {(isLive || isFinished) && (match.goles_local != null || match.goles_visitante != null) && (
-                      <div style={{ marginTop: '.75rem', paddingTop: '.75rem', borderTop: '1px solid rgba(132,153,194,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', fontSize: '.75rem', fontFamily: "'DM Sans',sans-serif" }}>
+                      <div style={{ marginTop: '.75rem', paddingTop: '.75rem', borderTop: '1px solid rgba(132,153,194,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', fontSize: '.75rem', fontFamily: "'DM Sans',sans-serif", flexWrap: 'wrap' }}>
                         <span style={{ color: '#8499c2', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 10 }}>
                           {isLive ? 'En vivo' : 'Resultado'}:
                         </span>
                         <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.1rem', letterSpacing: '.04em', color: isLive ? '#ff3d71' : '#fff' }}>
                           {match.goles_local ?? 0} - {match.goles_visitante ?? 0}
                         </span>
+                        {match.penales_local != null && match.penales_local !== '' &&
+                         match.penales_visit != null && match.penales_visit !== '' && (
+                          <span style={{ fontSize: 10, color: '#f4b42a', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700 }}>
+                            (pen {match.penales_local}-{match.penales_visit})
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -447,7 +652,5 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     </>
   )
 
-  // ★ CLAVE: renderizamos con Portal directamente en document.body
-  //   Esto saca el modal de cualquier ancestor que pueda romper el fixed.
   return createPortal(modalContent, document.body)
 }
