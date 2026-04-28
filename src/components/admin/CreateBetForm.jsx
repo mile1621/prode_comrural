@@ -186,7 +186,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       return
     }
 
-    // Buscar el partido más temprano
     const partidoMasTemprano = partidosSeleccionados.reduce((earliest, current) => {
       const currentDate = new Date(current.fecha_partido)
       const earliestDate = new Date(earliest.fecha_partido)
@@ -203,7 +202,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
     const fechaLimite = new Date(form.fecha_cierre)
     const fechaPrimerPartido = new Date(partidoMasTemprano.fecha_partido)
 
-    // La fecha límite NO puede ser posterior al inicio del primer partido
     if (fechaLimite >= fechaPrimerPartido) {
       setErrorFecha(`La fecha límite debe ser ANTES del ${fmtFecha(partidoMasTemprano.fecha_partido)} (${partidoMasTemprano.equipo_local} vs ${partidoMasTemprano.equipo_visitante})`)
     } else if (fechaLimite.getTime() <= Date.now()) {
@@ -290,8 +288,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
   const canSubmit = !loading && seleccionados > 0 && !errorFecha && form.fecha_cierre
 
-  // ✅ Calcular el valor MAX para el input datetime-local
-  // (2 minutos antes del primer partido, formato YYYY-MM-DDTHH:mm)
   const maxFechaCierre = useMemo(() => {
     if (!primerPartido) return ''
     const fecha = new Date(primerPartido.fecha_partido)
@@ -304,7 +300,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
   }, [primerPartido])
 
-  // ✅ MIN: el momento actual (no permitir fecha pasada)
   const minFechaCierre = useMemo(() => {
     const ahora = new Date()
     ahora.setMinutes(ahora.getMinutes() + 1)
@@ -314,7 +309,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
     const hh = String(ahora.getHours()).padStart(2, '0')
     const mi = String(ahora.getMinutes()).padStart(2, '0')
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}`
-  }, [primerPartido]) // recalcular cuando cambian los partidos seleccionados
+  }, [primerPartido])
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -471,11 +466,17 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                 {gr.partidos.map(m => {
                   const checked = form.partidos_ids.includes(m.id)
                   return (
-                    <label key={m.id}
+                    <div
+                      key={m.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => toggleMatch(m.id)}
+                      onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleMatch(m.id) } }}
                       className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
                       style={{
                         background: checked ? 'rgba(235,195,43,.08)' : 'transparent',
                         borderBottom: '1px solid #f0eadb',
+                        outline: 'none',
                       }}
                       onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(12,24,43,.04)' }}
                       onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent' }}
@@ -493,12 +494,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                           </svg>
                         )}
                       </span>
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={() => toggleMatch(m.id)}
-                        className="sr-only"
-                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 font-body text-sm" style={{ color: '#0c182b' }}>
                           {m.bandera_local && <img src={m.bandera_local} alt="" className="w-5 h-3.5 object-cover rounded-[2px]" />}
@@ -511,7 +506,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
                       <span className="font-body whitespace-nowrap" style={{ fontSize: 10, color: '#a8b2c4' }}>
                         {fmtFecha(m.fecha_partido)}
                       </span>
-                    </label>
+                    </div>
                   )
                 })}
               </div>
