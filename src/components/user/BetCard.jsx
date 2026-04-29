@@ -308,6 +308,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                       <Bandera url={match.bandera_visitante} alt={match.equipo_visitante} />
                     </div>
                   </div>
+  
 
                   {/* Scores: predicción + real (si corresponde) */}
                   {(pred || hasRealScore) && (

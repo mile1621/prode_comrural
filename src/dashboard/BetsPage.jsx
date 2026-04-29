@@ -17,10 +17,10 @@ import PredictModal from '../components/user/PredictModal.jsx'
 
 /* ── helpers ── */
 function timeLeft(d){const diff=new Date(d)-Date.now();if(diff<=0)return'Cerrada';const h=Math.floor(diff/3600000);const m=Math.floor((diff%3600000)/60000);if(h>=24)return`${Math.floor(h/24)}d ${h%24}h`;if(h>0)return`${h}h ${m}m`;return`${m}m`}
-function isOpen(b){return b.estado==='abierta'&&new Date(b.fecha_cierre)>Date.now()}
-
 const CARD_BASE={background:'#fff',border:'1px solid #f0eadb',borderRadius:16,boxShadow:'0 1px 0 rgba(12,24,43,.04)'}
 const MUTED={fontSize:'.78rem',color:'#5f6e8a'}
+
+function isOpen(b){return b.estado==='abierta'&&new Date(b.fecha_cierre)>Date.now()}
 
 const FILTERS=[
   {key:'todas', label:'Todas'},
@@ -144,11 +144,13 @@ export default function BetsPage(){
 
   function showToast(msg,ok=true){setToast({msg,ok});setTimeout(()=>setToast(null),3200)}
 
-  const filtered=bets.filter(b=>{
-    if(filter==='activas')return b.estado==='abierta'
-    if(filter==='cerradas')return b.estado==='cerrada'||b.estado==='finalizada'
-    return true
-  })
+const filtered = bets.filter(b => {
+  // Mostrar solo apuestas con estado "abierta"
+  if (filter === 'activas') return b.estado === 'abierta'
+  if (filter === 'cerradas') return b.estado === 'cerrada' || b.estado === 'finalizada'
+  // "Todas" muestra solo abiertas
+  return b.estado === 'abierta'
+})
 
   // ★ CAMBIO: el payload ahora incluye pred_clasificado cuando el modal lo envía
   // (lo hace solo en partidos de fase eliminatoria).
@@ -190,9 +192,9 @@ export default function BetsPage(){
                 style={{ fontSize: 'clamp(2.8rem,7vw,4rem)', color: '#0c182b' }}>
                 APUESTAS
               </h1>
-              <p className="font-body text-sm" style={{ color: '#5f6e8a' }}>
-                {bets.length} {bets.length === 1 ? 'apuesta disponible' : 'apuestas disponibles'}
-              </p>
+<p className="font-body text-sm" style={{ color: '#5f6e8a' }}>
+  {filtered.length} {filtered.length === 1 ? 'apuesta disponible' : 'apuestas disponibles'}
+</p>
             </div>
           </div>
 
@@ -334,7 +336,7 @@ export default function BetsPage(){
 
       {/* Modal de predicción */}
       {activeBet&&(
-        <PredictModal bet={activeBet} onSubmit={(id,preds)=>handlePredict(id,preds)} onClose={()=>setActiveBet(null)} loading={loading}/>
+        <PredictModal bet={activeBet} onSubmit={(id,preds)=>handlePredict(id,preds)} onFinalize={()=>setActiveBet(null)} loading={loading}/>
       )}
     </AppShell>
   )

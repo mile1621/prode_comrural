@@ -82,29 +82,29 @@ function BetRow({ bet, onClose, onFinalize }) {
 
         {/* Actions */}
 <div className="flex flex-row sm:flex-col gap-1.5 flex-shrink-0 w-full sm:w-auto">
-          {isOpen && onClose && (
-<button
-  onClick={() => onClose(bet.id)}
-  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
-              style={{ fontSize: 11, background: 'transparent', border: '1px solid rgba(224,50,82,.3)', color: '#e03252' }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,50,82,.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              Cerrar
-            </button>
-          )}
-          {bet.estado === 'cerrada' && onFinalize && (
-<button
-  onClick={() => onClose(bet.id)}
-  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
-              style={{ fontSize: 11, background: 'rgba(235,195,43,.1)', border: '1px solid rgba(235,195,43,.35)', color: '#c99f16' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.color = '#05090f' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(235,195,43,.1)'; e.currentTarget.style.color = '#c99f16' }}
-            >
-              Finalizar
-            </button>
-          )}
-        </div>
+  {isOpen && onClose && (
+    <button
+      onClick={() => onClose(bet.id)}
+      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
+      style={{ fontSize: 11, background: 'transparent', border: '1px solid rgba(224,50,82,.3)', color: '#e03252' }}
+      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,50,82,.06)' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+    >
+      Cerrar
+    </button>
+  )}
+  {bet.estado === 'cerrada' && onFinalize && (
+    <button
+      onClick={() => onFinalize(bet.id)}
+      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
+      style={{ fontSize: 11, background: 'rgba(235,195,43,.1)', border: '1px solid rgba(235,195,43,.35)', color: '#c99f16' }}
+      onMouseEnter={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.color = '#05090f' }}
+      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(235,195,43,.1)'; e.currentTarget.style.color = '#c99f16' }}
+    >
+      Finalizar
+    </button>
+  )}
+</div>
       </div>
     </div>
   )
@@ -114,6 +114,7 @@ export default function BetsTab({ bets, loading, createBet, matches, closeBet, f
   const openBets     = bets.filter(b => isBetOpen(b))
   const closedBets   = bets.filter(b => b.estado === 'cerrada' && !isBetOpen(b))
   const finishedBets = bets.filter(b => b.estado === 'finalizada')
+
 
   async function handleClose(id) {
     if (!window.confirm('¿Cerrar esta apuesta? Los usuarios ya no podrán cargar predicciones.')) return
