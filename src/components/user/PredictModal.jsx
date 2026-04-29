@@ -1,21 +1,69 @@
-import { useState, useEffect } from 'react'
+/**
+ * PredictModal.jsx — src/dashboard/components/PredictModal.jsx
+ *
+ * Rediseño v4 — "Match Center Pro"
+ * - Mobile-first con navegación adaptativa
+ * - Microinteracciones pulidas
+ * - Scroll management profesional
+ * - Validación inline + autosave
+ * - Sistema de diseño consistente
+ */
+
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useBets } from '../../hooks/useBets.jsx'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { timeLeft, isBetOpen } from '../../utils/index.js'
 
-// ─── Detección de eliminatoria (cualquier fase distinta de 'grupos') ─
+// ──────────────────────────────────────────────────────────────────
+// 🎨 DESIGN TOKENS
+// ──────────────────────────────────────────────────────────────────
+const C = {
+  // Neutros
+  cream50:   '#fcf9f1',
+  cream100:  '#f7f1e1',
+  cream200:  '#ede4cc',
+  
+  ink900:    '#050a18',
+  ink800:    '#0a1226',
+  ink700:    '#1a2540',
+  ink600:    '#2d3a5a',
+  
+  steel400:  '#a8b2c4',
+  steel300:  '#c4cbd8',
+  
+  // Acentos
+  gold600:   '#a87a0b',
+  gold500:   '#d4a017',
+  gold400:   '#ebc32b',
+  
+  red500:    '#e03252',
+  green500:  '#1f9d6b',
+}
+
+// ─── Detección de eliminatoria ─
 function esEliminatoria(fase) {
   if (!fase) return false
   return String(fase).trim().toLowerCase() !== 'grupos'
+}
+
+// ─── Debounce hook ─
+function useDebounce(callback, delay, deps) {
+  useEffect(() => {
+    const handler = setTimeout(callback, delay)
+    return () => clearTimeout(handler)
+  }, [...deps, delay])
 }
 
 export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const { predictions } = useBets()
   const { user } = useAuth()
   const [scores, setScores] = useState({})
-  // ★ NUEVO: estado para guardar el clasificado predicho por partido (solo eliminatorias)
   const [clasificados, setClasificados] = useState({})
+  const [activeMatchIdx, setActiveMatchIdx] = useState(0)
+  const matchRefs = useRef({})
+  const listRef = useRef(null)
+  const navRef = useRef(null)
 
   const esApuestaGrupos = bet?.tipo === 'grupos' || bet?.type === 'grupos'
   const esJefe = user?.tipo_usuario === 'jefe'
@@ -39,6 +87,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }
 
+  // ─── Init scores & clasificados ─
   useEffect(() => {
     if (bet?.partidos) {
       const initialScores = {}
@@ -56,6 +105,32 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }, [bet, predictions])
 
+  // ─── Autosave draft to localStorage ─
+  useDebounce(() => {
+    if (!bet?.id) return
+    try {
+      localStorage.setItem(`bet-${bet.id}-draft`, JSON.stringify({ scores, clasificados }))
+    } catch (e) {
+      console.warn('Error saving draft:', e)
+    }
+  }, 2000, [scores, clasificados])
+
+  // ─── Load draft on mount ─
+  useEffect(() => {
+    if (!bet?.id) return
+    try {
+      const draft = localStorage.getItem(`bet-${bet.id}-draft`)
+      if (draft) {
+        const { scores: dScores, clasificados: dClasif } = JSON.parse(draft)
+        if (dScores) setScores(prev => ({ ...prev, ...dScores }))
+        if (dClasif) setClasificados(prev => ({ ...prev, ...dClasif }))
+      }
+    } catch (e) {
+      console.warn('Error loading draft:', e)
+    }
+  }, [bet?.id])
+
+  // ─── ESC to close ─
   useEffect(() => {
     if (!bet) return
     function handleKeyDown(e) { if (e.key === 'Escape') onClose() }
@@ -63,12 +138,37 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [bet, onClose])
 
+  // ─── Prevent body scroll ─
   useEffect(() => {
     if (!bet) return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = prev }
   }, [bet])
+
+  // ─── Scrollspy: track visible match ─
+  useEffect(() => {
+    if (!bet?.partidos || !listRef.current) return
+    
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.dataset.matchId
+            const idx = bet.partidos.findIndex(p => String(p.id) === id)
+            if (idx !== -1) setActiveMatchIdx(idx)
+          }
+        })
+      },
+      { root: listRef.current, threshold: 0.6 }
+    )
+
+    Object.values(matchRefs.current).forEach(el => {
+      if (el) observer.observe(el)
+    })
+
+    return () => observer.disconnect()
+  }, [bet?.partidos])
 
   if (!bet) return null
 
@@ -78,17 +178,12 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
   const totalMatches = bet.partidos?.length || 0
 
-  // ★ Una predicción se considera "completa" si:
-  //   - tiene marcador, Y
-  //   - si es eliminatoria CON EMPATE predicho, también tiene clasificado.
-  //   En eliminatorias con ganador claro, el clasificado se deduce del marcador.
   function predicionCompleta(match) {
     const sc = scores[match.id]
     if (!sc || sc.local === '' || sc.visitante === '') return false
     if (esEliminatoria(match.fase)) {
       const pl = parseInt(sc.local, 10)
       const pv = parseInt(sc.visitante, 10)
-      // Solo si hay empate predicho exigimos clasificado
       if (!isNaN(pl) && !isNaN(pv) && pl === pv && !clasificados[match.id]) return false
     }
     return true
@@ -96,6 +191,8 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
   const filledCount = bet.partidos?.filter(predicionCompleta).length || 0
   const hadPredictions = bet.partidos?.some(p => predictions?.[p.id]) ?? false
+  const progressPct = totalMatches > 0 ? (filledCount / totalMatches) * 100 : 0
+  const pendingCount = totalMatches - filledCount
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -115,10 +212,8 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
       if (esEliminatoria(match.fase)) {
         if (pl !== pv) {
-          // Ganador claro en el marcador → deducimos el clasificado automáticamente
           item.pred_clasificado = pl > pv ? match.codigo_local : match.codigo_visitante
         } else {
-          // Empate predicho → el usuario tiene que haber elegido manualmente
           const clasif = clasificados[match.id]
           if (!clasif) {
             empatesSinClasificado.push(match.equipo_local + ' vs ' + match.equipo_visitante)
@@ -142,15 +237,20 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
       alert('Ingresá al menos una predicción válida.')
       return
     }
+
+    // Clear draft on submit
+    try {
+      localStorage.removeItem(`bet-${bet.id}-draft`)
+    } catch (e) {}
+
     onSubmit(bet.id, matchPredictions)
   }
 
   function updateScore(partidoId, side, value) {
     if (value !== '' && !/^\d{1,2}$/.test(value)) return
     setScores(prev => ({ ...prev, [partidoId]: { ...prev[partidoId], [side]: value } }))
-    // Si el usuario cambia un marcador empatado a un marcador con ganador claro,
-    // limpiamos el clasificado manualmente elegido (porque ya no aplica).
-    // Lo recalculamos solo cuando vuelve a haber empate.
+    
+    // Auto-clear clasificado if score is no longer a tie
     setClasificados(prev => {
       const match = bet.partidos?.find(p => p.id === partidoId)
       if (!match || !esEliminatoria(match.fase)) return prev
@@ -158,8 +258,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
       const otherVal = scores[partidoId]?.[otherSide]
       const newPl = side === 'local' ? parseInt(value, 10) : parseInt(otherVal, 10)
       const newPv = side === 'visitante' ? parseInt(value, 10) : parseInt(otherVal, 10)
-      // Si el nuevo marcador deja un ganador claro, limpiamos el clasificado guardado
-      // (en empates, lo elige el usuario; con ganador claro, lo deduce el sistema)
       if (!isNaN(newPl) && !isNaN(newPv) && newPl !== newPv && prev[partidoId]) {
         const next = { ...prev }
         delete next[partidoId]
@@ -173,196 +271,1283 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     setClasificados(prev => ({ ...prev, [partidoId]: codigo }))
   }
 
+  function scrollToMatch(id, idx) {
+    const el = matchRefs.current[id]
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setActiveMatchIdx(idx)
+    }
+  }
+
   const modalContent = (
     <>
       <style>{`
-        @keyframes pm-fade { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes pm-scale { from { opacity: 0; transform: translateY(16px) scale(.96) } to { opacity: 1; transform: translateY(0) scale(1) } }
-        @keyframes pm-slideup { from { transform: translateY(100%) } to { transform: translateY(0) } }
-        @keyframes pm-spin { to { transform: rotate(360deg) } }
-        @keyframes pm-pulse { 0%,100% { opacity: 1 } 50% { opacity: .5 } }
+        @keyframes pm-fade  { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes pm-zoom  { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: scale(1) } }
+        @keyframes pm-slide { from { transform: translateY(100%) } to { transform: translateY(0) } }
+        @keyframes pm-spin  { to { transform: rotate(360deg) } }
+        @keyframes pm-pulse { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
+        @keyframes pm-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
+        @keyframes pm-shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
 
+        * { box-sizing: border-box; }
+
+        /* ─── OVERLAY ─── */
         .pm-overlay {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(2,15,39,0.75);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
+          position: fixed; inset: 0;
+          background: radial-gradient(ellipse at center, rgba(10,18,38,.8) 0%, rgba(5,10,24,.94) 100%);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           z-index: 99999;
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          padding: 1.5rem;
+          animation: pm-fade .2s ease both;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          overflow: hidden;
+        }
+
+.pm-shell {
+  position: relative;
+  width: 100%; 
+  max-width: 1200px;
+  height: calc(100vh - 3rem);
+  max-height: 900px;
+  background: ${C.cream100};
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 1px rgba(212,160,23,.15),
+    0 50px 100px rgba(0,0,0,.7);
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  grid-template-rows: 1fr;  /* ← AGREGÁ ESTA LÍNEA */
+  overflow: hidden;
+  animation: pm-zoom .28s cubic-bezier(.2,.8,.2,1) both;
+}
+
+        @media (max-width: 900px) {
+          .pm-overlay { 
+            padding: 0; 
+            align-items: flex-end; 
+          }
+          .pm-shell {
+            grid-template-columns: 1fr;
+            height: 96vh;
+            max-height: none;
+            border-radius: 16px 16px 0 0;
+            animation: pm-slide .32s cubic-bezier(.2,.8,.2,1) both;
+          }
+        }
+
+        /* ─── SIDEBAR (desktop only) ─── */
+        .pm-side {
+          background: ${C.ink800};
+          color: ${C.cream100};
+          display: flex; 
+          flex-direction: column;
+          border-right: 1px solid ${C.ink700};
+          overflow: hidden;
+        }
+
+        @media (max-width: 900px) { 
+          .pm-side { display: none; } 
+        }
+
+        .pm-side-head {
+          padding: 1.5rem 1.25rem 1.25rem;
+          border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+        .pm-side-eyebrow {
+          font-size: 0.6875rem; 
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          color: ${C.gold400}; 
+          text-transform: uppercase;
+          margin-bottom: 0.5rem;
+        }
+
+        .pm-side-title {
+          font-size: 1.25rem; 
+          font-weight: 700;
+          line-height: 1.2; 
+          margin: 0;
+          color: ${C.cream50};
+        }
+
+        /* Stats */
+        .pm-stats {
+          padding: 1rem 1.25rem;
+          display: grid; 
+          grid-template-columns: 1fr 1fr; 
+          gap: 0.75rem;
+          border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+        .pm-stat {
+          background: rgba(255,255,255,.04);
+          border: 1px solid rgba(255,255,255,.06);
+          border-radius: 6px;
+          padding: 0.75rem;
+        }
+
+        .pm-stat-num {
+          font-size: 1.75rem; 
+          font-weight: 800;
+          line-height: 1;
+          color: ${C.gold400};
+        }
+
+        .pm-stat-num.dim { 
+          color: ${C.steel400}; 
+        }
+
+        .pm-stat-lab {
+          font-size: 0.6875rem; 
+          letter-spacing: 0.08em;
+          color: ${C.steel400}; 
+          text-transform: uppercase;
+          margin-top: 0.375rem;
+          font-weight: 600;
+        }
+
+        /* Status */
+        .pm-side-status {
+          padding: 1rem 1.25rem;
+          border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+
+        .pm-side-pill {
+          display: inline-flex; 
+          align-items: center; 
+          gap: 0.5rem;
+          padding: 0.5rem 0.875rem; 
+          border-radius: 999px;
+          font-size: 0.6875rem; 
+          font-weight: 700;
+          letter-spacing: 0.08em; 
+          text-transform: uppercase;
+        }
+
+        .pm-pill-open { 
+          background: rgba(212,160,23,.12); 
+          color: ${C.gold400}; 
+          border: 1px solid rgba(212,160,23,.3); 
+        }
+
+        .pm-pill-soon { 
+          background: rgba(224,50,82,.12); 
+          color: #ff8095; 
+          border: 1px solid rgba(224,50,82,.35); 
+          animation: pm-pulse 1.8s ease-in-out infinite; 
+        }
+
+        .pm-pill-closed { 
+          background: rgba(168,178,196,.08); 
+          color: ${C.steel400}; 
+          border: 1px solid rgba(168,178,196,.2); 
+        }
+
+        .pm-side-status-detail {
+          margin-top: 0.625rem; 
+          font-size: 0.8125rem;
+          color: ${C.steel400}; 
+          line-height: 1.5;
+        }
+
+        /* Nav list */
+        .pm-nav {
+          flex: 1; 
+          overflow-y: auto;
+          padding: 0.5rem 0.75rem 1rem;
+        }
+
+        .pm-nav::-webkit-scrollbar { width: 5px; }
+        .pm-nav::-webkit-scrollbar-thumb { 
+          background: rgba(255,255,255,.12); 
+          border-radius: 3px; 
+        }
+
+        .pm-nav-title {
+          padding: 0.875rem 0.625rem 0.5rem;
+          font-size: 0.6875rem; 
+          letter-spacing: 0.12em;
+          color: ${C.steel400}; 
+          text-transform: uppercase;
+          font-weight: 700;
+        }
+
+        .pm-nav-item {
+          display: flex; 
+          align-items: center; 
+          gap: 0.625rem;
+          width: 100%;
+          padding: 0.625rem 0.75rem;
+          background: transparent; 
+          border: none;
+          color: ${C.cream100};
+          text-align: left; 
+          cursor: pointer;
+          border-radius: 6px;
+          font-size: 0.8125rem;
+          transition: all .18s;
+          border-left: 2px solid transparent;
+          margin-bottom: 0.25rem;
+        }
+
+        .pm-nav-item:hover { 
+          background: rgba(255,255,255,.05); 
+        }
+
+        .pm-nav-item.active {
+          background: rgba(212,160,23,.12);
+          border-left-color: ${C.gold400};
+        }
+
+        .pm-nav-item.done { 
+          border-left-color: ${C.gold500}; 
+        }
+
+        .pm-nav-item.live { 
+          border-left-color: ${C.red500}; 
+        }
+
+        .pm-nav-num {
+          width: 24px; 
+          height: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 1rem;
-          animation: pm-fade .2s ease both;
-          overflow-y: auto;
+          background: rgba(255,255,255,.06);
+          border-radius: 4px;
+          color: ${C.steel400}; 
+          font-size: 0.75rem;
+          font-weight: 700;
+          flex-shrink: 0;
         }
-        .pm-box {
-          position: relative;
-          width: 100%;
-          max-width: 720px;
-          max-height: calc(100vh - 2rem);
-          background: linear-gradient(145deg, rgba(15,43,79,0.98) 0%, rgba(15,33,69,0.98) 100%);
-          border: 1px solid rgba(34,217,223,0.2);
-          border-radius: 20px;
-          box-shadow: 0 25px 80px rgba(0,0,0,0.6), 0 0 60px rgba(34,217,223,0.08);
+
+        .pm-nav-item.done .pm-nav-num { 
+          background: ${C.gold500};
+          color: ${C.ink900};
+        }
+
+        .pm-nav-item.live .pm-nav-num {
+          background: ${C.red500};
+          color: white;
+          animation: pm-pulse 1.2s ease-in-out infinite;
+        }
+
+        .pm-nav-teams {
+          flex: 1; 
+          min-width: 0;
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis;
+        }
+
+        .pm-nav-dot {
+          width: 6px; 
+          height: 6px; 
+          border-radius: 50%;
+          background: rgba(255,255,255,.15);
+          flex-shrink: 0;
+        }
+
+        .pm-nav-item.done .pm-nav-dot { 
+          background: ${C.gold400}; 
+        }
+
+        .pm-nav-item.live .pm-nav-dot { 
+          background: ${C.red500}; 
+        }
+
+        /* ─── MAIN COLUMN ─── */
+.pm-main {
+  display: flex; 
+  flex-direction: column;
+  background: ${C.cream50};
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;  /* ← AGREGÁ ESTO TAMBIÉN */
+}
+
+        /* Top bar */
+        .pm-topbar {
+          padding: 1.25rem 1.5rem;
+          background: white;
+          border-bottom: 1px solid ${C.cream200};
+          display: flex; 
+          align-items: center; 
+          justify-content: space-between;
+          gap: 1rem;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 600px) {
+          .pm-topbar { 
+            padding: 1rem; 
+          }
+        }
+
+        .pm-topbar-info { 
+          min-width: 0; 
+          flex: 1;
+        }
+
+        .pm-topbar-eyebrow {
+          font-size: 0.6875rem; 
+          letter-spacing: 0.1em;
+          color: ${C.gold600}; 
+          text-transform: uppercase;
+          font-weight: 700;
+          margin-bottom: 0.25rem;
+        }
+
+        .pm-topbar-title {
+          font-size: clamp(1.125rem, 3vw, 1.5rem);
+          font-weight: 700;
+          color: ${C.ink900}; 
+          margin: 0;
+          line-height: 1.2;
+          white-space: nowrap; 
+          overflow: hidden; 
+          text-overflow: ellipsis;
+        }
+
+        .pm-topbar-actions { 
+          display: flex; 
+          align-items: center; 
+          gap: 0.5rem; 
+          flex-shrink: 0; 
+        }
+
+        .pm-mobile-status {
+          display: none;
+        }
+
+        @media (max-width: 900px) {
+          .pm-mobile-status { 
+            display: inline-flex; 
+          }
+        }
+
+        .pm-icon-btn {
+          width: 36px; 
+          height: 36px;
+          background: transparent;
+          border: 1px solid ${C.cream200};
+          color: ${C.steel400};
+          border-radius: 6px;
+          display: inline-flex; 
+          align-items: center; 
+          justify-content: center;
+          cursor: pointer; 
+          transition: all .18s;
+          flex-shrink: 0;
+        }
+
+        .pm-icon-btn:hover {
+          background: ${C.ink800}; 
+          border-color: ${C.ink800}; 
+          color: white;
+        }
+
+        /* Mobile quick nav */
+        .pm-quick-nav {
+          display: none;
+          padding: 0.75rem 1rem;
+          background: white;
+          border-bottom: 1px solid ${C.cream200};
+          overflow-x: auto;
+          overflow-y: hidden;
+          scroll-snap-type: x mandatory;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .pm-quick-nav::-webkit-scrollbar { display: none; }
+
+        @media (max-width: 900px) {
+          .pm-quick-nav { 
+            display: block; 
+          }
+        }
+
+        .pm-quick-row {
+          display: inline-flex;
+          gap: 0.5rem;
+          min-width: min-content;
+        }
+
+        .pm-quick-pill {
+          width: 40px;
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: ${C.cream100};
+          border: 1.5px solid ${C.cream200};
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: ${C.ink700};
+          cursor: pointer;
+          transition: all .18s;
+          flex-shrink: 0;
+          scroll-snap-align: start;
+        }
+
+        .pm-quick-pill.active {
+          background: ${C.ink800};
+          border-color: ${C.gold500};
+          color: ${C.gold400};
+          box-shadow: 0 0 0 3px rgba(212,160,23,.15);
+        }
+
+        .pm-quick-pill.done {
+          background: ${C.gold500};
+          border-color: ${C.gold500};
+          color: ${C.ink900};
+        }
+
+        .pm-quick-pill.live {
+          background: ${C.red500};
+          border-color: ${C.red500};
+          color: white;
+          animation: pm-pulse 1.2s ease-in-out infinite;
+        }
+
+/* List */
+.pm-list {
+  flex: 1; 
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 1.5rem;
+  scroll-behavior: smooth;
+  
+  /* ← AGREGÁ ESTAS LÍNEAS */
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  contain: layout style paint;
+}
+
+        .pm-list::-webkit-scrollbar { width: 8px; }
+        .pm-list::-webkit-scrollbar-track { background: transparent; }
+        .pm-list::-webkit-scrollbar-thumb { 
+          background: ${C.cream200}; 
+          border-radius: 4px; 
+        }
+        .pm-list::-webkit-scrollbar-thumb:hover { 
+          background: ${C.gold500}; 
+        }
+
+        @media (max-width: 600px) {
+          .pm-list { 
+            padding: 1rem; 
+          }
+        }
+
+        /* Empty state */
+        .pm-empty {
           display: flex;
           flex-direction: column;
-          overflow: hidden;
-          animation: pm-scale .25s ease both;
-          margin: auto;
-        }
-        @media (max-width: 640px) {
-          .pm-overlay {
-            padding: 0;
-            align-items: flex-end;
-          }
-          .pm-box {
-            max-height: 92vh;
-            border-radius: 16px 16px 0 0;
-            animation: pm-slideup .28s ease both;
-          }
-        }
-        .pm-clasif-radio {
-          flex: 1;
-          padding: .55rem .5rem;
-          border-radius: 8px;
-          font-family: 'DM Sans', sans-serif;
-          font-size: .78rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all .15s;
-          border: 1px solid rgba(132,153,194,.2);
-          background: rgba(2,15,39,.4);
-          color: #8499c2;
-          text-align: center;
-          display: flex;
           align-items: center;
           justify-content: center;
-          gap: .4rem;
+          padding: 3rem 1.5rem;
+          text-align: center;
+          color: ${C.steel400};
         }
-        .pm-clasif-radio.active {
-          background: rgba(244,180,42,.15);
-          border-color: #f4b42a;
-          color: #f4b42a;
-          box-shadow: 0 0 0 3px rgba(244,180,42,.1);
+
+        .pm-empty svg {
+          width: 64px;
+          height: 64px;
+          margin-bottom: 1rem;
+          opacity: 0.3;
         }
-        .pm-clasif-radio:hover:not(:disabled) {
-          border-color: rgba(244,180,42,.5);
-          color: #fff;
+
+        .pm-empty h3 {
+          font-size: 1.125rem;
+          font-weight: 700;
+          color: ${C.ink700};
+          margin: 0 0 0.5rem;
         }
-        .pm-clasif-radio:disabled {
+
+        .pm-empty p {
+          font-size: 0.9375rem;
+          margin: 0;
+        }
+
+        /* Block message */
+        .pm-block {
+          display: flex; 
+          gap: 0.875rem;
+          background: white;
+          border: 1px solid ${C.cream200};
+          border-left: 4px solid ${C.red500};
+          border-radius: 8px;
+          padding: 1.125rem 1.25rem;
+          margin-bottom: 1.25rem;
+        }
+
+        .pm-block-icon {
+          width: 36px; 
+          height: 36px; 
+          flex-shrink: 0;
+          border-radius: 6px;
+          background: ${C.red500}; 
+          color: white;
+          font-weight: 800;
+          font-size: 1.125rem;
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+        }
+
+        .pm-block-content {
+          flex: 1;
+          min-width: 0;
+        }
+
+        .pm-block-title { 
+          font-weight: 700; 
+          color: ${C.ink800}; 
+          margin-bottom: 0.375rem;
+          font-size: 0.9375rem;
+        }
+
+        .pm-block-detail { 
+          font-size: 0.8125rem; 
+          color: ${C.steel400}; 
+          line-height: 1.5; 
+        }
+
+        /* ─── MATCH CARD ─── */
+.pm-card {
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+  box-shadow:
+    0 1px 0 rgba(10,18,38,.03),
+    0 4px 12px rgba(10,18,38,.08);
+  border: 1.5px solid ${C.cream200};
+  transition: all .22s cubic-bezier(.2,.8,.2,1);
+  
+  /* ← AGREGÁ ESTAS 3 LÍNEAS */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+        .pm-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 
+            0 2px 0 rgba(10,18,38,.04), 
+            0 12px 24px rgba(10,18,38,.14);
+        }
+
+        .pm-card.done { 
+          border-color: ${C.gold500}; 
+          box-shadow: 
+            0 0 0 1px ${C.gold500}, 
+            0 8px 20px rgba(212,160,23,.25); 
+        }
+
+        .pm-card.live { 
+          border-color: ${C.red500}; 
+          box-shadow:
+            0 0 0 1px ${C.red500},
+            0 8px 20px rgba(224,50,82,.25);
+        }
+
+        /* Strip */
+        .pm-strip {
+          display: flex; 
+          align-items: center; 
+          justify-content: space-between;
+          padding: 0.625rem 1rem;
+          background: ${C.ink800};
+          color: ${C.cream100};
+          font-size: 0.6875rem;
+          font-weight: 700;
+          letter-spacing: 0.08em; 
+          text-transform: uppercase;
+        }
+
+        .pm-card.done .pm-strip { 
+          background: linear-gradient(90deg, ${C.ink800}, ${C.ink700}); 
+        }
+
+        .pm-strip-left { 
+          display: flex; 
+          align-items: center; 
+          gap: 0.625rem; 
+        }
+
+        .pm-strip-num {
+          background: ${C.gold400}; 
+          color: ${C.ink900};
+          font-size: 0.75rem;
+          padding: 0.125rem 0.5rem; 
+          border-radius: 4px;
+          min-width: 32px;
+          text-align: center;
+        }
+
+        .pm-strip-fase {
+          color: ${C.gold400};
+        }
+
+        .pm-strip-right { 
+          display: flex; 
+          align-items: center; 
+          gap: 0.5rem; 
+        }
+
+        .pm-tag {
+          display: inline-flex; 
+          align-items: center; 
+          gap: 0.375rem;
+          font-size: 0.625rem; 
+          font-weight: 700;
+          letter-spacing: 0.1em; 
+          padding: 0.25rem 0.5rem;
+          border-radius: 4px;
+        }
+
+        .pm-tag-live { 
+          background: ${C.red500}; 
+          color: white; 
+        }
+
+        .pm-tag-fin { 
+          background: ${C.steel400}; 
+          color: white; 
+        }
+
+        .pm-tag-done { 
+          background: ${C.gold400}; 
+          color: ${C.ink900}; 
+        }
+
+        .pm-tag-dot {
+          width: 5px; 
+          height: 5px; 
+          border-radius: 50%;
+          background: currentColor;
+        }
+
+        .pm-tag-dot.pulse { 
+          animation: pm-pulse 1.2s ease-in-out infinite; 
+        }
+
+        /* Board */
+        .pm-board {
+          display: grid;
+          grid-template-columns: 1fr auto 1fr;
+          align-items: stretch;
+          min-height: 100px;
+        }
+
+        @media (max-width: 600px) {
+          .pm-board { 
+            grid-template-columns: 1fr;
+            gap: 0;
+          }
+        }
+
+        .pm-side-team {
+          display: flex; 
+          align-items: center; 
+          gap: 1rem;
+          padding: 1.25rem;
+        }
+
+        .pm-side-team.left {
+          background: linear-gradient(90deg, white 0%, ${C.cream50} 100%);
+        }
+
+        .pm-side-team.right {
+          flex-direction: row-reverse;
+          text-align: right;
+          background: linear-gradient(270deg, white 0%, ${C.cream50} 100%);
+        }
+
+        @media (max-width: 600px) {
+          .pm-side-team {
+            padding: 1rem;
+          }
+
+          .pm-side-team.right {
+            flex-direction: row;
+            text-align: left;
+            border-top: 1px dashed ${C.cream200};
+          }
+
+          .pm-side-team.left {
+            border-bottom: 1px dashed ${C.cream200};
+          }
+        }
+
+        .pm-flag-lg {
+          width: 48px; 
+          height: 34px;
+          object-fit: cover; 
+          border-radius: 4px;
+          box-shadow: 
+            0 0 0 1px rgba(0,0,0,.08), 
+            0 2px 6px rgba(0,0,0,.1);
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 600px) {
+          .pm-flag-lg {
+            width: 40px;
+            height: 28px;
+          }
+        }
+
+        .pm-team-block { 
+          min-width: 0; 
+          flex: 1;
+        }
+
+        .pm-team-code {
+          font-size: 0.6875rem; 
+          font-weight: 700;
+          letter-spacing: 0.12em;
+          color: ${C.gold600}; 
+          text-transform: uppercase;
+          margin-bottom: 0.25rem;
+        }
+
+        .pm-team-nm {
+          font-size: 1.125rem; 
+          font-weight: 700;
+          letter-spacing: 0.01em;
+          color: ${C.ink800}; 
+          line-height: 1.1;
+        }
+
+        @media (max-width: 600px) {
+          .pm-team-nm {
+            font-size: 1rem;
+          }
+        }
+
+        /* Center */
+        .pm-center {
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          gap: 0.75rem;
+          padding: 1.25rem;
+          background: ${C.ink800};
+          position: relative;
+        }
+
+        @media (min-width: 601px) {
+          .pm-center::before, 
+          .pm-center::after {
+            content: '';
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%);
+            width: 0; 
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+          }
+
+          .pm-center::before { 
+            left: -1px; 
+            border-right: 12px solid white;
+          }
+
+          .pm-center::after { 
+            right: -1px; 
+            border-left: 12px solid white;
+          }
+        }
+
+.pm-input {
+  width: 64px;      /* antes: 80px */
+  height: 64px;     /* antes: 80px */
+  font-size: 2rem;  /* antes: 2.5rem */
+          text-align: center;
+          font-weight: 800;
+          background: ${C.cream50};
+          color: ${C.ink900};
+          border: 2px solid ${C.gold500};
+          border-radius: 8px;
+          outline: none;
+          transition: all .2s;
+          -moz-appearance: textfield;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .pm-input::-webkit-outer-spin-button,
+        .pm-input::-webkit-inner-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+
+        .pm-input::placeholder { 
+          color: ${C.steel400}; 
+          opacity: .4; 
+        }
+
+        .pm-input:focus:not(:disabled) {
+          border-color: ${C.gold400};
+          background: white;
+          box-shadow: 0 0 0 4px rgba(212,160,23,.2);
+          transform: scale(1.05);
+        }
+
+        .pm-input:disabled {
+          background: ${C.cream200};
+          color: ${C.steel400};
+          border-color: ${C.cream200};
           cursor: not-allowed;
-          opacity: .5;
+        }
+
+        .pm-input.error {
+          border-color: ${C.red500};
+          animation: pm-shake .4s;
+        }
+
+@media (max-width: 600px) {
+  .pm-input {
+    width: 56px;   /* antes: 68px */
+    height: 56px;  /* antes: 68px */
+    font-size: 1.75rem;  /* antes: 2rem */
+  }
+}
+
+        .pm-dash {
+          font-size: 2rem;
+          font-weight: 800;
+          color: ${C.gold400};
+        }
+
+        /* Extra */
+        .pm-extra {
+          padding: 1rem 1.25rem;
+          background: ${C.cream50};
+          border-top: 1px dashed ${C.cream200};
+        }
+
+        .pm-clasif-label {
+          display: flex; 
+          align-items: center; 
+          gap: 0.5rem;
+          font-size: 0.6875rem; 
+          font-weight: 700;
+          letter-spacing: 0.1em; 
+          text-transform: uppercase;
+          color: ${C.gold600};
+          margin-bottom: 0.75rem;
+        }
+
+        .pm-clasif-row {
+          display: grid; 
+          grid-template-columns: 1fr 1fr; 
+          gap: 0.625rem;
+        }
+
+        .pm-radio {
+          padding: 0.75rem;
+          border-radius: 6px;
+          font-size: 0.8125rem; 
+          font-weight: 600;
+          cursor: pointer; 
+          transition: all .18s;
+          border: 1.5px solid ${C.cream200};
+          background: white;
+          color: ${C.ink700};
+          display: flex; 
+          align-items: center; 
+          justify-content: center;
+          gap: 0.5rem;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .pm-radio:hover:not(:disabled) {
+          border-color: ${C.gold500};
+          background: ${C.cream50};
+        }
+
+        .pm-radio.active {
+          background: ${C.ink800};
+          border-color: ${C.gold500};
+          color: ${C.gold400};
+          box-shadow: 0 0 0 3px rgba(212,160,23,.15);
+        }
+
+        .pm-radio:disabled { 
+          cursor: not-allowed; 
+          opacity: .5; 
+        }
+
+        .pm-warn {
+          margin-top: 0.625rem;
+          font-size: 0.75rem; 
+          color: ${C.red500};
+          display: flex; 
+          align-items: center; 
+          gap: 0.375rem;
+          font-weight: 600;
+        }
+
+        .pm-auto {
+          display: flex; 
+          align-items: center; 
+          gap: 0.75rem;
+          padding: 0.75rem 1rem;
+          background: white;
+          border-radius: 6px;
+          border: 1.5px solid ${C.cream200};
+        }
+
+        .pm-auto-arrow { 
+          color: ${C.gold500}; 
+          font-size: 1rem;
+        }
+
+        .pm-auto-lab {
+          color: ${C.steel400}; 
+          text-transform: uppercase;
+          letter-spacing: 0.08em; 
+          font-weight: 600; 
+          font-size: 0.6875rem;
+        }
+
+        .pm-auto-team {
+          font-size: 0.9375rem; 
+          font-weight: 700;
+          color: ${C.ink800}; 
+          text-transform: uppercase;
+          display: inline-flex; 
+          align-items: center; 
+          gap: 0.5rem;
+        }
+
+        .pm-result {
+          display: flex; 
+          align-items: center; 
+          gap: 0.875rem;
+          padding: 0.75rem 1rem;
+          background: ${C.ink800};
+          border-radius: 6px;
+          color: white;
+        }
+
+        .pm-result-lab {
+          font-size: 0.6875rem; 
+          letter-spacing: 0.1em;
+          color: ${C.gold400}; 
+          text-transform: uppercase;
+          font-weight: 700;
+        }
+
+        .pm-result-sc {
+          font-size: 1.25rem; 
+          font-weight: 800;
+          font-variant-numeric: tabular-nums;
+        }
+
+        .pm-result-pen { 
+          color: ${C.steel400}; 
+          font-size: 0.75rem; 
+          margin-left: auto; 
+        }
+
+        /* ─── FOOTER ─── */
+        .pm-foot {
+          padding: 1.125rem 1.5rem;
+          background: ${C.ink800};
+          color: white;
+          border-top: 3px solid ${C.gold500};
+          display: grid;
+          grid-template-columns: 1fr auto;
+          gap: 1.25rem;
+          align-items: center;
+          flex-shrink: 0;
+        }
+
+        @media (max-width: 700px) {
+          .pm-foot { 
+            grid-template-columns: 1fr; 
+            padding: 1rem; 
+          }
+        }
+
+        .pm-progress-wrap { 
+          min-width: 0; 
+        }
+
+        .pm-progress-row {
+          display: flex; 
+          align-items: baseline; 
+          justify-content: space-between;
+          font-size: 0.6875rem; 
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 0.5rem;
+        }
+
+        .pm-progress-lab { 
+          color: ${C.steel400}; 
+          font-weight: 700; 
+        }
+
+        .pm-progress-cn { 
+          color: white; 
+          font-weight: 600;
+        }
+
+        .pm-progress-cn strong {
+          color: ${C.gold400};
+          font-size: 1.125rem; 
+          margin-right: 0.25rem;
+          font-weight: 800;
+        }
+
+        .pm-progress-bar {
+          height: 6px;
+          background: rgba(255,255,255,.1);
+          border-radius: 999px; 
+          overflow: hidden;
+        }
+
+        .pm-progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, ${C.gold500}, ${C.gold400}, ${C.gold500});
+          background-size: 200% 100%;
+          border-radius: 999px;
+          transition: width .4s cubic-bezier(.2,.8,.2,1);
+          animation: pm-shimmer 2.5s linear infinite;
+        }
+
+        .pm-actions { 
+          display: flex; 
+          gap: 0.625rem; 
+          justify-content: flex-end; 
+        }
+
+        @media (max-width: 700px) {
+          .pm-actions {
+            justify-content: stretch;
+          }
+
+          .pm-actions .pm-btn {
+            flex: 1;
+          }
+        }
+
+        .pm-btn {
+          font-size: 0.875rem; 
+          font-weight: 700;
+          letter-spacing: 0.04em;
+          padding: 0.875rem 1.625rem;
+          border-radius: 6px;
+          cursor: pointer; 
+          transition: all .2s;
+          text-transform: uppercase;
+          display: inline-flex; 
+          align-items: center; 
+          justify-content: center;
+          gap: 0.5rem;
+          border: none;
+          white-space: nowrap;
+        }
+
+        .pm-btn-cancel {
+          background: transparent;
+          border: 1.5px solid rgba(255,255,255,.2);
+          color: ${C.steel400};
+        }
+
+        .pm-btn-cancel:hover { 
+          border-color: white; 
+          color: white; 
+        }
+
+        .pm-btn-submit {
+          background: linear-gradient(135deg, ${C.gold500}, ${C.gold400});
+          color: ${C.ink900};
+          box-shadow: 0 4px 14px rgba(212,160,23,.35);
+          border: 1.5px solid transparent;
+        }
+
+        .pm-btn-submit:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(212,160,23,.5);
+        }
+
+        .pm-btn-submit:disabled { 
+          opacity: .45; 
+          cursor: not-allowed; 
+          box-shadow: none; 
+        }
+
+        .pm-spin {
+          width: 14px; 
+          height: 14px;
+          border: 2px solid rgba(10,18,38,.25);
+          border-top-color: ${C.ink900};
+          border-radius: 50%;
+          animation: pm-spin .65s linear infinite;
+        }
+
+        .pm-foot-note {
+          grid-column: 1 / -1;
+          font-size: 0.75rem; 
+          color: ${C.steel400};
+          text-align: center; 
+          letter-spacing: 0.02em;
+          margin-top: 0.25rem;
+        }
+
+        .pm-foot-note.warn { 
+          color: #ffb0bd; 
         }
       `}</style>
 
-      <div className="pm-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="predict-modal-title">
-        <div className="pm-box" onClick={e => e.stopPropagation()}>
+      <div className="pm-overlay" onClick={onClose}>
+        <form className="pm-shell" onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
 
-          {/* Header */}
-          <div style={{
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem',
-            padding: '1.25rem 1.5rem',
-            background: 'linear-gradient(180deg, rgba(15,43,79,0.95) 0%, rgba(15,33,69,0.9) 100%)',
-            borderBottom: '1px solid rgba(34,217,223,0.15)',
-            flexShrink: 0,
-          }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              {open && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem' }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                    stroke={isClosingSoon ? '#f4b42a' : '#22d9df'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                  </svg>
-                  <span style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '.15em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                    Cierra en
-                  </span>
-                  <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 16, letterSpacing: '.04em', color: isClosingSoon ? '#f4b42a' : '#22d9df' }}>
-                    {remaining}
-                  </span>
-                </div>
-              )}
-
-              {!open && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem' }}>
-                  <span style={{
-                    display: 'inline-flex', alignItems: 'center', padding: '.15rem .5rem', borderRadius: 4,
-                    fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em',
-                    background: 'rgba(132,153,194,0.1)', color: '#8499c2',
-                    border: '1px solid rgba(132,153,194,0.2)', fontFamily: "'DM Sans',sans-serif",
-                  }}>Apuesta cerrada</span>
-                </div>
-              )}
-
-              <h2 id="predict-modal-title" style={{
-                fontFamily: "'Bebas Neue',sans-serif",
-                fontSize: 'clamp(1.4rem, 4vw, 1.8rem)',
-                color: '#fff', letterSpacing: '.03em', lineHeight: 1.1, margin: 0,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{bet.titulo}</h2>
-
-              <p style={{ fontSize: '.8rem', color: '#8499c2', fontFamily: "'DM Sans',sans-serif", marginTop: 4, marginBottom: 0 }}>
-                {open
-                  ? hadPredictions
-                    ? 'Revisá tus predicciones o ajustalas antes del cierre.'
-                    : 'Ingresá el resultado de cada partido.'
-                  : 'Podés ver tus predicciones pero ya no se pueden editar.'}
-              </p>
+          {/* ═══════════════ SIDEBAR (desktop) ═══════════════ */}
+          <aside className="pm-side">
+            <div className="pm-side-head">
+              <div className="pm-side-eyebrow">Predicciones · Mundial 2026</div>
+              <h2 className="pm-side-title">{bet.titulo}</h2>
             </div>
 
-            <button onClick={onClose} aria-label="Cerrar" style={{
-              flexShrink: 0, width: 36, height: 36, borderRadius: 8,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: 'rgba(2,15,39,0.4)', border: '1px solid rgba(132,153,194,0.2)',
-              color: '#8499c2', cursor: 'pointer', transition: 'all .15s',
-            }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,77,109,0.1)'
-                e.currentTarget.style.borderColor = 'rgba(255,77,109,0.4)'
-                e.currentTarget.style.color = '#ff4d6d'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(2,15,39,0.4)'
-                e.currentTarget.style.borderColor = 'rgba(132,153,194,0.2)'
-                e.currentTarget.style.color = '#8499c2'
-              }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
+            <div className="pm-stats">
+              <div className="pm-stat">
+                <div className="pm-stat-num">{filledCount}</div>
+                <div className="pm-stat-lab">Cargadas</div>
+              </div>
+              <div className="pm-stat">
+                <div className={`pm-stat-num ${pendingCount === 0 ? '' : 'dim'}`}>{pendingCount}</div>
+                <div className="pm-stat-lab">Pendientes</div>
+              </div>
+            </div>
 
-          {/* Cuerpo */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
-            <form onSubmit={handleSubmit} id="predict-form" style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+            <div className="pm-side-status">
+              {open ? (
+                <span className={`pm-side-pill ${isClosingSoon ? 'pm-pill-soon' : 'pm-pill-open'}`}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+                  {remaining}
+                </span>
+              ) : (
+                <span className="pm-side-pill pm-pill-closed">Cerrada</span>
+              )}
+              <div className="pm-side-status-detail">
+                {open
+                  ? hadPredictions
+                    ? 'Revisá o ajustá tus predicciones antes del cierre.'
+                    : 'Cargá el resultado de cada partido. Podés editar mientras esté abierta.'
+                  : 'Modo solo lectura — la apuesta ya cerró.'}
+              </div>
+            </div>
+
+            <nav className="pm-nav">
+              <div className="pm-nav-title">Partidos ({totalMatches})</div>
+              {bet.partidos?.map((m, idx) => {
+                const done = predicionCompleta(m)
+                const live = m.estado === 'en_vivo'
+                const isActive = idx === activeMatchIdx
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`pm-nav-item ${done ? 'done' : ''} ${live ? 'live' : ''} ${isActive ? 'active' : ''}`}
+                    onClick={() => scrollToMatch(m.id, idx)}
+                  >
+                    <span className="pm-nav-num">{idx + 1}</span>
+                    <span className="pm-nav-teams">
+                      {m.codigo_local || m.equipo_local} · {m.codigo_visitante || m.equipo_visitante}
+                    </span>
+                    <span className="pm-nav-dot" />
+                  </button>
+                )
+              })}
+            </nav>
+          </aside>
+
+          {/* ═══════════════ MAIN ═══════════════ */}
+          <div className="pm-main">
+
+            {/* Top bar */}
+            <header className="pm-topbar">
+              <div className="pm-topbar-info">
+                <div className="pm-topbar-eyebrow">Centro de Predicciones</div>
+                <h2 className="pm-topbar-title">{bet.titulo}</h2>
+              </div>
+              <div className="pm-topbar-actions">
+                {open && (
+                  <span className={`pm-side-pill pm-mobile-status ${isClosingSoon ? 'pm-pill-soon' : 'pm-pill-open'}`}>
+                    {remaining}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="pm-icon-btn"
+                  onClick={onClose}
+                  aria-label="Cerrar"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            </header>
+
+            {/* Mobile quick nav */}
+            <div className="pm-quick-nav" ref={navRef}>
+              <div className="pm-quick-row">
+                {bet.partidos?.map((m, idx) => {
+                  const done = predicionCompleta(m)
+                  const live = m.estado === 'en_vivo'
+                  const isActive = idx === activeMatchIdx
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      className={`pm-quick-pill ${done ? 'done' : ''} ${live ? 'live' : ''} ${isActive ? 'active' : ''}`}
+                      onClick={() => scrollToMatch(m.id, idx)}
+                    >
+                      {idx + 1}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Match list */}
+            <div className="pm-list" ref={listRef}>
 
               {razonBloqueo && (
-                <div style={{
-                  borderRadius: 12, padding: '1rem 1.25rem',
-                  display: 'flex', alignItems: 'flex-start', gap: '.75rem',
-                  background: 'rgba(255,77,109,0.08)', border: '1px solid rgba(255,77,109,0.4)',
-                  boxShadow: '0 4px 16px rgba(255,77,109,0.08)',
-                }}>
-                  <div style={{
-                    flexShrink: 0, width: 36, height: 36, borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(255,77,109,0.15)', border: '1px solid rgba(255,77,109,0.4)',
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4d6d" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-                    </svg>
+                <div className="pm-block">
+                  <div className="pm-block-icon">!</div>
+                  <div className="pm-block-content">
+                    <div className="pm-block-title">{razonBloqueo.titulo}</div>
+                    <div className="pm-block-detail">{razonBloqueo.detalle}</div>
                   </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <p style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 700, color: '#ff4d6d', fontSize: '.9rem', margin: '0 0 4px' }}>
-                      {razonBloqueo.titulo}
-                    </p>
-                    <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '.8rem', color: '#8499c2', lineHeight: 1.5, margin: 0 }}>
-                      {razonBloqueo.detalle}
-                    </p>
-                  </div>
+                </div>
+              )}
+
+              {totalMatches === 0 && (
+                <div className="pm-empty">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 6v6l4 2" />
+                  </svg>
+                  <h3>No hay partidos disponibles</h3>
+                  <p>Esta apuesta aún no tiene fixture cargado</p>
                 </div>
               )}
 
@@ -372,7 +1557,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                 const isDisabled = !open || isLive || isFinished || estaBloqueado
                 const sc         = scores[match.id] || { local: '', visitante: '' }
                 const hasScore   = sc.local !== '' && sc.visitante !== ''
-                const matchState = isLive ? 'EN VIVO' : isFinished ? 'FINALIZADO' : null
                 const elim       = esEliminatoria(match.fase)
                 const pl         = sc.local !== '' ? parseInt(sc.local, 10) : null
                 const pv         = sc.visitante !== '' ? parseInt(sc.visitante, 10) : null
@@ -380,127 +1564,116 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                 const clasifElegido = clasificados[match.id] || ''
                 const completo   = predicionCompleta(match)
 
+                const cardClass = [
+                  'pm-card',
+                  completo && !isLive && !isFinished ? 'done' : '',
+                  isLive ? 'live' : '',
+                ].filter(Boolean).join(' ')
+
                 return (
-                  <div key={match.id} style={{
-                    borderRadius: 12, padding: '1rem 1.25rem',
-                    background: 'rgba(2,15,39,0.45)',
-                    border: `1px solid ${isLive ? 'rgba(255,61,113,0.35)' : completo ? 'rgba(34,217,223,0.3)' : 'rgba(132,153,194,0.2)'}`,
-                    transition: 'all .2s',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem', gap: '.5rem', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                          Partido {idx + 1}
-                        </span>
-                        {elim && (
-                          <span style={{
-                            display: 'inline-flex', alignItems: 'center',
-                            padding: '.1rem .45rem', borderRadius: 4,
-                            fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em',
-                            background: 'rgba(244,180,42,.12)', color: '#f4b42a',
-                            border: '1px solid rgba(244,180,42,.3)', fontFamily: "'DM Sans',sans-serif",
-                          }}>
-                            Eliminación directa
+                  <div
+                    key={match.id}
+                    ref={el => { matchRefs.current[match.id] = el }}
+                    data-match-id={match.id}
+                    className={cardClass}
+                  >
+                    {/* Strip */}
+                    <div className="pm-strip">
+                      <div className="pm-strip-left">
+                        <span className="pm-strip-num">{String(idx + 1).padStart(2, '0')}</span>
+                        <span>Partido</span>
+                        {elim && <span className="pm-strip-fase">· Eliminación</span>}
+                      </div>
+                      <div className="pm-strip-right">
+                        {isLive && (
+                          <span className="pm-tag pm-tag-live">
+                            <span className="pm-tag-dot pulse" /> LIVE
+                          </span>
+                        )}
+                        {isFinished && <span className="pm-tag pm-tag-fin">FT</span>}
+                        {!isLive && !isFinished && completo && (
+                          <span className="pm-tag pm-tag-done">
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Lista
                           </span>
                         )}
                       </div>
-
-                      {matchState && (
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '.35rem',
-                          padding: '.1rem .5rem', borderRadius: 4,
-                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em',
-                          background: isLive ? 'rgba(255,61,113,0.15)' : 'rgba(244,180,42,0.1)',
-                          color: isLive ? '#ff3d71' : '#f4b42a',
-                          border: `1px solid ${isLive ? 'rgba(255,61,113,0.35)' : 'rgba(244,180,42,0.3)'}`,
-                          fontFamily: "'DM Sans',sans-serif",
-                        }}>
-                          {isLive && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ff3d71', animation: 'pm-pulse 1.4s ease infinite' }} />}
-                          {matchState}
-                        </span>
-                      )}
-
-                      {!matchState && completo && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.25rem', fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em', color: '#22d9df', fontFamily: "'DM Sans',sans-serif" }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                          Guardada
-                        </span>
-                      )}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto 1fr', alignItems: 'center', gap: '.6rem' }}>
-                      <span style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 600, color: '#fff', fontSize: '.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {match.equipo_local}
-                      </span>
+                    {/* Board */}
+                    <div className="pm-board">
+                      <div className="pm-side-team left">
+                        {match.bandera_local && (
+                          <img src={match.bandera_local} alt="" className="pm-flag-lg" />
+                        )}
+                        <div className="pm-team-block">
+                          {match.codigo_local && <div className="pm-team-code">{match.codigo_local}</div>}
+                          <div className="pm-team-nm">{match.equipo_local}</div>
+                        </div>
+                      </div>
 
-                      <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
-                        value={sc.local}
-                        onChange={e => updateScore(match.id, 'local', e.target.value)}
-                        placeholder="—" disabled={isDisabled}
-                        aria-label={`Goles ${match.equipo_local}`}
-                        style={{
-                          width: 56, height: 56, textAlign: 'center',
-                          fontFamily: "'Bebas Neue',sans-serif", fontSize: '2rem',
-                          borderRadius: 8, outline: 'none',
-                          background: 'rgba(15,43,79,0.8)', border: '1px solid rgba(132,153,194,0.2)', color: '#22d9df',
-                          opacity: isDisabled ? 0.6 : 1, cursor: isDisabled ? 'not-allowed' : 'text',
-                          transition: 'all .15s',
-                        }}
-                        onFocus={e => { if (isDisabled) return; e.target.style.borderColor = '#22d9df'; e.target.style.boxShadow = '0 0 0 3px rgba(34,217,223,0.2)' }}
-                        onBlur={e => { e.target.style.borderColor = 'rgba(132,153,194,0.2)'; e.target.style.boxShadow = 'none' }}
-                      />
+                      <div className="pm-center">
+                        <input
+                          type="text" 
+                          inputMode="numeric" 
+                          maxLength={2}
+                          value={sc.local}
+                          onChange={e => updateScore(match.id, 'local', e.target.value)}
+                          placeholder="—"
+                          disabled={isDisabled}
+                          aria-label={`Goles ${match.equipo_local}`}
+                          className="pm-input"
+                        />
+                        <span className="pm-dash">:</span>
+                        <input
+                          type="text" 
+                          inputMode="numeric" 
+                          maxLength={2}
+                          value={sc.visitante}
+                          onChange={e => updateScore(match.id, 'visitante', e.target.value)}
+                          placeholder="—"
+                          disabled={isDisabled}
+                          aria-label={`Goles ${match.equipo_visitante}`}
+                          className="pm-input"
+                        />
+                      </div>
 
-                      <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.3rem', color: '#f4b42a', padding: '0 .25rem' }}>vs</span>
-
-                      <input type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
-                        value={sc.visitante}
-                        onChange={e => updateScore(match.id, 'visitante', e.target.value)}
-                        placeholder="—" disabled={isDisabled}
-                        aria-label={`Goles ${match.equipo_visitante}`}
-                        style={{
-                          width: 56, height: 56, textAlign: 'center',
-                          fontFamily: "'Bebas Neue',sans-serif", fontSize: '2rem',
-                          borderRadius: 8, outline: 'none',
-                          background: 'rgba(15,43,79,0.8)', border: '1px solid rgba(132,153,194,0.2)', color: '#22d9df',
-                          opacity: isDisabled ? 0.6 : 1, cursor: isDisabled ? 'not-allowed' : 'text',
-                          transition: 'all .15s',
-                        }}
-                        onFocus={e => { if (isDisabled) return; e.target.style.borderColor = '#22d9df'; e.target.style.boxShadow = '0 0 0 3px rgba(34,217,223,0.2)' }}
-                        onBlur={e => { e.target.style.borderColor = 'rgba(132,153,194,0.2)'; e.target.style.boxShadow = 'none' }}
-                      />
-
-                      <span style={{ fontFamily: "'DM Sans',sans-serif", fontWeight: 600, color: '#fff', fontSize: '.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'right' }}>
-                        {match.equipo_visitante}
-                      </span>
+                      <div className="pm-side-team right">
+                        {match.bandera_visitante && (
+                          <img src={match.bandera_visitante} alt="" className="pm-flag-lg" />
+                        )}
+                        <div className="pm-team-block">
+                          {match.codigo_visitante && <div className="pm-team-code">{match.codigo_visitante}</div>}
+                          <div className="pm-team-nm">{match.equipo_visitante}</div>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* ★ Selector de clasificado: SOLO cuando hay empate predicho.
-                       En ganador claro, mostramos un badge sutil indicando quién pasa según el marcador. */}
+                    {/* Extra: clasificado / auto / resultado */}
                     {elim && empate && (
-                      <div style={{ marginTop: '.85rem', paddingTop: '.85rem', borderTop: '1px solid rgba(132,153,194,0.15)' }}>
-                        <p style={{
-                          fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em',
-                          color: '#f4b42a', fontFamily: "'DM Sans',sans-serif",
-                          margin: '0 0 .5rem', display: 'flex', alignItems: 'center', gap: '.4rem',
-                        }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f4b42a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                            <line x1="12" y1="9" x2="12" y2="13"/>
-                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                      <div className="pm-extra">
+                        <div className="pm-clasif-label">
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 7v5l3 2" />
                           </svg>
                           ¿Quién pasa por penales?
-                        </p>
-                        <div style={{ display: 'flex', gap: '.5rem' }}>
+                        </div>
+                        <div className="pm-clasif-row">
                           <button
                             type="button"
                             disabled={isDisabled}
                             onClick={() => updateClasificado(match.id, match.codigo_local)}
-                            className={`pm-clasif-radio ${clasifElegido === match.codigo_local ? 'active' : ''}`}
+                            className={`pm-radio ${clasifElegido === match.codigo_local ? 'active' : ''}`}
                           >
                             {match.bandera_local && (
-                              <img src={match.bandera_local} alt="" style={{ width: 16, height: 11, objectFit: 'cover', borderRadius: 2 }} />
+                              <img 
+                                src={match.bandera_local} 
+                                alt="" 
+                                style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
+                              />
                             )}
                             {match.equipo_local}
                           </button>
@@ -508,146 +1681,131 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
                             type="button"
                             disabled={isDisabled}
                             onClick={() => updateClasificado(match.id, match.codigo_visitante)}
-                            className={`pm-clasif-radio ${clasifElegido === match.codigo_visitante ? 'active' : ''}`}
+                            className={`pm-radio ${clasifElegido === match.codigo_visitante ? 'active' : ''}`}
                           >
                             {match.bandera_visitante && (
-                              <img src={match.bandera_visitante} alt="" style={{ width: 16, height: 11, objectFit: 'cover', borderRadius: 2 }} />
+                              <img 
+                                src={match.bandera_visitante} 
+                                alt="" 
+                                style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
+                              />
                             )}
                             {match.equipo_visitante}
                           </button>
                         </div>
                         {!clasifElegido && (
-                          <p style={{ fontSize: 10, color: '#ff4d6d', marginTop: '.4rem', marginBottom: 0, fontFamily: "'DM Sans',sans-serif" }}>
+                          <div className="pm-warn">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="12" cy="12" r="9" />
+                              <line x1="12" y1="8" x2="12" y2="12" />
+                              <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
                             Tenés que elegir quién pasa
-                          </p>
+                          </div>
                         )}
                       </div>
                     )}
 
-                    {/* En eliminatoria con ganador claro: mostrar quién pasa según el marcador (informativo) */}
                     {elim && hasScore && !empate && (
-                      <div style={{ marginTop: '.7rem', paddingTop: '.5rem', borderTop: '1px dashed rgba(132,153,194,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.45rem' }}>
-                        <span style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.1em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                          Pasa según tu marcador:
-                        </span>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '.3rem', fontSize: 11, fontWeight: 700, color: '#22d9df', fontFamily: "'DM Sans',sans-serif" }}>
-                          {(() => {
-                            const ganador = pl > pv ? { nombre: match.equipo_local, bandera: match.bandera_local } : { nombre: match.equipo_visitante, bandera: match.bandera_visitante }
-                            return (
-                              <>
-                                {ganador.bandera && <img src={ganador.bandera} alt="" style={{ width: 14, height: 10, objectFit: 'cover', borderRadius: 2 }} />}
-                                {ganador.nombre}
-                              </>
-                            )
-                          })()}
-                        </span>
+                      <div className="pm-extra">
+                        <div className="pm-auto">
+                          <span className="pm-auto-arrow">▸</span>
+                          <span className="pm-auto-lab">Pasa según tu marcador:</span>
+                          <span className="pm-auto-team">
+                            {(() => {
+                              const ganador = pl > pv
+                                ? { nombre: match.equipo_local, bandera: match.bandera_local }
+                                : { nombre: match.equipo_visitante, bandera: match.bandera_visitante }
+                              return (
+                                <>
+                                  {ganador.bandera && (
+                                    <img 
+                                      src={ganador.bandera} 
+                                      alt="" 
+                                      style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
+                                    />
+                                  )}
+                                  {ganador.nombre}
+                                </>
+                              )
+                            })()}
+                          </span>
+                        </div>
                       </div>
                     )}
 
                     {(isLive || isFinished) && (match.goles_local != null || match.goles_visitante != null) && (
-                      <div style={{ marginTop: '.75rem', paddingTop: '.75rem', borderTop: '1px solid rgba(132,153,194,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', fontSize: '.75rem', fontFamily: "'DM Sans',sans-serif", flexWrap: 'wrap' }}>
-                        <span style={{ color: '#8499c2', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 10 }}>
-                          {isLive ? 'En vivo' : 'Resultado'}:
-                        </span>
-                        <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: '1.1rem', letterSpacing: '.04em', color: isLive ? '#ff3d71' : '#fff' }}>
-                          {match.goles_local ?? 0} - {match.goles_visitante ?? 0}
-                        </span>
-                        {match.penales_local != null && match.penales_local !== '' &&
-                         match.penales_visit != null && match.penales_visit !== '' && (
-                          <span style={{ fontSize: 10, color: '#f4b42a', textTransform: 'uppercase', letterSpacing: '.08em', fontWeight: 700 }}>
-                            (pen {match.penales_local}-{match.penales_visit})
+                      <div className="pm-extra">
+                        <div className="pm-result">
+                          <span className="pm-result-lab">{isLive ? 'En vivo' : 'Resultado'}</span>
+                          <span className="pm-result-sc">
+                            {match.goles_local ?? 0} - {match.goles_visitante ?? 0}
                           </span>
-                        )}
+                          {match.penales_local != null && match.penales_local !== '' &&
+                            match.penales_visit != null && match.penales_visit !== '' && (
+                              <span className="pm-result-pen">
+                                (pen {match.penales_local}-{match.penales_visit})
+                              </span>
+                            )}
+                        </div>
                       </div>
                     )}
                   </div>
                 )
               })}
-
-            </form>
-          </div>
-
-          {/* Footer */}
-          <div style={{
-            flexShrink: 0, padding: '1rem 1.25rem',
-            background: 'linear-gradient(0deg, rgba(15,33,69,0.98) 0%, rgba(15,43,79,0.92) 100%)',
-            borderTop: '1px solid rgba(34,217,223,0.15)',
-          }}>
-            {open && (
-              <div style={{ marginBottom: '.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.4rem' }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.15em', color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                    Progreso
-                  </span>
-                  <span style={{ fontSize: 12, color: '#8499c2', fontFamily: "'DM Sans',sans-serif" }}>
-                    Predijiste{' '}
-                    <span style={{ fontFamily: "'Bebas Neue',sans-serif", fontSize: 14, color: '#22d9df', letterSpacing: '.04em' }}>
-                      {filledCount}
-                    </span>
-                    {' '}de {totalMatches} partidos
-                  </span>
-                </div>
-                <div style={{ height: 6, borderRadius: 99, overflow: 'hidden', background: 'rgba(2,15,39,0.6)' }}>
-                  <div style={{
-                    height: '100%', transition: 'width .5s', borderRadius: 99,
-                    width: totalMatches > 0 ? `${(filledCount / totalMatches) * 100}%` : '0%',
-                    background: 'linear-gradient(90deg, #22d9df 0%, #7af5f8 100%)',
-                    boxShadow: '0 0 12px rgba(34,217,223,0.4)',
-                  }} />
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '.75rem' }}>
-              <button type="button" onClick={onClose} style={{
-                padding: '.75rem 1.25rem', borderRadius: 8,
-                fontFamily: "'DM Sans',sans-serif", fontWeight: 600, fontSize: 14,
-                background: 'transparent', border: '1px solid rgba(132,153,194,0.2)',
-                color: '#8499c2', cursor: 'pointer', transition: 'all .15s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(34,217,223,0.3)'; e.currentTarget.style.color = '#fff' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(132,153,194,0.2)'; e.currentTarget.style.color = '#8499c2' }}>
-                Cancelar
-              </button>
-
-              {open && !estaBloqueado && (
-                <button type="submit" form="predict-form" disabled={loading || filledCount === 0} style={{
-                  flex: 1, padding: '.75rem', borderRadius: 8,
-                  fontFamily: "'DM Sans',sans-serif", fontWeight: 700, fontSize: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', border: 'none',
-                  background: (loading || filledCount === 0) ? 'rgba(34,217,223,0.3)' : 'linear-gradient(135deg, #22d9df 0%, #7af5f8 100%)',
-                  color: '#020F27',
-                  boxShadow: (loading || filledCount === 0) ? 'none' : '0 6px 24px rgba(34,217,223,0.35)',
-                  opacity: (loading || filledCount === 0) ? 0.5 : 1,
-                  cursor: (loading || filledCount === 0) ? 'not-allowed' : 'pointer',
-                  transition: 'all .15s',
-                }}
-                  onMouseEnter={e => { if (!loading && filledCount > 0) { e.currentTarget.style.boxShadow = '0 8px 32px rgba(34,217,223,0.55)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                  onMouseLeave={e => { if (!loading && filledCount > 0) { e.currentTarget.style.boxShadow = '0 6px 24px rgba(34,217,223,0.35)'; e.currentTarget.style.transform = 'translateY(0)' } }}>
-                  {loading ? (
-                    <>
-                      <span style={{ width: 16, height: 16, border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'pm-spin .8s linear infinite' }} />
-                      Guardando...
-                    </>
-                  ) : hadPredictions ? 'Actualizar predicciones' : 'Guardar predicciones'}
-                </button>
-              )}
             </div>
 
-            {open && !estaBloqueado && (
-              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', fontFamily: "'DM Sans',sans-serif", textAlign: 'center', marginTop: '.75rem', marginBottom: 0 }}>
-                Podés editar tus predicciones mientras la apuesta siga abierta
-              </p>
-            )}
+            {/* Footer */}
+            <footer className="pm-foot">
+              <div className="pm-progress-wrap">
+                {open && (
+                  <>
+                    <div className="pm-progress-row">
+                      <span className="pm-progress-lab">Progreso</span>
+                      <span className="pm-progress-cn">
+                        <strong>{filledCount}</strong>/ {totalMatches}
+                      </span>
+                    </div>
+                    <div className="pm-progress-bar">
+                      <div className="pm-progress-fill" style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </>
+                )}
+              </div>
 
-            {open && estaBloqueado && (
-              <p style={{ fontSize: 10, color: '#ff4d6d', fontFamily: "'DM Sans',sans-serif", textAlign: 'center', marginTop: '.75rem', marginBottom: 0, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>
-                Modo solo lectura · No podés modificar predicciones
-              </p>
-            )}
+              <div className="pm-actions">
+                <button type="button" className="pm-btn pm-btn-cancel" onClick={onClose}>
+                  Cancelar
+                </button>
+                {open && !estaBloqueado && (
+                  <button
+                    type="submit"
+                    className="pm-btn pm-btn-submit"
+                    disabled={loading || filledCount === 0}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="pm-spin" />
+                        Guardando
+                      </>
+                    ) : hadPredictions ? 'Actualizar' : 'Guardar'}
+                  </button>
+                )}
+              </div>
+
+              {open && !estaBloqueado && (
+                <div className="pm-foot-note">
+                  Podés editar tus predicciones mientras la apuesta siga abierta
+                </div>
+              )}
+              {open && estaBloqueado && (
+                <div className="pm-foot-note warn">
+                  Modo solo lectura · No podés modificar predicciones
+                </div>
+              )}
+            </footer>
           </div>
-
-        </div>
+        </form>
       </div>
     </>
   )

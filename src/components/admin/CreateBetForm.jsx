@@ -26,21 +26,17 @@ function isTBD(m) {
 
 function estaDisponible(m) { return m.estado === 'programado' }
 
-// ✅ Verificar si el partido ya terminó
 function partidoYaTerminado(partido) {
   if (!partido.fecha_partido) return false
   const fechaPartido = new Date(partido.fecha_partido)
   const ahora = new Date()
-  // Asumimos que un partido dura aprox 2 horas
   const partidoTerminado = new Date(fechaPartido.getTime() + (2 * 60 * 60 * 1000))
   return ahora >= partidoTerminado
 }
 
-// ✅ Verificar si una fase completa ya terminó
 function faseYaTerminada(partidos, fase) {
   const partidosDeFase = partidos.filter(p => p.fase === fase)
   if (partidosDeFase.length === 0) return false
-  // Si todos los partidos de la fase ya terminaron
   return partidosDeFase.every(p => partidoYaTerminado(p) || p.estado === 'finalizado')
 }
 
@@ -54,20 +50,20 @@ function Field({ label, error, ...props }) {
       </label>
       <input
         {...props}
-        className="w-full px-3 py-2.5 rounded-xl font-body text-sm outline-none transition-all"
+        className="w-full px-4 py-3 rounded-xl font-body text-sm outline-none transition-all"
         style={{ 
           background: '#fff', 
-          border: `1px solid ${error ? '#e03252' : '#e8dfd0'}`, 
-          color: '#0c182b' 
+          border: `1.5px solid ${error ? '#e03252' : '#f0eadb'}`, 
+          color: '#0a1226' 
         }}
         onFocus={e => {
           e.target.style.borderColor = error ? '#e03252' : '#ebc32b'
           e.target.style.boxShadow = error 
-            ? '0 0 0 3px rgba(224,50,82,.12)' 
-            : '0 0 0 3px rgba(235,195,43,.12)'
+            ? '0 0 0 3px rgba(224,50,82,.08)' 
+            : '0 0 0 3px rgba(235,195,43,.08)'
         }}
         onBlur={e => {
-          e.target.style.borderColor = error ? '#e03252' : '#e8dfd0'
+          e.target.style.borderColor = error ? '#e03252' : '#f0eadb'
           e.target.style.boxShadow = 'none'
         }}
       />
@@ -86,15 +82,24 @@ function FilterChip({ active, onClick, children, disabled }) {
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="px-2.5 py-1 rounded-full font-body font-semibold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+      className="px-3 py-1.5 rounded-lg font-body font-semibold text-xs transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
       style={{
-        fontSize: 11,
-        background: active ? '#0c182b' : '#fff',
-        border: `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
+        background: active ? '#0a1226' : '#fff',
+        border: `1.5px solid ${active ? '#0a1226' : '#f0eadb'}`,
         color: active ? '#ebc32b' : '#5f6e8a',
       }}
-      onMouseEnter={e => { if (!active && !disabled) { e.currentTarget.style.borderColor = '#0c182b'; e.currentTarget.style.color = '#0c182b' } }}
-      onMouseLeave={e => { if (!active && !disabled) { e.currentTarget.style.borderColor = '#e8dfd0'; e.currentTarget.style.color = '#5f6e8a' } }}
+      onMouseEnter={e => { 
+        if (!active && !disabled) { 
+          e.currentTarget.style.borderColor = '#ebc32b'
+          e.currentTarget.style.color = '#c99f16'
+        } 
+      }}
+      onMouseLeave={e => { 
+        if (!active && !disabled) { 
+          e.currentTarget.style.borderColor = '#f0eadb'
+          e.currentTarget.style.color = '#5f6e8a'
+        } 
+      }}
     >
       {children}
     </button>
@@ -112,7 +117,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   const [filtroGrupo, setFiltroGrupo] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
   const [errorFecha, setErrorFecha] = useState('')
-  // ✅ Info del primer partido seleccionado (para mostrar referencia y limitar el input datetime-local)
   const [primerPartido, setPrimerPartido] = useState(null)
 
   useEffect(() => {
@@ -171,7 +175,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
   const seleccionados = form.partidos_ids.length
 
-  // ✅ Validar fecha límite vs partidos seleccionados
   useEffect(() => {
     if (form.partidos_ids.length === 0) {
       setErrorFecha('')
@@ -251,7 +254,6 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       return
     }
 
-    // ✅ VALIDACIÓN CRÍTICA: Verificar que la fecha límite sea válida
     if (errorFecha) {
       toast.error('Corregí la fecha límite antes de continuar.')
       return
@@ -312,7 +314,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
   }, [primerPartido])
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
 
       {/* Título */}
       <Field
@@ -323,14 +325,16 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
         placeholder="Ej: Fase de grupos · Jornada 1"
       />
 
-      {/* Partidos */}
-      <div className="flex flex-col gap-2">
+      {/* ── SECCIÓN PARTIDOS ── */}
+      <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
             Partidos
           </span>
           <span className="font-body text-xs" style={{ color: '#a8b2c4' }}>
-            <span className="font-bold" style={{ color: '#c99f16' }}>{seleccionados}</span>
+            <span className="font-bold" style={{ color: seleccionados > 0 ? '#c99f16' : '#a8b2c4' }}>
+              {seleccionados}
+            </span>
             {' / '}{partidosDisponibles.length} seleccionados
           </span>
         </div>
@@ -340,75 +344,43 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           <div className="flex flex-col gap-2">
             <span className="font-body font-semibold text-xs uppercase tracking-wider"
               style={{ color: '#a8b2c4' }}>Fases</span>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => handleChangeFase('todas')}
-                className="px-3 py-2 rounded-lg font-body font-semibold text-sm transition-all"
-                style={{
-                  background: filtroFase === 'todas' ? '#0c182b' : '#fff',
-                  border: `1px solid ${filtroFase === 'todas' ? '#0c182b' : '#e8dfd0'}`,
-                  color: filtroFase === 'todas' ? '#ebc32b' : '#5f6e8a',
-                }}
-              >
+            <div className="flex flex-wrap gap-2">
+              <FilterChip active={filtroFase === 'todas'} onClick={() => handleChangeFase('todas')}>
                 Todas las fases
-              </button>
-              {fasesDisponibles.map(f => {
-                const terminada = faseYaTerminada(partidosDisponibles, f)
-                return (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => handleChangeFase(f)}
-                    className="px-3 py-2 rounded-lg font-body font-semibold text-sm transition-all relative"
-                    style={{
-                      background: filtroFase === f ? '#0c182b' : '#fff',
-                      border: `1px solid ${filtroFase === f ? '#0c182b' : '#e8dfd0'}`,
-                      color: filtroFase === f ? '#ebc32b' : '#5f6e8a',
-                    }}
-                  >
-                    {LABEL_FASE[f] || f}
-                    {terminada && (
-                      <span className="absolute -top-1 -right-1 px-1.5 py-0.5 rounded-full font-body font-bold uppercase"
-                        style={{ 
-                          fontSize: 8, 
-                          background: '#e03252', 
-                          color: '#fff',
-                          letterSpacing: '.05em'
-                        }}>
-                        Finalizada
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
+              </FilterChip>
+              {fasesDisponibles.map(f => (
+                <FilterChip key={f} active={filtroFase === f} onClick={() => handleChangeFase(f)}>
+                  {LABEL_FASE[f] || f}
+                </FilterChip>
+              ))}
             </div>
           </div>
         )}
 
-        {/* Filtros de Jornada */}
-        {jornadasDisponibles.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Jornada</span>
-            <FilterChip active={filtroJornada === 'todas'} onClick={() => setFiltroJornada('todas')}>Todas</FilterChip>
-            {jornadasDisponibles.map(j => (
-              <FilterChip key={j} active={filtroJornada === j} onClick={() => setFiltroJornada(j)}>{j}</FilterChip>
-            ))}
-          </div>
-        )}
+        {/* Filtros de Jornada + Grupo */}
+        <div className="flex flex-wrap gap-3">
+          {jornadasDisponibles.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-body font-semibold uppercase text-[10px]"
+                style={{ color: '#a8b2c4', letterSpacing: '.1em', minWidth: 60 }}>Jornada</span>
+              <FilterChip active={filtroJornada === 'todas'} onClick={() => setFiltroJornada('todas')}>Todas</FilterChip>
+              {jornadasDisponibles.map(j => (
+                <FilterChip key={j} active={filtroJornada === j} onClick={() => setFiltroJornada(j)}>{j}</FilterChip>
+              ))}
+            </div>
+          )}
 
-        {/* Filtros de Grupo */}
-        {gruposDisponibles.length > 0 && (
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="font-body font-semibold uppercase w-14"
-              style={{ fontSize: 10, color: '#a8b2c4', letterSpacing: '.1em' }}>Grupo</span>
-            <FilterChip active={filtroGrupo === 'todos'} onClick={() => setFiltroGrupo('todos')}>Todos</FilterChip>
-            {gruposDisponibles.map(g => (
-              <FilterChip key={g} active={filtroGrupo === g} onClick={() => setFiltroGrupo(g)}>{g}</FilterChip>
-            ))}
-          </div>
-        )}
+          {gruposDisponibles.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-body font-semibold uppercase text-[10px]"
+                style={{ color: '#a8b2c4', letterSpacing: '.1em', minWidth: 50 }}>Grupo</span>
+              <FilterChip active={filtroGrupo === 'todos'} onClick={() => setFiltroGrupo('todos')}>Todos</FilterChip>
+              {gruposDisponibles.map(g => (
+                <FilterChip key={g} active={filtroGrupo === g} onClick={() => setFiltroGrupo(g)}>{g}</FilterChip>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Búsqueda */}
         <input
@@ -416,121 +388,189 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
           placeholder="Buscar equipo..."
-          className="w-full px-3 py-2 rounded-xl font-body text-sm outline-none transition-all"
-          style={{ background: '#fff', border: '1px solid #e8dfd0', color: '#0c182b' }}
-          onFocus={e => { e.target.style.borderColor = '#ebc32b'; e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.12)' }}
-          onBlur={e => { e.target.style.borderColor = '#e8dfd0'; e.target.style.boxShadow = 'none' }}
+          className="w-full px-4 py-3 rounded-xl font-body text-sm outline-none transition-all"
+          style={{ background: '#fff', border: '1.5px solid #f0eadb', color: '#0a1226' }}
+          onFocus={e => { 
+            e.target.style.borderColor = '#ebc32b'
+            e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.08)' 
+          }}
+          onBlur={e => { 
+            e.target.style.borderColor = '#f0eadb'
+            e.target.style.boxShadow = 'none' 
+          }}
         />
 
-        {/* Acciones */}
+        {/* Acciones rápidas */}
         <div className="flex items-center justify-between gap-2 text-xs font-body">
           <button type="button" onClick={toggleVisibles} disabled={partidosFiltrados.length === 0}
-            className="transition-colors disabled:opacity-40" style={{ color: '#c99f16' }}
+            className="transition-colors disabled:opacity-40 font-semibold" style={{ color: '#c99f16' }}
             onMouseEnter={e => { if (partidosFiltrados.length > 0) e.currentTarget.style.color = '#ebc32b' }}
             onMouseLeave={e => { e.currentTarget.style.color = '#c99f16' }}>
             {partidosFiltrados.every(m => form.partidos_ids.includes(m.id)) && partidosFiltrados.length > 0
-              ? `✕ Deseleccionar visibles (${partidosFiltrados.length})`
-              : `✓ Seleccionar visibles (${partidosFiltrados.length})`}
+              ? `✕ Deseleccionar visibles`
+              : `✓ Seleccionar visibles`}
           </button>
           {seleccionados > 0 && (
             <button type="button" onClick={limpiarSeleccion}
-              className="transition-colors" style={{ color: '#a8b2c4' }}
+              className="transition-colors font-semibold" style={{ color: '#a8b2c4' }}
               onMouseEnter={e => { e.currentTarget.style.color = '#e03252' }}
               onMouseLeave={e => { e.currentTarget.style.color = '#a8b2c4' }}>
-              Limpiar selección
+              Limpiar selección ({seleccionados})
             </button>
           )}
         </div>
 
-        {/* Lista de partidos */}
-        <div className="max-h-72 overflow-y-auto rounded-xl"
-          style={{ background: '#faf7f0', border: '1px solid #e8dfd0' }}>
-          {agrupados.length === 0 ? (
-            <p className="font-body text-xs text-center p-4" style={{ color: '#a8b2c4' }}>
-              No hay partidos que coincidan.
-            </p>
-          ) : agrupados.map(gr => {
-            const header = [LABEL_FASE[gr.fase] || gr.fase, gr.jornada, gr.grupo].filter(Boolean).join(' · ')
-            return (
-              <div key={`${gr.fase}-${gr.jornada}-${gr.grupo}`}>
-                {/* Subheader de grupo */}
-                <div className="px-3 py-1.5 flex items-center justify-between sticky top-0 z-10"
-                  style={{ background: '#0c182b', borderBottom: '1px solid rgba(255,255,255,.08)' }}>
-                  <span className="font-body font-semibold uppercase"
-                    style={{ fontSize: 10, color: 'rgba(235,195,43,.8)', letterSpacing: '.1em' }}>
-                    {header}
-                  </span>
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,.4)' }}>{gr.partidos.length}</span>
-                </div>
-
-                {gr.partidos.map(m => {
-                  const checked = form.partidos_ids.includes(m.id)
-                  return (
-                    <div
-                      key={m.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => toggleMatch(m.id)}
-                      onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggleMatch(m.id) } }}
-                      className="flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors"
-                      style={{
-                        background: checked ? 'rgba(235,195,43,.08)' : 'transparent',
-                        borderBottom: '1px solid #f0eadb',
-                        outline: 'none',
-                      }}
-                      onMouseEnter={e => { if (!checked) e.currentTarget.style.background = 'rgba(12,24,43,.04)' }}
-                      onMouseLeave={e => { if (!checked) e.currentTarget.style.background = 'transparent' }}
-                    >
-                      {/* Custom checkbox */}
-                      <span className="flex-shrink-0 w-4 h-4 rounded flex items-center justify-center"
-                        style={{
-                          border: `1.5px solid ${checked ? '#ebc32b' : '#e8dfd0'}`,
-                          background: checked ? '#ebc32b' : 'transparent',
-                          transition: 'all .15s',
-                        }}>
-                        {checked && (
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#05090f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        )}
+        {/* Lista de partidos con scroll */}
+        <div className="rounded-2xl overflow-hidden"
+          style={{ border: '1.5px solid #f0eadb', boxShadow: '0 2px 8px rgba(12,24,43,0.04)' }}>
+          <div className="max-h-96 overflow-y-auto"
+            style={{ 
+              background: '#fafafa',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#e8dfd0 transparent'
+            }}>
+            {agrupados.length === 0 ? (
+              <div className="text-center py-16"
+                style={{ background: '#fff' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e8dfd0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-3">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <p className="font-body text-sm" style={{ color: '#a8b2c4' }}>
+                  No hay partidos que coincidan con los filtros.
+                </p>
+              </div>
+            ) : agrupados.map(gr => {
+              const header = [LABEL_FASE[gr.fase] || gr.fase, gr.jornada, gr.grupo].filter(Boolean).join(' · ')
+              const faseTerminada = faseYaTerminada(partidosDisponibles, gr.fase)
+              
+              return (
+                <div key={`${gr.fase}-${gr.jornada}-${gr.grupo}`}>
+                  {/* Header de grupo */}
+                  <div className="sticky top-0 z-10 px-4 py-2.5 flex items-center justify-between"
+                    style={{ background: 'linear-gradient(135deg, #0a1226 0%, #1a2540 100%)', borderBottom: '1px solid rgba(235,195,43,0.15)' }}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-md flex items-center justify-center font-display font-bold text-xs"
+                        style={{ background: '#ebc32b', color: '#0a1226' }}>
+                        {gr.partidos.length}
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 font-body text-sm" style={{ color: '#0c182b' }}>
-                          {m.bandera_local && <img src={m.bandera_local} alt="" className="w-5 h-3.5 object-cover rounded-[2px]" />}
-                          <span className="truncate">{m.equipo_local}</span>
-                          <span style={{ color: '#a8b2c4', fontSize: 11 }}>vs</span>
-                          {m.bandera_visitante && <img src={m.bandera_visitante} alt="" className="w-5 h-3.5 object-cover rounded-[2px]" />}
-                          <span className="truncate">{m.equipo_visitante}</span>
-                        </div>
-                      </div>
-                      <span className="font-body whitespace-nowrap" style={{ fontSize: 10, color: '#a8b2c4' }}>
-                        {fmtFecha(m.fecha_partido)}
+                      <span className="font-body font-bold uppercase text-xs tracking-wider"
+                        style={{ color: '#ebc32b' }}>
+                        {header}
                       </span>
                     </div>
-                  )
-                })}
-              </div>
-            )
-          })}
+                    {faseTerminada && (
+                      <span className="px-2 py-0.5 rounded-full font-body font-bold uppercase text-[8px]"
+                        style={{ background: '#e03252', color: '#fff', letterSpacing: '.08em' }}>
+                        Finalizada
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Lista de partidos */}
+                  {gr.partidos.map(m => {
+                    const checked = form.partidos_ids.includes(m.id)
+                    const yaTermino = partidoYaTerminado(m)
+                    
+                    return (
+                      <label
+                        key={m.id}
+                        className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all"
+                        style={{
+                          background: checked ? 'rgba(235,195,43,0.08)' : '#fff',
+                          borderBottom: '1px solid #f5f5f5',
+                          opacity: yaTermino ? 0.5 : 1,
+                          cursor: yaTermino ? 'not-allowed' : 'pointer',
+                        }}
+                        onMouseEnter={e => { 
+                          if (!checked && !yaTermino) e.currentTarget.style.background = 'rgba(235,195,43,0.04)' 
+                        }}
+                        onMouseLeave={e => { 
+                          if (!checked && !yaTermino) e.currentTarget.style.background = '#fff' 
+                        }}
+                      >
+                        {/* Checkbox */}
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => !yaTermino && toggleMatch(m.id)}
+                          disabled={yaTermino}
+                          className="hidden"
+                        />
+                        <span className="flex-shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all"
+                          style={{
+                            border: `2px solid ${checked ? '#ebc32b' : '#e8dfd0'}`,
+                            background: checked ? '#ebc32b' : '#fff',
+                          }}>
+                          {checked && (
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0a1226" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          )}
+                        </span>
+
+                        {/* Equipos */}
+                        <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                          {m.bandera_local && (
+                            <img src={m.bandera_local} alt="" 
+                              className="w-6 h-4 object-cover rounded-sm flex-shrink-0"
+                              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+                          )}
+                          <span className="font-body font-semibold text-sm truncate"
+                            style={{ color: '#0a1226' }}>
+                            {m.equipo_local}
+                          </span>
+                          
+                          <span className="font-body text-xs flex-shrink-0"
+                            style={{ color: '#a8b2c4' }}>
+                            vs
+                          </span>
+                          
+                          {m.bandera_visitante && (
+                            <img src={m.bandera_visitante} alt="" 
+                              className="w-6 h-4 object-cover rounded-sm flex-shrink-0"
+                              style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }} />
+                          )}
+                          <span className="font-body font-semibold text-sm truncate"
+                            style={{ color: '#0a1226' }}>
+                            {m.equipo_visitante}
+                          </span>
+                        </div>
+
+                        {/* Fecha */}
+                        <span className="text-[11px] font-body px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0"
+                          style={{ 
+                            background: yaTermino ? 'rgba(224,50,82,0.08)' : 'rgba(95,110,138,0.08)', 
+                            color: yaTermino ? '#e03252' : '#5f6e8a'
+                          }}>
+                          {fmtFecha(m.fecha_partido)}
+                        </span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Tipo — solo Plan Pro */}
       {isPro && (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
-            Tipo
+            Tipo de apuesta
           </span>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {['libre', 'grupos'].map(t => {
               const active = form.type === t
               return (
                 <button key={t} type="button"
                   onClick={() => setForm(p => ({ ...p, type: t }))}
-                  className="flex-1 py-2.5 rounded-xl font-body font-semibold text-sm transition-all"
+                  className="py-3 rounded-xl font-body font-semibold text-sm transition-all"
                   style={{
-                    background: active ? '#0c182b' : '#fff',
-                    border: `1px solid ${active ? '#0c182b' : '#e8dfd0'}`,
+                    background: active ? '#0a1226' : '#fff',
+                    border: `1.5px solid ${active ? '#0a1226' : '#f0eadb'}`,
                     color: active ? '#ebc32b' : '#5f6e8a',
                   }}>
                   {t === 'grupos' ? 'Por Áreas' : 'Libre'}
@@ -543,10 +583,10 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
 
       {/* Áreas — solo Plan Pro y tipo grupos */}
       {isPro && form.type === 'grupos' && (
-        <div className="flex flex-col gap-2 p-3 rounded-xl"
-          style={{ border: '1px solid rgba(235,195,43,.25)', background: 'rgba(235,195,43,.04)' }}>
-          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#5f6e8a' }}>
-            Áreas participantes (Mín. 2)
+        <div className="flex flex-col gap-3 p-4 rounded-xl"
+          style={{ border: '1.5px solid rgba(235,195,43,.2)', background: 'rgba(235,195,43,.04)' }}>
+          <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#c99f16' }}>
+            Áreas participantes (Mínimo 2)
           </span>
           <div className="flex flex-wrap gap-2">
             {areas.map(a => {
@@ -568,7 +608,7 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       )}
 
       {/* Premio + Fecha */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Field
           label="Premio / Incentivo"
           value={form.premio}
@@ -591,10 +631,17 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
             required
           />
           {primerPartido && !errorFecha && (
-            <span className="font-body text-[11px]" style={{ color: '#5f6e8a' }}>
-              <span style={{ color: '#c99f16', fontWeight: 700 }}>ⓘ</span>{' '}
-              El primer partido es <strong style={{ color: '#0c182b' }}>{primerPartido.equipo_local} vs {primerPartido.equipo_visitante}</strong> el {fmtFecha(primerPartido.fecha_partido)}.
-            </span>
+            <div className="flex items-start gap-2 px-3 py-2 rounded-lg"
+              style={{ background: 'rgba(235,195,43,0.06)', border: '1px solid rgba(235,195,43,0.15)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c99f16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span className="font-body text-[11px]" style={{ color: '#5f6e8a' }}>
+                El primer partido es <strong style={{ color: '#0a1226' }}>{primerPartido.equipo_local} vs {primerPartido.equipo_visitante}</strong> el {fmtFecha(primerPartido.fecha_partido)}.
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -603,19 +650,38 @@ export default function CreateBetForm({ onSubmit, loading, matches = [] }) {
       <button
         type="submit"
         disabled={!canSubmit}
-        className="w-full mt-1 py-3.5 rounded-full font-body font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full py-4 rounded-xl font-body font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          background: canSubmit ? '#0c182b' : 'rgba(12,24,43,.2)',
+          background: canSubmit ? 'linear-gradient(135deg, #0a1226 0%, #1a2540 100%)' : 'rgba(12,24,43,.15)',
           color: canSubmit ? '#ebc32b' : '#a8b2c4',
-          boxShadow: canSubmit ? '0 4px 16px rgba(12,24,43,.2)' : 'none',
+          boxShadow: canSubmit ? '0 4px 16px rgba(10,18,38,.2)' : 'none',
         }}
-        onMouseEnter={e => { if (canSubmit) { e.currentTarget.style.background = '#17376a'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-        onMouseLeave={e => { if (canSubmit) { e.currentTarget.style.background = '#0c182b'; e.currentTarget.style.transform = '' } }}
+        onMouseEnter={e => { 
+          if (canSubmit) { 
+            e.currentTarget.style.background = 'linear-gradient(135deg, #1a2540 0%, #0a1226 100%)'
+            e.currentTarget.style.transform = 'translateY(-1px)'
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(10,18,38,.25)'
+          } 
+        }}
+        onMouseLeave={e => { 
+          if (canSubmit) { 
+            e.currentTarget.style.background = 'linear-gradient(135deg, #0a1226 0%, #1a2540 100%)'
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(10,18,38,.2)'
+          } 
+        }}
       >
-        {loading
-          ? <><span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />Creando...</>
-          : <>Crear Apuesta{seleccionados > 0 && ` · ${seleccionados} partidos`}</>
-        }
+        {loading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            Creando apuesta...
+          </>
+        ) : (
+          <>
+            Crear Apuesta
+            {seleccionados > 0 && ` · ${seleccionados} ${seleccionados === 1 ? 'partido' : 'partidos'}`}
+          </>
+        )}
       </button>
     </form>
   )
