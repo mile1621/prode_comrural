@@ -1,15 +1,15 @@
 /**
  * DashboardPage.jsx
  * Ubicación: src/dashboard/DashboardPage.jsx
- *
- * CAMBIOS: muestra el minuto de juego en la card "EN VIVO AHORA"
- * si el backend lo envió (campo `match.minuto`).
+ * ✅ INTEGRADO CON PredictModal
  */
+import { useState } from 'react'
 import AppShell from '../dashboard/AppShell.jsx'
 import { useAuth } from '../hooks/useAuth.jsx'
 import { useBets } from '../hooks/useBets.jsx'
 import { isBetOpen, timeLeft } from '../utils/index.js'
 import { Link } from 'react-router-dom'
+import PredictModal from '../components/user/PredictModal.jsx'
 
 function StatCard({ label, value, sub, icon, gold = false, live = false }) {
   const accentColor = live ? '#e03252' : gold ? '#c99f16' : '#425b8b'
@@ -33,15 +33,16 @@ function StatCard({ label, value, sub, icon, gold = false, live = false }) {
   )
 }
 
-function BetRow({ bet }) {
+function BetRow({ bet, onPredict }) {
   const matchCount  = bet.partidos?.length || 0
-  const remaining   = timeLeft(bet.fecha_cierre)
+  const remaining   = isBetOpen(bet) ? timeLeft(bet.fecha_cierre) : 'Cerrada'
   const closingSoon = remaining !== 'Cerrada' && !remaining.includes('d')
   const hasLive     = bet.partidos?.some(p => p.estado === 'en_vivo')
   return (
-    <Link to="/apuestas"
-      className="flex items-center gap-3 p-3.5 rounded-xl transition-all group"
-      style={{ background: '#fff', border: '1px solid #f0eadb', textDecoration: 'none', boxShadow: '0 1px 0 rgba(12,24,43,.04)' }}
+    <div
+      onClick={() => onPredict(bet)}
+      className="flex items-center gap-3 p-3.5 rounded-xl transition-all group cursor-pointer"
+      style={{ background: '#fff', border: '1px solid #f0eadb', boxShadow: '0 1px 0 rgba(12,24,43,.04)' }}
       onMouseEnter={e => { e.currentTarget.style.background = '#fffdf5'; e.currentTarget.style.borderColor = '#ebc32b'; e.currentTarget.style.transform = 'translateX(3px)' }}
       onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#f0eadb'; e.currentTarget.style.transform = '' }}
     >
@@ -58,16 +59,21 @@ function BetRow({ bet }) {
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8b2c4" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 transition-transform group-hover:translate-x-1">
         <polyline points="9 18 15 12 9 6"/>
       </svg>
-    </Link>
+    </div>
   )
 }
 
-function LiveCard({ bet, predictions }) {
+function LiveCard({ bet, predictions, onPredict }) {
   const liveMatch = bet.partidos?.find(p => p.estado === 'en_vivo') || bet.partidos?.[0]
   const myPred    = liveMatch ? predictions[liveMatch.id] : null
   return (
-    <div className="rounded-2xl p-4 md:p-5"
-      style={{ background: '#fff', border: '1.5px solid rgba(224,50,82,.3)', boxShadow: '0 4px 16px rgba(224,50,82,.08)' }}>
+    <div 
+      onClick={() => onPredict(bet)}
+      className="rounded-2xl p-4 md:p-5 cursor-pointer transition-all"
+      style={{ background: '#fff', border: '1.5px solid rgba(224,50,82,.3)', boxShadow: '0 4px 16px rgba(224,50,82,.08)' }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(224,50,82,.15)' }}
+      onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 16px rgba(224,50,82,.08)' }}
+    >
       <div className="flex items-center gap-2 mb-3">
         <span className="w-2 h-2 rounded-full animate-pulse-live" style={{ background: '#e03252' }} />
         <span className="font-body font-bold text-xs uppercase tracking-widest" style={{ color: '#e03252' }}>
@@ -146,12 +152,40 @@ function SectionHead({ title, to, cta }) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { bets, predictions } = useBets()
+  const { bets, predictions, submitPredictions } = useBets()
+  
+  // ✅ ESTADO PARA CONTROLAR EL MODAL
+  const [selectedBet, setSelectedBet] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const activeBets  = bets.filter(b => isBetOpen(b))
   const liveBets    = bets.filter(b => b.partidos?.some(p => p.estado === 'en_vivo'))
   const myPredCount = Object.keys(predictions).length
   const nombre      = (user?.nombre || '').split(' ')[0].toUpperCase()
+
+  // ✅ FUNCIÓN PARA ABRIR EL MODAL
+  const handlePredict = (bet) => {
+    setSelectedBet(bet)
+  }
+
+  // ✅ FUNCIÓN PARA CERRAR EL MODAL
+  const handleCloseModal = () => {
+    setSelectedBet(null)
+  }
+
+  // ✅ FUNCIÓN PARA GUARDAR PREDICCIONES
+  const handleSubmitPredictions = async (betId, matchPredictions) => {
+    setIsSubmitting(true)
+    try {
+      await submitPredictions(betId, matchPredictions)
+      setSelectedBet(null)
+    } catch (error) {
+      console.error('Error submitting predictions:', error)
+      alert('Error al guardar predicciones. Por favor intentá de nuevo.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
 
   return (
     <AppShell>
@@ -220,7 +254,7 @@ export default function DashboardPage() {
           <div className="mb-8 animate-fade-in delay-2">
             <SectionHead title="EN VIVO AHORA" />
             <div className="grid gap-3">
-              {liveBets.map(bet => <LiveCard key={bet.id} bet={bet} predictions={predictions} />)}
+              {liveBets.map(bet => <LiveCard key={bet.id} bet={bet} predictions={predictions} onPredict={handlePredict} />)}
             </div>
           </div>
         )}
@@ -239,7 +273,7 @@ export default function DashboardPage() {
               />
             ) : (
               <div className="flex flex-col gap-2">
-                {activeBets.slice(0, 5).map(bet => <BetRow key={bet.id} bet={bet} />)}
+                {activeBets.slice(0, 5).map(bet => <BetRow key={bet.id} bet={bet} onPredict={handlePredict} />)}
                 {activeBets.length > 5 && (
                   <Link to="/apuestas" className="text-center font-body text-sm py-2 transition-colors"
                     style={{ color: '#c99f16', textDecoration: 'none' }}
@@ -286,6 +320,16 @@ export default function DashboardPage() {
 
         </div>
       </div>
+
+      {/* ✅ MODAL DE PREDICCIONES */}
+      {selectedBet && (
+        <PredictModal
+          bet={selectedBet}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitPredictions}
+          loading={isSubmitting}
+        />
+      )}
     </AppShell>
   )
 }

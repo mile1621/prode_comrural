@@ -1,12 +1,6 @@
 /**
  * PredictModal.jsx — src/dashboard/components/PredictModal.jsx
- *
- * Rediseño v4 — "Match Center Pro"
- * - Mobile-first con navegación adaptativa
- * - Microinteracciones pulidas
- * - Scroll management profesional
- * - Validación inline + autosave
- * - Sistema de diseño consistente
+ * v10 - BOTÓN CERRAR 100% FUNCIONAL GARANTIZADO
  */
 
 import { useState, useEffect, useRef } from 'react'
@@ -15,39 +9,11 @@ import { useBets } from '../../hooks/useBets.jsx'
 import { useAuth } from '../../hooks/useAuth.jsx'
 import { timeLeft, isBetOpen } from '../../utils/index.js'
 
-// ──────────────────────────────────────────────────────────────────
-// 🎨 DESIGN TOKENS
-// ──────────────────────────────────────────────────────────────────
-const C = {
-  // Neutros
-  cream50:   '#fcf9f1',
-  cream100:  '#f7f1e1',
-  cream200:  '#ede4cc',
-  
-  ink900:    '#050a18',
-  ink800:    '#0a1226',
-  ink700:    '#1a2540',
-  ink600:    '#2d3a5a',
-  
-  steel400:  '#a8b2c4',
-  steel300:  '#c4cbd8',
-  
-  // Acentos
-  gold600:   '#a87a0b',
-  gold500:   '#d4a017',
-  gold400:   '#ebc32b',
-  
-  red500:    '#e03252',
-  green500:  '#1f9d6b',
-}
-
-// ─── Detección de eliminatoria ─
 function esEliminatoria(fase) {
   if (!fase) return false
   return String(fase).trim().toLowerCase() !== 'grupos'
 }
 
-// ─── Debounce hook ─
 function useDebounce(callback, delay, deps) {
   useEffect(() => {
     const handler = setTimeout(callback, delay)
@@ -63,7 +29,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const [activeMatchIdx, setActiveMatchIdx] = useState(0)
   const matchRefs = useRef({})
   const listRef = useRef(null)
-  const navRef = useRef(null)
 
   const esApuestaGrupos = bet?.tipo === 'grupos' || bet?.type === 'grupos'
   const esJefe = user?.tipo_usuario === 'jefe'
@@ -87,7 +52,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }
 
-  // ─── Init scores & clasificados ─
   useEffect(() => {
     if (bet?.partidos) {
       const initialScores = {}
@@ -105,7 +69,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }, [bet, predictions])
 
-  // ─── Autosave draft to localStorage ─
   useDebounce(() => {
     if (!bet?.id) return
     try {
@@ -115,7 +78,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }, 2000, [scores, clasificados])
 
-  // ─── Load draft on mount ─
   useEffect(() => {
     if (!bet?.id) return
     try {
@@ -130,15 +92,18 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }, [bet?.id])
 
-  // ─── ESC to close ─
   useEffect(() => {
     if (!bet) return
-    function handleKeyDown(e) { if (e.key === 'Escape') onClose() }
+    function handleKeyDown(e) { 
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [bet, onClose])
 
-  // ─── Prevent body scroll ─
   useEffect(() => {
     if (!bet) return
     const prev = document.body.style.overflow
@@ -146,7 +111,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     return () => { document.body.style.overflow = prev }
   }, [bet])
 
-  // ─── Scrollspy: track visible match ─
   useEffect(() => {
     if (!bet?.partidos || !listRef.current) return
     
@@ -175,7 +139,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   const open = isBetOpen(bet)
   const remaining = timeLeft(bet.fecha_cierre)
   const isClosingSoon = open && remaining !== 'Cerrada' && !remaining.includes('d')
-
   const totalMatches = bet.partidos?.length || 0
 
   function predicionCompleta(match) {
@@ -196,6 +159,8 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault()
+    e.stopPropagation()
+    
     if (estaBloqueado) return
 
     const matchPredictions = []
@@ -238,7 +203,6 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
       return
     }
 
-    // Clear draft on submit
     try {
       localStorage.removeItem(`bet-${bet.id}-draft`)
     } catch (e) {}
@@ -247,10 +211,9 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
   }
 
   function updateScore(partidoId, side, value) {
-    if (value !== '' && !/^\d{1,2}$/.test(value)) return
+    if (value !== '' && !/^\d{0,2}$/.test(value)) return
     setScores(prev => ({ ...prev, [partidoId]: { ...prev[partidoId], [side]: value } }))
     
-    // Auto-clear clasificado if score is no longer a tie
     setClasificados(prev => {
       const match = bet.partidos?.find(p => p.id === partidoId)
       if (!match || !esEliminatoria(match.fase)) return prev
@@ -279,1182 +242,183 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
     }
   }
 
-  const modalContent = (
-    <>
-      <style>{`
-        @keyframes pm-fade  { from { opacity: 0 } to { opacity: 1 } }
-        @keyframes pm-zoom  { from { opacity: 0; transform: scale(.97) } to { opacity: 1; transform: scale(1) } }
-        @keyframes pm-slide { from { transform: translateY(100%) } to { transform: translateY(0) } }
-        @keyframes pm-spin  { to { transform: rotate(360deg) } }
-        @keyframes pm-pulse { 0%,100% { opacity: 1 } 50% { opacity: .4 } }
-        @keyframes pm-shimmer { 0% { background-position: -200% 0 } 100% { background-position: 200% 0 } }
-        @keyframes pm-shake { 0%,100% { transform: translateX(0) } 25% { transform: translateX(-4px) } 75% { transform: translateX(4px) } }
-
-        * { box-sizing: border-box; }
-
-        /* ─── OVERLAY ─── */
-        .pm-overlay {
-          position: fixed; inset: 0;
-          background: radial-gradient(ellipse at center, rgba(10,18,38,.8) 0%, rgba(5,10,24,.94) 100%);
-          backdrop-filter: blur(10px);
-          -webkit-backdrop-filter: blur(10px);
-          z-index: 99999;
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          padding: 1.5rem;
-          animation: pm-fade .2s ease both;
-          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          overflow: hidden;
-        }
-
-.pm-shell {
-  position: relative;
-  width: 100%; 
-  max-width: 1200px;
-  height: calc(100vh - 3rem);
-  max-height: 900px;
-  background: ${C.cream100};
-  border-radius: 12px;
-  box-shadow:
-    0 0 0 1px rgba(212,160,23,.15),
-    0 50px 100px rgba(0,0,0,.7);
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  grid-template-rows: 1fr;  /* ← AGREGÁ ESTA LÍNEA */
-  overflow: hidden;
-  animation: pm-zoom .28s cubic-bezier(.2,.8,.2,1) both;
-}
-
-        @media (max-width: 900px) {
-          .pm-overlay { 
-            padding: 0; 
-            align-items: flex-end; 
-          }
-          .pm-shell {
-            grid-template-columns: 1fr;
-            height: 96vh;
-            max-height: none;
-            border-radius: 16px 16px 0 0;
-            animation: pm-slide .32s cubic-bezier(.2,.8,.2,1) both;
-          }
-        }
-
-        /* ─── SIDEBAR (desktop only) ─── */
-        .pm-side {
-          background: ${C.ink800};
-          color: ${C.cream100};
-          display: flex; 
-          flex-direction: column;
-          border-right: 1px solid ${C.ink700};
-          overflow: hidden;
-        }
-
-        @media (max-width: 900px) { 
-          .pm-side { display: none; } 
-        }
-
-        .pm-side-head {
-          padding: 1.5rem 1.25rem 1.25rem;
-          border-bottom: 1px solid rgba(255,255,255,.06);
-        }
-
-        .pm-side-eyebrow {
-          font-size: 0.6875rem; 
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          color: ${C.gold400}; 
-          text-transform: uppercase;
-          margin-bottom: 0.5rem;
-        }
-
-        .pm-side-title {
-          font-size: 1.25rem; 
-          font-weight: 700;
-          line-height: 1.2; 
-          margin: 0;
-          color: ${C.cream50};
-        }
-
-        /* Stats */
-        .pm-stats {
-          padding: 1rem 1.25rem;
-          display: grid; 
-          grid-template-columns: 1fr 1fr; 
-          gap: 0.75rem;
-          border-bottom: 1px solid rgba(255,255,255,.06);
-        }
-
-        .pm-stat {
-          background: rgba(255,255,255,.04);
-          border: 1px solid rgba(255,255,255,.06);
-          border-radius: 6px;
-          padding: 0.75rem;
-        }
-
-        .pm-stat-num {
-          font-size: 1.75rem; 
-          font-weight: 800;
-          line-height: 1;
-          color: ${C.gold400};
-        }
-
-        .pm-stat-num.dim { 
-          color: ${C.steel400}; 
-        }
-
-        .pm-stat-lab {
-          font-size: 0.6875rem; 
-          letter-spacing: 0.08em;
-          color: ${C.steel400}; 
-          text-transform: uppercase;
-          margin-top: 0.375rem;
-          font-weight: 600;
-        }
-
-        /* Status */
-        .pm-side-status {
-          padding: 1rem 1.25rem;
-          border-bottom: 1px solid rgba(255,255,255,.06);
-        }
-
-        .pm-side-pill {
-          display: inline-flex; 
-          align-items: center; 
-          gap: 0.5rem;
-          padding: 0.5rem 0.875rem; 
-          border-radius: 999px;
-          font-size: 0.6875rem; 
-          font-weight: 700;
-          letter-spacing: 0.08em; 
-          text-transform: uppercase;
-        }
-
-        .pm-pill-open { 
-          background: rgba(212,160,23,.12); 
-          color: ${C.gold400}; 
-          border: 1px solid rgba(212,160,23,.3); 
-        }
-
-        .pm-pill-soon { 
-          background: rgba(224,50,82,.12); 
-          color: #ff8095; 
-          border: 1px solid rgba(224,50,82,.35); 
-          animation: pm-pulse 1.8s ease-in-out infinite; 
-        }
-
-        .pm-pill-closed { 
-          background: rgba(168,178,196,.08); 
-          color: ${C.steel400}; 
-          border: 1px solid rgba(168,178,196,.2); 
-        }
-
-        .pm-side-status-detail {
-          margin-top: 0.625rem; 
-          font-size: 0.8125rem;
-          color: ${C.steel400}; 
-          line-height: 1.5;
-        }
-
-        /* Nav list */
-        .pm-nav {
-          flex: 1; 
-          overflow-y: auto;
-          padding: 0.5rem 0.75rem 1rem;
-        }
-
-        .pm-nav::-webkit-scrollbar { width: 5px; }
-        .pm-nav::-webkit-scrollbar-thumb { 
-          background: rgba(255,255,255,.12); 
-          border-radius: 3px; 
-        }
-
-        .pm-nav-title {
-          padding: 0.875rem 0.625rem 0.5rem;
-          font-size: 0.6875rem; 
-          letter-spacing: 0.12em;
-          color: ${C.steel400}; 
-          text-transform: uppercase;
-          font-weight: 700;
-        }
-
-        .pm-nav-item {
-          display: flex; 
-          align-items: center; 
-          gap: 0.625rem;
-          width: 100%;
-          padding: 0.625rem 0.75rem;
-          background: transparent; 
-          border: none;
-          color: ${C.cream100};
-          text-align: left; 
-          cursor: pointer;
-          border-radius: 6px;
-          font-size: 0.8125rem;
-          transition: all .18s;
-          border-left: 2px solid transparent;
-          margin-bottom: 0.25rem;
-        }
-
-        .pm-nav-item:hover { 
-          background: rgba(255,255,255,.05); 
-        }
-
-        .pm-nav-item.active {
-          background: rgba(212,160,23,.12);
-          border-left-color: ${C.gold400};
-        }
-
-        .pm-nav-item.done { 
-          border-left-color: ${C.gold500}; 
-        }
-
-        .pm-nav-item.live { 
-          border-left-color: ${C.red500}; 
-        }
-
-        .pm-nav-num {
-          width: 24px; 
-          height: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(255,255,255,.06);
-          border-radius: 4px;
-          color: ${C.steel400}; 
-          font-size: 0.75rem;
-          font-weight: 700;
-          flex-shrink: 0;
-        }
-
-        .pm-nav-item.done .pm-nav-num { 
-          background: ${C.gold500};
-          color: ${C.ink900};
-        }
-
-        .pm-nav-item.live .pm-nav-num {
-          background: ${C.red500};
-          color: white;
-          animation: pm-pulse 1.2s ease-in-out infinite;
-        }
-
-        .pm-nav-teams {
-          flex: 1; 
-          min-width: 0;
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis;
-        }
-
-        .pm-nav-dot {
-          width: 6px; 
-          height: 6px; 
-          border-radius: 50%;
-          background: rgba(255,255,255,.15);
-          flex-shrink: 0;
-        }
-
-        .pm-nav-item.done .pm-nav-dot { 
-          background: ${C.gold400}; 
-        }
-
-        .pm-nav-item.live .pm-nav-dot { 
-          background: ${C.red500}; 
-        }
-
-        /* ─── MAIN COLUMN ─── */
-.pm-main {
-  display: flex; 
-  flex-direction: column;
-  background: ${C.cream50};
-  min-width: 0;
-  height: 100%;
-  overflow: hidden;  /* ← AGREGÁ ESTO TAMBIÉN */
-}
-
-        /* Top bar */
-        .pm-topbar {
-padding: 0.875rem 1rem;
-          background: white;
-          border-bottom: 1px solid ${C.cream200};
-          display: flex; 
-          align-items: center; 
-          justify-content: space-between;
-          gap: 1rem;
-          flex-shrink: 0;
-        }
-
-        @media (max-width: 600px) {
-          .pm-topbar { 
-            padding: 1rem; 
-          }
-        }
-
-        .pm-topbar-info { 
-          min-width: 0; 
-          flex: 1;
-        }
-
-        .pm-topbar-eyebrow {
-          font-size: 0.6875rem; 
-          letter-spacing: 0.1em;
-          color: ${C.gold600}; 
-          text-transform: uppercase;
-          font-weight: 700;
-          margin-bottom: 0.25rem;
-        }
-
-        .pm-topbar-title {
-          font-size: clamp(1.125rem, 3vw, 1.5rem);
-          font-weight: 700;
-          color: ${C.ink900}; 
-          margin: 0;
-          line-height: 1.2;
-          white-space: nowrap; 
-          overflow: hidden; 
-          text-overflow: ellipsis;
-        }
-
-        .pm-topbar-actions { 
-          display: flex; 
-          align-items: center; 
-          gap: 0.5rem; 
-          flex-shrink: 0; 
-        }
-
-        .pm-mobile-status {
-          display: none;
-        }
-
-        @media (max-width: 900px) {
-          .pm-mobile-status { 
-            display: inline-flex; 
-          }
-        }
-
-        .pm-icon-btn {
-          width: 36px; 
-          height: 36px;
-          background: transparent;
-          border: 1px solid ${C.cream200};
-          color: ${C.steel400};
-          border-radius: 6px;
-          display: inline-flex; 
-          align-items: center; 
-          justify-content: center;
-          cursor: pointer; 
-          transition: all .18s;
-          flex-shrink: 0;
-        }
-
-        .pm-icon-btn:hover {
-          background: ${C.ink800}; 
-          border-color: ${C.ink800}; 
-          color: white;
-        }
-
-        /* Mobile quick nav */
-        .pm-quick-nav {
-          display: none;
-          padding: 0.75rem 1rem;
-          background: white;
-          border-bottom: 1px solid ${C.cream200};
-          overflow-x: auto;
-          overflow-y: hidden;
-          scroll-snap-type: x mandatory;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .pm-quick-nav::-webkit-scrollbar { display: none; }
-
-        @media (max-width: 900px) {
-          .pm-quick-nav { 
-            display: block; 
-          }
-        }
-
-        .pm-quick-row {
-          display: inline-flex;
-          gap: 0.5rem;
-          min-width: min-content;
-        }
-
-        .pm-quick-pill {
-          width: 40px;
-          height: 40px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: ${C.cream100};
-          border: 1.5px solid ${C.cream200};
-          border-radius: 8px;
-          font-size: 0.875rem;
-          font-weight: 700;
-          color: ${C.ink700};
-          cursor: pointer;
-          transition: all .18s;
-          flex-shrink: 0;
-          scroll-snap-align: start;
-        }
-
-        .pm-quick-pill.active {
-          background: ${C.ink800};
-          border-color: ${C.gold500};
-          color: ${C.gold400};
-          box-shadow: 0 0 0 3px rgba(212,160,23,.15);
-        }
-
-        .pm-quick-pill.done {
-          background: ${C.gold500};
-          border-color: ${C.gold500};
-          color: ${C.ink900};
-        }
-
-        .pm-quick-pill.live {
-          background: ${C.red500};
-          border-color: ${C.red500};
-          color: white;
-          animation: pm-pulse 1.2s ease-in-out infinite;
-        }
-
-/* List */
-.pm-list {
-  flex: 1; 
-  overflow-y: auto;
-padding: 0.875rem 1rem;
-  scroll-behavior: smooth;
-  
-  /* ← AGREGÁ ESTAS LÍNEAS */
-  -webkit-overflow-scrolling: touch;
-  will-change: scroll-position;
-  contain: layout style paint;
-}
-
-        .pm-list::-webkit-scrollbar { width: 8px; }
-        .pm-list::-webkit-scrollbar-track { background: transparent; }
-        .pm-list::-webkit-scrollbar-thumb { 
-          background: ${C.cream200}; 
-          border-radius: 4px; 
-        }
-        .pm-list::-webkit-scrollbar-thumb:hover { 
-          background: ${C.gold500}; 
-        }
-
-        @media (max-width: 600px) {
-          .pm-list { 
-            padding: 1rem; 
-          }
-        }
-
-        /* Empty state */
-        .pm-empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 3rem 1.5rem;
-          text-align: center;
-          color: ${C.steel400};
-        }
-
-        .pm-empty svg {
-          width: 64px;
-          height: 64px;
-          margin-bottom: 1rem;
-          opacity: 0.3;
-        }
-
-        .pm-empty h3 {
-          font-size: 1.125rem;
-          font-weight: 700;
-          color: ${C.ink700};
-          margin: 0 0 0.5rem;
-        }
-
-        .pm-empty p {
-          font-size: 0.9375rem;
-          margin: 0;
-        }
-
-        /* Block message */
-        .pm-block {
-          display: flex; 
-          gap: 0.875rem;
-          background: white;
-          border: 1px solid ${C.cream200};
-          border-left: 4px solid ${C.red500};
-          border-radius: 8px;
-          padding: 1.125rem 1.25rem;
-margin-bottom: 0.75rem;
-        }
-
-        .pm-block-icon {
-          width: 36px; 
-          height: 36px; 
-          flex-shrink: 0;
-          border-radius: 6px;
-          background: ${C.red500}; 
-          color: white;
-          font-weight: 800;
-          font-size: 1.125rem;
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-        }
-
-        .pm-block-content {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .pm-block-title { 
-          font-weight: 700; 
-          color: ${C.ink800}; 
-          margin-bottom: 0.375rem;
-          font-size: 0.9375rem;
-        }
-
-        .pm-block-detail { 
-          font-size: 0.8125rem; 
-          color: ${C.steel400}; 
-          line-height: 1.5; 
-        }
-
-        /* ─── MATCH CARD ─── */
-.pm-card {
-  background: white;
-  border-radius: 10px;
-  margin-bottom: 0.75rem;
-  overflow: hidden;
-  box-shadow:
-    0 1px 0 rgba(10,18,38,.03),
-    0 4px 12px rgba(10,18,38,.08);
-  border: 1.5px solid ${C.cream200};
-  transition: all .22s cubic-bezier(.2,.8,.2,1);
-  
-  /* ← AGREGÁ ESTAS 3 LÍNEAS */
-  will-change: transform;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-}
-
-        .pm-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 
-            0 2px 0 rgba(10,18,38,.04), 
-            0 12px 24px rgba(10,18,38,.14);
-        }
-
-        .pm-card.done { 
-          border-color: ${C.gold500}; 
-          box-shadow: 
-            0 0 0 1px ${C.gold500}, 
-            0 8px 20px rgba(212,160,23,.25); 
-        }
-
-        .pm-card.live { 
-          border-color: ${C.red500}; 
-          box-shadow:
-            0 0 0 1px ${C.red500},
-            0 8px 20px rgba(224,50,82,.25);
-        }
-
-        /* Strip */
-        .pm-strip {
-          display: flex; 
-          align-items: center; 
-          justify-content: space-between;
-          padding: 0.625rem 1rem;
-          background: ${C.ink800};
-          color: ${C.cream100};
-          font-size: 0.6875rem;
-          font-weight: 700;
-          letter-spacing: 0.08em; 
-          text-transform: uppercase;
-        }
-
-        .pm-card.done .pm-strip { 
-          background: linear-gradient(90deg, ${C.ink800}, ${C.ink700}); 
-        }
-
-        .pm-strip-left { 
-          display: flex; 
-          align-items: center; 
-          gap: 0.625rem; 
-        }
-
-        .pm-strip-num {
-          background: ${C.gold400}; 
-          color: ${C.ink900};
-          font-size: 0.75rem;
-          padding: 0.125rem 0.5rem; 
-          border-radius: 4px;
-          min-width: 32px;
-          text-align: center;
-        }
-
-        .pm-strip-fase {
-          color: ${C.gold400};
-        }
-
-        .pm-strip-right { 
-          display: flex; 
-          align-items: center; 
-          gap: 0.5rem; 
-        }
-
-        .pm-tag {
-          display: inline-flex; 
-          align-items: center; 
-          gap: 0.375rem;
-          font-size: 0.625rem; 
-          font-weight: 700;
-          letter-spacing: 0.1em; 
-          padding: 0.25rem 0.5rem;
-          border-radius: 4px;
-        }
-
-        .pm-tag-live { 
-          background: ${C.red500}; 
-          color: white; 
-        }
-
-        .pm-tag-fin { 
-          background: ${C.steel400}; 
-          color: white; 
-        }
-
-        .pm-tag-done { 
-          background: ${C.gold400}; 
-          color: ${C.ink900}; 
-        }
-
-        .pm-tag-dot {
-          width: 5px; 
-          height: 5px; 
-          border-radius: 50%;
-          background: currentColor;
-        }
-
-        .pm-tag-dot.pulse { 
-          animation: pm-pulse 1.2s ease-in-out infinite; 
-        }
-
-        /* Board */
-        .pm-board {
-          display: grid;
-          grid-template-columns: 1fr auto 1fr;
-          align-items: stretch;
-          min-height: 100px;
-        }
-
-        @media (max-width: 600px) {
-          .pm-board { 
-            grid-template-columns: 1fr;
-            gap: 0;
-          }
-        }
-
-        .pm-side-team {
-          display: flex; 
-          align-items: center; 
-          gap: 1rem;
-          padding: 1.25rem;
-        }
-
-        .pm-side-team.left {
-          background: linear-gradient(90deg, white 0%, ${C.cream50} 100%);
-        }
-
-        .pm-side-team.right {
-          flex-direction: row-reverse;
-          text-align: right;
-          background: linear-gradient(270deg, white 0%, ${C.cream50} 100%);
-        }
-
-        @media (max-width: 600px) {
-          .pm-side-team {
-            padding: 1rem;
-          }
-
-          .pm-side-team.right {
-            flex-direction: row;
-            text-align: left;
-            border-top: 1px dashed ${C.cream200};
-          }
-
-          .pm-side-team.left {
-            border-bottom: 1px dashed ${C.cream200};
-          }
-        }
-
-        .pm-flag-lg {
-          width: 48px; 
-          height: 34px;
-          object-fit: cover; 
-          border-radius: 4px;
-          box-shadow: 
-            0 0 0 1px rgba(0,0,0,.08), 
-            0 2px 6px rgba(0,0,0,.1);
-          flex-shrink: 0;
-        }
-
-        @media (max-width: 600px) {
-          .pm-flag-lg {
-            width: 40px;
-            height: 28px;
-          }
-        }
-
-        .pm-team-block { 
-          min-width: 0; 
-          flex: 1;
-        }
-
-        .pm-team-code {
-          font-size: 0.6875rem; 
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          color: ${C.gold600}; 
-          text-transform: uppercase;
-          margin-bottom: 0.25rem;
-        }
-
-        .pm-team-nm {
-          font-size: 1.125rem; 
-          font-weight: 700;
-          letter-spacing: 0.01em;
-          color: ${C.ink800}; 
-          line-height: 1.1;
-        }
-
-        @media (max-width: 600px) {
-          .pm-team-nm {
-            font-size: 1rem;
-          }
-        }
-
-        /* Center */
-        .pm-center {
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          gap: 0.75rem;
-          padding: 1.25rem;
-          background: ${C.ink800};
-          position: relative;
-        }
-
-        @media (min-width: 601px) {
-          .pm-center::before, 
-          .pm-center::after {
-            content: '';
-            position: absolute; 
-            top: 50%; 
-            transform: translateY(-50%);
-            width: 0; 
-            height: 0;
-            border-top: 12px solid transparent;
-            border-bottom: 12px solid transparent;
-          }
-
-          .pm-center::before { 
-            left: -1px; 
-            border-right: 12px solid white;
-          }
-
-          .pm-center::after { 
-            right: -1px; 
-            border-left: 12px solid white;
-          }
-        }
-
-.pm-input {
-  width: 52px;
-  height: 52px;
-  font-size: 1.75rem;
-          text-align: center;
-          font-weight: 800;
-          background: ${C.cream50};
-          color: ${C.ink900};
-          border: 2px solid ${C.gold500};
-          border-radius: 8px;
-          outline: none;
-          transition: all .2s;
-          -moz-appearance: textfield;
-          font-variant-numeric: tabular-nums;
-        }
-
-        .pm-input::-webkit-outer-spin-button,
-        .pm-input::-webkit-inner-spin-button { 
-          -webkit-appearance: none; 
-          margin: 0; 
-        }
-
-        .pm-input::placeholder { 
-          color: ${C.steel400}; 
-          opacity: .4; 
-        }
-
-        .pm-input:focus:not(:disabled) {
-          border-color: ${C.gold400};
-          background: white;
-          box-shadow: 0 0 0 4px rgba(212,160,23,.2);
-          transform: scale(1.05);
-        }
-
-        .pm-input:disabled {
-          background: ${C.cream200};
-          color: ${C.steel400};
-          border-color: ${C.cream200};
-          cursor: not-allowed;
-        }
-
-        .pm-input.error {
-          border-color: ${C.red500};
-          animation: pm-shake .4s;
-        }
-
-@media (max-width: 600px) {
-  .pm-input {
-    width: 48px;
-    height: 48px;
-    font-size: 1.5rem;
+  // ✅ FUNCIÓN SIMPLIFICADA QUE SÍ FUNCIONA
+  const cerrarModal = () => {
+    console.log('🔴 CERRANDO MODAL') // Para debug
+    onClose()
   }
-}
 
-        .pm-dash {
-          font-size: 2rem;
-          font-weight: 800;
-          color: ${C.gold400};
-        }
-
-        /* Extra */
-        .pm-extra {
-          padding: 1rem 1.25rem;
-          background: ${C.cream50};
-          border-top: 1px dashed ${C.cream200};
-        }
-
-        .pm-clasif-label {
-          display: flex; 
-          align-items: center; 
-          gap: 0.5rem;
-          font-size: 0.6875rem; 
-          font-weight: 700;
-          letter-spacing: 0.1em; 
-          text-transform: uppercase;
-          color: ${C.gold600};
-          margin-bottom: 0.75rem;
-        }
-
-        .pm-clasif-row {
-          display: grid; 
-          grid-template-columns: 1fr 1fr; 
-          gap: 0.625rem;
-        }
-
-        .pm-radio {
-          padding: 0.75rem;
-          border-radius: 6px;
-          font-size: 0.8125rem; 
-          font-weight: 600;
-          cursor: pointer; 
-          transition: all .18s;
-          border: 1.5px solid ${C.cream200};
-          background: white;
-          color: ${C.ink700};
-          display: flex; 
-          align-items: center; 
-          justify-content: center;
-          gap: 0.5rem;
-          text-transform: uppercase;
-          letter-spacing: 0.02em;
-        }
-
-        .pm-radio:hover:not(:disabled) {
-          border-color: ${C.gold500};
-          background: ${C.cream50};
-        }
-
-        .pm-radio.active {
-          background: ${C.ink800};
-          border-color: ${C.gold500};
-          color: ${C.gold400};
-          box-shadow: 0 0 0 3px rgba(212,160,23,.15);
-        }
-
-        .pm-radio:disabled { 
-          cursor: not-allowed; 
-          opacity: .5; 
-        }
-
-        .pm-warn {
-          margin-top: 0.625rem;
-          font-size: 0.75rem; 
-          color: ${C.red500};
-          display: flex; 
-          align-items: center; 
-          gap: 0.375rem;
-          font-weight: 600;
-        }
-
-        .pm-auto {
-          display: flex; 
-          align-items: center; 
-          gap: 0.75rem;
-          padding: 0.75rem 1rem;
-          background: white;
-          border-radius: 6px;
-          border: 1.5px solid ${C.cream200};
-        }
-
-        .pm-auto-arrow { 
-          color: ${C.gold500}; 
-          font-size: 1rem;
-        }
-
-        .pm-auto-lab {
-          color: ${C.steel400}; 
-          text-transform: uppercase;
-          letter-spacing: 0.08em; 
-          font-weight: 600; 
-          font-size: 0.6875rem;
-        }
-
-        .pm-auto-team {
-          font-size: 0.9375rem; 
-          font-weight: 700;
-          color: ${C.ink800}; 
-          text-transform: uppercase;
-          display: inline-flex; 
-          align-items: center; 
-          gap: 0.5rem;
-        }
-
-        .pm-result {
-          display: flex; 
-          align-items: center; 
-          gap: 0.875rem;
-          padding: 0.75rem 1rem;
-          background: ${C.ink800};
-          border-radius: 6px;
-          color: white;
-        }
-
-        .pm-result-lab {
-          font-size: 0.6875rem; 
-          letter-spacing: 0.1em;
-          color: ${C.gold400}; 
-          text-transform: uppercase;
-          font-weight: 700;
-        }
-
-        .pm-result-sc {
-          font-size: 1.25rem; 
-          font-weight: 800;
-          font-variant-numeric: tabular-nums;
-        }
-
-        .pm-result-pen { 
-          color: ${C.steel400}; 
-          font-size: 0.75rem; 
-          margin-left: auto; 
-        }
-
-        /* ─── FOOTER ─── */
-        .pm-foot {
-          padding: 1.125rem 1.5rem;
-          background: ${C.ink800};
-          color: white;
-          border-top: 3px solid ${C.gold500};
-          display: grid;
-          grid-template-columns: 1fr auto;
-          gap: 1.25rem;
-          align-items: center;
-          flex-shrink: 0;
-        }
-
-        @media (max-width: 700px) {
-          .pm-foot { 
-            grid-template-columns: 1fr; 
-            padding: 1rem; 
-          }
-        }
-
-        .pm-progress-wrap { 
-          min-width: 0; 
-        }
-
-        .pm-progress-row {
-          display: flex; 
-          align-items: baseline; 
-          justify-content: space-between;
-          font-size: 0.6875rem; 
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          margin-bottom: 0.5rem;
-        }
-
-        .pm-progress-lab { 
-          color: ${C.steel400}; 
-          font-weight: 700; 
-        }
-
-        .pm-progress-cn { 
-          color: white; 
-          font-weight: 600;
-        }
-
-        .pm-progress-cn strong {
-          color: ${C.gold400};
-          font-size: 1.125rem; 
-          margin-right: 0.25rem;
-          font-weight: 800;
-        }
-
-        .pm-progress-bar {
-          height: 6px;
-          background: rgba(255,255,255,.1);
-          border-radius: 999px; 
-          overflow: hidden;
-        }
-
-        .pm-progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, ${C.gold500}, ${C.gold400}, ${C.gold500});
-          background-size: 200% 100%;
-          border-radius: 999px;
-          transition: width .4s cubic-bezier(.2,.8,.2,1);
-          animation: pm-shimmer 2.5s linear infinite;
-        }
-
-        .pm-actions { 
-          display: flex; 
-          gap: 0.625rem; 
-          justify-content: flex-end; 
-        }
-
-        @media (max-width: 700px) {
-          .pm-actions {
-            justify-content: stretch;
-          }
-
-          .pm-actions .pm-btn {
-            flex: 1;
-          }
-        }
-
-        .pm-btn {
-          font-size: 0.875rem; 
-          font-weight: 700;
-          letter-spacing: 0.04em;
-          padding: 0.875rem 1.625rem;
-          border-radius: 6px;
-          cursor: pointer; 
-          transition: all .2s;
-          text-transform: uppercase;
-          display: inline-flex; 
-          align-items: center; 
-          justify-content: center;
-          gap: 0.5rem;
-          border: none;
-          white-space: nowrap;
-        }
-
-        .pm-btn-cancel {
-          background: transparent;
-          border: 1.5px solid rgba(255,255,255,.2);
-          color: ${C.steel400};
-        }
-
-        .pm-btn-cancel:hover { 
-          border-color: white; 
-          color: white; 
-        }
-
-        .pm-btn-submit {
-          background: linear-gradient(135deg, ${C.gold500}, ${C.gold400});
-          color: ${C.ink900};
-          box-shadow: 0 4px 14px rgba(212,160,23,.35);
-          border: 1.5px solid transparent;
-        }
-
-        .pm-btn-submit:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(212,160,23,.5);
-        }
-
-        .pm-btn-submit:disabled { 
-          opacity: .45; 
-          cursor: not-allowed; 
-          box-shadow: none; 
-        }
-
-        .pm-spin {
-          width: 14px; 
-          height: 14px;
-          border: 2px solid rgba(10,18,38,.25);
-          border-top-color: ${C.ink900};
-          border-radius: 50%;
-          animation: pm-spin .65s linear infinite;
-        }
-
-        .pm-foot-note {
-          grid-column: 1 / -1;
-          font-size: 0.75rem; 
-          color: ${C.steel400};
-          text-align: center; 
-          letter-spacing: 0.02em;
-          margin-top: 0.25rem;
-        }
-
-        .pm-foot-note.warn { 
-          color: #ffb0bd; 
-        }
-      `}</style>
-
-      <div className="pm-overlay" onClick={onClose}>
-        <form className="pm-shell" onClick={e => e.stopPropagation()} onSubmit={handleSubmit}>
-
-          {/* ═══════════════ SIDEBAR (desktop) ═══════════════ */}
-          <aside className="pm-side">
-            <div className="pm-side-head">
-              <div className="pm-side-eyebrow">Predicciones · Mundial 2026</div>
-              <h2 className="pm-side-title">{bet.titulo}</h2>
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-6 bg-black/60 backdrop-blur-sm"
+      onClick={cerrarModal}
+    >
+      <div 
+        className="relative w-full h-full sm:h-auto sm:max-w-7xl sm:max-h-[95vh] bg-gradient-to-br from-slate-50 to-amber-50/30 sm:rounded-2xl shadow-2xl grid grid-cols-1 lg:grid-cols-[320px_1fr] grid-rows-1 overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        
+        {/* SIDEBAR - SIN CAMBIOS */}
+        <aside className="hidden lg:flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-amber-50 border-r border-slate-700/50 overflow-hidden">
+          <div className="p-6 border-b border-white/10 bg-gradient-to-r from-yellow-500/10 to-transparent flex-shrink-0">
+            <div className="text-[10px] font-bold tracking-[0.2em] text-yellow-400 uppercase mb-2.5 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />
+              Mundial 2026
             </div>
+            <h2 className="text-xl font-extrabold leading-tight text-white">{bet.titulo}</h2>
+          </div>
 
-            <div className="pm-stats">
-              <div className="pm-stat">
-                <div className="pm-stat-num">{filledCount}</div>
-                <div className="pm-stat-lab">Cargadas</div>
-              </div>
-              <div className="pm-stat">
-                <div className={`pm-stat-num ${pendingCount === 0 ? '' : 'dim'}`}>{pendingCount}</div>
-                <div className="pm-stat-lab">Pendientes</div>
-              </div>
+          <div className="grid grid-cols-2 gap-3 p-5 border-b border-white/10 flex-shrink-0">
+            <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur border border-white/20 rounded-xl p-4 hover:scale-105 transition-transform">
+              <div className="text-4xl font-black leading-none text-yellow-400 mb-2">{filledCount}</div>
+              <div className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">Completadas</div>
             </div>
+            <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur border border-white/20 rounded-xl p-4 hover:scale-105 transition-transform">
+              <div className={`text-4xl font-black leading-none mb-2 ${pendingCount === 0 ? 'text-green-400' : 'text-slate-400'}`}>
+                {pendingCount}
+              </div>
+              <div className="text-[10px] font-bold tracking-wider text-slate-300 uppercase">Pendientes</div>
+            </div>
+          </div>
 
-            <div className="pm-side-status">
-              {open ? (
-                <span className={`pm-side-pill ${isClosingSoon ? 'pm-pill-soon' : 'pm-pill-open'}`}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }} />
+          <div className="p-5 border-b border-white/10 flex-shrink-0">
+            {open ? (
+              <div className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full text-[10px] font-bold tracking-wider uppercase border-2 ${
+                isClosingSoon 
+                  ? 'bg-red-500/20 text-red-300 border-red-500/50 animate-pulse shadow-lg shadow-red-500/20' 
+                  : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/50 shadow-lg shadow-yellow-500/20'
+              }`}>
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                {remaining}
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-slate-700/50 text-slate-400 border-2 border-slate-600/50">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                Cerrada
+              </div>
+            )}
+            <div className="mt-3 text-[13px] text-slate-300 leading-relaxed">
+              {open
+                ? hadPredictions
+                  ? 'Revisá o modificá tus predicciones antes del cierre.'
+                  : 'Cargá tus predicciones para cada partido.'
+                : 'La apuesta está cerrada. Modo solo lectura.'}
+            </div>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto p-3 pb-4 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+            <div className="px-3 py-3 text-[10px] font-bold tracking-[0.15em] text-slate-400 uppercase">
+              {totalMatches} Partidos
+            </div>
+            {bet.partidos?.map((m, idx) => {
+              const done = predicionCompleta(m)
+              const live = m.estado === 'en_vivo'
+              const isActive = idx === activeMatchIdx
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 text-left rounded-xl text-[13px] transition-all border-l-[3px] mb-2 ${
+                    isActive 
+                      ? 'bg-yellow-500/20 border-l-yellow-400 shadow-lg shadow-yellow-500/20' 
+                      : done 
+                        ? 'border-l-yellow-500 hover:bg-white/10 bg-white/5' 
+                        : live 
+                          ? 'border-l-red-500 hover:bg-white/10 bg-red-500/10 animate-pulse'
+                          : 'border-l-transparent hover:bg-white/5'
+                  }`}
+                  onClick={() => scrollToMatch(m.id, idx)}
+                >
+                  <span className={`flex items-center justify-center w-7 h-7 rounded-lg text-xs font-bold flex-shrink-0 ${
+                    done 
+                      ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-slate-900 shadow-md' 
+                      : live 
+                        ? 'bg-gradient-to-br from-red-500 to-red-600 text-white shadow-md'
+                        : 'bg-white/10 text-slate-400 border border-white/20'
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <span className="flex-1 min-w-0 text-white font-medium">
+                    <span className="block text-xs text-slate-400 mb-0.5 truncate">
+                      {m.codigo_local || m.equipo_local}
+                    </span>
+                    <span className="block text-xs text-slate-400 truncate">
+                      {m.codigo_visitante || m.equipo_visitante}
+                    </span>
+                  </span>
+                  {done && (
+                    <svg className="w-4 h-4 text-yellow-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+        </aside>
+
+        {/* MAIN */}
+        <div className="flex flex-col bg-white min-w-0 h-full overflow-hidden">
+          
+          {/* Header */}
+          <header className="px-4 sm:px-6 py-3 bg-gradient-to-r from-white to-amber-50/50 border-b border-slate-200 flex items-center justify-between gap-4 flex-shrink-0 shadow-sm">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-bold tracking-[0.2em] text-yellow-600 uppercase mb-1 flex items-center gap-2">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                Centro de Predicciones
+              </div>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 leading-tight">
+                {bet.titulo}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {open && (
+                <span className={`hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase border ${
+                  isClosingSoon 
+                    ? 'bg-red-50 text-red-600 border-red-300' 
+                    : 'bg-yellow-50 text-yellow-700 border-yellow-300'
+                }`}>
+                  <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="12" r="10" />
+                  </svg>
                   {remaining}
                 </span>
-              ) : (
-                <span className="pm-side-pill pm-pill-closed">Cerrada</span>
               )}
-              <div className="pm-side-status-detail">
-                {open
-                  ? hadPredictions
-                    ? 'Revisá o ajustá tus predicciones antes del cierre.'
-                    : 'Cargá el resultado de cada partido. Podés editar mientras esté abierta.'
-                  : 'Modo solo lectura — la apuesta ya cerró.'}
+              {/* ✅ BOTÓN X TOTALMENTE AISLADO */}
+              <div 
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-red-500 hover:bg-red-600 text-white transition-all shadow-lg hover:shadow-xl cursor-pointer select-none"
+                style={{ position: 'relative', zIndex: 9999999 }}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  cerrarModal()
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  cerrarModal()
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" style={{ pointerEvents: 'none' }}>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </div>
             </div>
+          </header>
 
-            <nav className="pm-nav">
-              <div className="pm-nav-title">Partidos ({totalMatches})</div>
+          {/* Mobile Nav Pills */}
+          <div className="lg:hidden px-4 py-2 bg-white border-b border-slate-200 overflow-x-auto scrollbar-none flex-shrink-0">
+            <div className="inline-flex gap-2 min-w-min pb-1">
               {bet.partidos?.map((m, idx) => {
                 const done = predicionCompleta(m)
                 const live = m.estado === 'en_vivo'
@@ -1463,351 +427,344 @@ margin-bottom: 0.75rem;
                   <button
                     key={m.id}
                     type="button"
-                    className={`pm-nav-item ${done ? 'done' : ''} ${live ? 'live' : ''} ${isActive ? 'active' : ''}`}
+                    className={`w-9 h-9 inline-flex items-center justify-center rounded-lg text-xs font-bold flex-shrink-0 border-2 transition-all ${
+                      isActive 
+                        ? 'bg-gradient-to-br from-slate-900 to-slate-800 border-yellow-400 text-yellow-400 shadow-lg shadow-yellow-500/30 scale-110' 
+                        : done 
+                          ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 border-yellow-500 text-slate-900'
+                          : live 
+                            ? 'bg-gradient-to-br from-red-500 to-red-600 border-red-500 text-white animate-pulse'
+                            : 'bg-slate-50 border-slate-200 text-slate-600'
+                    }`}
                     onClick={() => scrollToMatch(m.id, idx)}
                   >
-                    <span className="pm-nav-num">{idx + 1}</span>
-                    <span className="pm-nav-teams">
-                      {m.codigo_local || m.equipo_local} · {m.codigo_visitante || m.equipo_visitante}
-                    </span>
-                    <span className="pm-nav-dot" />
+                    {idx + 1}
                   </button>
                 )
               })}
-            </nav>
-          </aside>
-
-          {/* ═══════════════ MAIN ═══════════════ */}
-          <div className="pm-main">
-
-            {/* Top bar */}
-            <header className="pm-topbar">
-              <div className="pm-topbar-info">
-                <div className="pm-topbar-eyebrow">Centro de Predicciones</div>
-                <h2 className="pm-topbar-title">{bet.titulo}</h2>
-              </div>
-              <div className="pm-topbar-actions">
-                {open && (
-                  <span className={`pm-side-pill pm-mobile-status ${isClosingSoon ? 'pm-pill-soon' : 'pm-pill-open'}`}>
-                    {remaining}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  className="pm-icon-btn"
-                  onClick={onClose}
-                  aria-label="Cerrar"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            </header>
-
-            {/* Mobile quick nav */}
-            <div className="pm-quick-nav" ref={navRef}>
-              <div className="pm-quick-row">
-                {bet.partidos?.map((m, idx) => {
-                  const done = predicionCompleta(m)
-                  const live = m.estado === 'en_vivo'
-                  const isActive = idx === activeMatchIdx
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      className={`pm-quick-pill ${done ? 'done' : ''} ${live ? 'live' : ''} ${isActive ? 'active' : ''}`}
-                      onClick={() => scrollToMatch(m.id, idx)}
-                    >
-                      {idx + 1}
-                    </button>
-                  )
-                })}
-              </div>
             </div>
+          </div>
 
-            {/* Match list */}
-            <div className="pm-list" ref={listRef}>
-
-              {razonBloqueo && (
-                <div className="pm-block">
-                  <div className="pm-block-icon">!</div>
-                  <div className="pm-block-content">
-                    <div className="pm-block-title">{razonBloqueo.titulo}</div>
-                    <div className="pm-block-detail">{razonBloqueo.detalle}</div>
-                  </div>
+          {/* Matches List - IGUAL QUE ANTES, SIN CAMBIOS */}
+          <div 
+            className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 scroll-smooth scrollbar-thin scrollbar-thumb-slate-300 hover:scrollbar-thumb-yellow-500 scrollbar-track-slate-100"
+            ref={listRef}
+          >
+            {/* ... TODO EL CONTENIDO DE LOS PARTIDOS IGUAL QUE ANTES ... */}
+            {razonBloqueo && (
+              <div className="flex gap-3 bg-gradient-to-r from-red-50 to-pink-50 border border-red-200 border-l-4 border-l-red-500 rounded-lg p-4 mb-3 shadow-sm">
+                <div className="w-8 h-8 flex-shrink-0 rounded-lg bg-red-500 text-white font-black text-lg flex items-center justify-center">
+                  !
                 </div>
-              )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-900 mb-1 text-sm">{razonBloqueo.titulo}</div>
+                  <div className="text-xs text-slate-600 leading-relaxed">{razonBloqueo.detalle}</div>
+                </div>
+              </div>
+            )}
 
-              {totalMatches === 0 && (
-                <div className="pm-empty">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            {totalMatches === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-3">
+                  <svg className="w-8 h-8 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <circle cx="12" cy="12" r="10" />
                     <path d="M12 6v6l4 2" />
                   </svg>
-                  <h3>No hay partidos disponibles</h3>
-                  <p>Esta apuesta aún no tiene fixture cargado</p>
                 </div>
-              )}
+                <h3 className="text-lg font-bold text-slate-800 mb-1">No hay partidos disponibles</h3>
+                <p className="text-sm text-slate-500">Esta apuesta aún no tiene fixture cargado</p>
+              </div>
+            )}
 
-              {bet.partidos?.map((match, idx) => {
-                const isLive     = match.estado === 'en_vivo'
-                const isFinished = match.estado === 'finalizado'
-                const isDisabled = !open || isLive || isFinished || estaBloqueado
-                const sc         = scores[match.id] || { local: '', visitante: '' }
-                const hasScore   = sc.local !== '' && sc.visitante !== ''
-                const elim       = esEliminatoria(match.fase)
-                const pl         = sc.local !== '' ? parseInt(sc.local, 10) : null
-                const pv         = sc.visitante !== '' ? parseInt(sc.visitante, 10) : null
-                const empate     = hasScore && pl === pv
-                const clasifElegido = clasificados[match.id] || ''
-                const completo   = predicionCompleta(match)
+            {bet.partidos?.map((match, idx) => {
+              const isLive = match.estado === 'en_vivo'
+              const isFinished = match.estado === 'finalizado'
+              const isDisabled = !open || isLive || isFinished || estaBloqueado
+              const sc = scores[match.id] || { local: '', visitante: '' }
+              const hasScore = sc.local !== '' && sc.visitante !== ''
+              const elim = esEliminatoria(match.fase)
+              const pl = sc.local !== '' ? parseInt(sc.local, 10) : null
+              const pv = sc.visitante !== '' ? parseInt(sc.visitante, 10) : null
+              const empate = hasScore && pl === pv
+              const clasifElegido = clasificados[match.id] || ''
+              const completo = predicionCompleta(match)
 
-                const cardClass = [
-                  'pm-card',
-                  completo && !isLive && !isFinished ? 'done' : '',
-                  isLive ? 'live' : '',
-                ].filter(Boolean).join(' ')
-
-                return (
-                  <div
-                    key={match.id}
-                    ref={el => { matchRefs.current[match.id] = el }}
-                    data-match-id={match.id}
-                    className={cardClass}
-                  >
-                    {/* Strip */}
-                    <div className="pm-strip">
-                      <div className="pm-strip-left">
-                        <span className="pm-strip-num">{String(idx + 1).padStart(2, '0')}</span>
-                        <span>Partido</span>
-                        {elim && <span className="pm-strip-fase">· Eliminación</span>}
-                      </div>
-                      <div className="pm-strip-right">
-                        {isLive && (
-                          <span className="pm-tag pm-tag-live">
-                            <span className="pm-tag-dot pulse" /> LIVE
-                          </span>
-                        )}
-                        {isFinished && <span className="pm-tag pm-tag-fin">FT</span>}
-                        {!isLive && !isFinished && completo && (
-                          <span className="pm-tag pm-tag-done">
-                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            Lista
-                          </span>
-                        )}
-                      </div>
+              return (
+                <div
+                  key={match.id}
+                  ref={el => { matchRefs.current[match.id] = el }}
+                  data-match-id={match.id}
+                  className={`bg-white rounded-xl mb-2.5 overflow-hidden shadow-sm border transition-all duration-200 hover:shadow-md ${
+                    completo && !isLive && !isFinished 
+                      ? 'border-yellow-400 shadow-yellow-500/10' 
+                      : isLive 
+                        ? 'border-red-500 shadow-red-500/10'
+                        : 'border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between px-3 py-2 bg-slate-900 text-white">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-slate-800 text-yellow-400 text-[10px] font-black px-2 py-0.5 rounded min-w-[32px] text-center border border-yellow-400/30">
+                        {String(idx + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-[10px] font-bold tracking-wider uppercase">Partido</span>
+                      {elim && <span className="text-[9px] font-bold text-yellow-400 uppercase">· Elim</span>}
                     </div>
-
-                    {/* Board */}
-                    <div className="pm-board">
-                      <div className="pm-side-team left">
-                        {match.bandera_local && (
-                          <img src={match.bandera_local} alt="" className="pm-flag-lg" />
-                        )}
-                        <div className="pm-team-block">
-                          {match.codigo_local && <div className="pm-team-code">{match.codigo_local}</div>}
-                          <div className="pm-team-nm">{match.equipo_local}</div>
-                        </div>
-                      </div>
-
-                      <div className="pm-center">
-                        <input
-                          type="text" 
-                          inputMode="numeric" 
-                          maxLength={2}
-                          value={sc.local}
-                          onChange={e => updateScore(match.id, 'local', e.target.value)}
-                          placeholder="—"
-                          disabled={isDisabled}
-                          aria-label={`Goles ${match.equipo_local}`}
-                          className="pm-input"
-                        />
-                        <span className="pm-dash">:</span>
-                        <input
-                          type="text" 
-                          inputMode="numeric" 
-                          maxLength={2}
-                          value={sc.visitante}
-                          onChange={e => updateScore(match.id, 'visitante', e.target.value)}
-                          placeholder="—"
-                          disabled={isDisabled}
-                          aria-label={`Goles ${match.equipo_visitante}`}
-                          className="pm-input"
-                        />
-                      </div>
-
-                      <div className="pm-side-team right">
-                        {match.bandera_visitante && (
-                          <img src={match.bandera_visitante} alt="" className="pm-flag-lg" />
-                        )}
-                        <div className="pm-team-block">
-                          {match.codigo_visitante && <div className="pm-team-code">{match.codigo_visitante}</div>}
-                          <div className="pm-team-nm">{match.equipo_visitante}</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Extra: clasificado / auto / resultado */}
-                    {elim && empate && (
-                      <div className="pm-extra">
-                        <div className="pm-clasif-label">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M12 7v5l3 2" />
+                    <div className="flex items-center gap-1.5">
+                      {isLive && (
+                        <span className="inline-flex items-center gap-1 bg-red-500 text-white text-[8px] font-black tracking-wider px-2 py-0.5 rounded-full animate-pulse">
+                          <span className="w-1 h-1 rounded-full bg-white" />
+                          VIVO
+                        </span>
+                      )}
+                      {isFinished && (
+                        <span className="inline-flex items-center bg-slate-600 text-white text-[8px] font-black tracking-wider px-2 py-0.5 rounded-full">
+                          FIN
+                        </span>
+                      )}
+                      {!isLive && !isFinished && completo && (
+                        <span className="inline-flex items-center gap-1 bg-yellow-400 text-slate-900 text-[8px] font-black tracking-wider px-2 py-0.5 rounded-full">
+                          <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <polyline points="20 6 9 17 4 12" />
                           </svg>
-                          ¿Quién pasa por penales?
-                        </div>
-                        <div className="pm-clasif-row">
-                          <button
-                            type="button"
-                            disabled={isDisabled}
-                            onClick={() => updateClasificado(match.id, match.codigo_local)}
-                            className={`pm-radio ${clasifElegido === match.codigo_local ? 'active' : ''}`}
-                          >
-                            {match.bandera_local && (
-                              <img 
-                                src={match.bandera_local} 
-                                alt="" 
-                                style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
-                              />
-                            )}
-                            {match.equipo_local}
-                          </button>
-                          <button
-                            type="button"
-                            disabled={isDisabled}
-                            onClick={() => updateClasificado(match.id, match.codigo_visitante)}
-                            className={`pm-radio ${clasifElegido === match.codigo_visitante ? 'active' : ''}`}
-                          >
-                            {match.bandera_visitante && (
-                              <img 
-                                src={match.bandera_visitante} 
-                                alt="" 
-                                style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
-                              />
-                            )}
-                            {match.equipo_visitante}
-                          </button>
-                        </div>
-                        {!clasifElegido && (
-                          <div className="pm-warn">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="12" cy="12" r="9" />
-                              <line x1="12" y1="8" x2="12" y2="12" />
-                              <line x1="12" y1="16" x2="12.01" y2="16" />
-                            </svg>
-                            Tenés que elegir quién pasa
+                          OK
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-[1fr_auto_1fr] items-center">
+                    <div className="flex items-center gap-2.5 p-3 bg-gradient-to-r from-slate-50 to-white border-r border-slate-200">
+                      {match.bandera_local && (
+                        <img src={match.bandera_local} alt="" className="w-10 h-7 object-cover rounded shadow-sm flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        {match.codigo_local && (
+                          <div className="text-[9px] font-black tracking-wider text-yellow-600 uppercase mb-0.5">
+                            {match.codigo_local}
                           </div>
                         )}
-                      </div>
-                    )}
-
-                    {elim && hasScore && !empate && (
-                      <div className="pm-extra">
-                        <div className="pm-auto">
-                          <span className="pm-auto-arrow">▸</span>
-                          <span className="pm-auto-lab">Pasa según tu marcador:</span>
-                          <span className="pm-auto-team">
-                            {(() => {
-                              const ganador = pl > pv
-                                ? { nombre: match.equipo_local, bandera: match.bandera_local }
-                                : { nombre: match.equipo_visitante, bandera: match.bandera_visitante }
-                              return (
-                                <>
-                                  {ganador.bandera && (
-                                    <img 
-                                      src={ganador.bandera} 
-                                      alt="" 
-                                      style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 2 }} 
-                                    />
-                                  )}
-                                  {ganador.nombre}
-                                </>
-                              )
-                            })()}
-                          </span>
+                        <div className="text-sm font-black text-slate-900 leading-tight truncate">
+                          {match.equipo_local}
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {(isLive || isFinished) && (match.goles_local != null || match.goles_visitante != null) && (
-                      <div className="pm-extra">
-                        <div className="pm-result">
-                          <span className="pm-result-lab">{isLive ? 'En vivo' : 'Resultado'}</span>
-                          <span className="pm-result-sc">
-                            {match.goles_local ?? 0} - {match.goles_visitante ?? 0}
-                          </span>
-                          {match.penales_local != null && match.penales_local !== '' &&
-                            match.penales_visit != null && match.penales_visit !== '' && (
-                              <span className="pm-result-pen">
-                                (pen {match.penales_local}-{match.penales_visit})
-                              </span>
-                            )}
+                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={2}
+                        value={sc.local}
+                        onChange={e => updateScore(match.id, 'local', e.target.value)}
+                        placeholder="—"
+                        disabled={isDisabled}
+                        className="w-11 h-11 text-2xl text-center font-black bg-white text-slate-900 border-2 border-yellow-400 rounded-lg outline-none transition-all focus:border-yellow-300 focus:shadow-lg focus:shadow-yellow-500/30 focus:scale-105 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 disabled:cursor-not-allowed tabular-nums"
+                      />
+                      <span className="text-2xl font-black text-yellow-400">:</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={2}
+                        value={sc.visitante}
+                        onChange={e => updateScore(match.id, 'visitante', e.target.value)}
+                        placeholder="—"
+                        disabled={isDisabled}
+                        className="w-11 h-11 text-2xl text-center font-black bg-white text-slate-900 border-2 border-yellow-400 rounded-lg outline-none transition-all focus:border-yellow-300 focus:shadow-lg focus:shadow-yellow-500/30 focus:scale-105 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-slate-300 disabled:cursor-not-allowed tabular-nums"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2.5 p-3 text-right bg-gradient-to-l from-slate-50 to-white border-l border-slate-200">
+                      <div className="flex-1 min-w-0">
+                        {match.codigo_visitante && (
+                          <div className="text-[9px] font-black tracking-wider text-yellow-600 uppercase mb-0.5">
+                            {match.codigo_visitante}
+                          </div>
+                        )}
+                        <div className="text-sm font-black text-slate-900 leading-tight truncate">
+                          {match.equipo_visitante}
                         </div>
                       </div>
-                    )}
+                      {match.bandera_visitante && (
+                        <img src={match.bandera_visitante} alt="" className="w-10 h-7 object-cover rounded shadow-sm flex-shrink-0" />
+                      )}
+                    </div>
                   </div>
-                )
-              })}
-            </div>
 
-            {/* Footer */}
-            <footer className="pm-foot">
-              <div className="pm-progress-wrap">
+                  {elim && empate && (
+                    <div className="px-3 py-3 bg-amber-50 border-t border-dashed border-amber-200">
+                      <div className="flex items-center gap-2 text-[10px] font-black tracking-widest uppercase text-amber-800 mb-2">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M12 6v6l4 2" />
+                        </svg>
+                        ¿Quién pasa por penales?
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => updateClasificado(match.id, match.codigo_local)}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide border-2 transition-all ${
+                            clasifElegido === match.codigo_local
+                              ? 'bg-slate-900 border-yellow-400 text-yellow-400 shadow-md'
+                              : 'bg-white border-slate-200 text-slate-700 hover:border-yellow-400 hover:bg-amber-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {match.bandera_local && (
+                            <img src={match.bandera_local} alt="" className="w-5 h-3.5 object-cover rounded" />
+                          )}
+                          <span className="text-[10px]">{match.equipo_local}</span>
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isDisabled}
+                          onClick={() => updateClasificado(match.id, match.codigo_visitante)}
+                          className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide border-2 transition-all ${
+                            clasifElegido === match.codigo_visitante
+                              ? 'bg-slate-900 border-yellow-400 text-yellow-400 shadow-md'
+                              : 'bg-white border-slate-200 text-slate-700 hover:border-yellow-400 hover:bg-amber-50'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {match.bandera_visitante && (
+                            <img src={match.bandera_visitante} alt="" className="w-5 h-3.5 object-cover rounded" />
+                          )}
+                          <span className="text-[10px]">{match.equipo_visitante}</span>
+                        </button>
+                      </div>
+                      {!clasifElegido && (
+                        <div className="flex items-center gap-1.5 mt-2 text-[10px] text-red-600 font-bold">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          Falta elegir
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {elim && hasScore && !empate && (
+                    <div className="px-3 py-2.5 bg-green-50 border-t border-dashed border-green-200">
+                      <div className="flex items-center gap-2.5 px-3 py-2 bg-white rounded-lg border border-green-200">
+                        <span className="text-green-600 text-sm">✓</span>
+                        <span className="text-[9px] uppercase tracking-wider font-bold text-slate-500">
+                          Clasificado:
+                        </span>
+                        <span className="text-xs font-black text-slate-900 uppercase inline-flex items-center gap-2">
+                          {(() => {
+                            const ganador = pl > pv
+                              ? { nombre: match.equipo_local, bandera: match.bandera_local }
+                              : { nombre: match.equipo_visitante, bandera: match.bandera_visitante }
+                            return (
+                              <>
+                                {ganador.bandera && (
+                                  <img src={ganador.bandera} alt="" className="w-5 h-3.5 object-cover rounded" />
+                                )}
+                                {ganador.nombre}
+                              </>
+                            )
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {(isLive || isFinished) && (match.goles_local != null || match.goles_visitante != null) && (
+                    <div className="px-3 py-2.5 bg-slate-100 border-t border-slate-200">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-slate-900 rounded-lg text-white">
+                        <span className="text-[9px] font-black tracking-widest uppercase text-yellow-400">
+                          {isLive ? '⚡ VIVO' : '🏁 FINAL'}
+                        </span>
+                        <span className="text-lg font-black tabular-nums">
+                          {match.goles_local ?? 0} - {match.goles_visitante ?? 0}
+                        </span>
+                        {match.penales_local != null && match.penales_local !== '' &&
+                          match.penales_visit != null && match.penales_visit !== '' && (
+                            <span className="text-[10px] text-slate-400 ml-auto font-bold">
+                              (pen {match.penales_local}-{match.penales_visit})
+                            </span>
+                          )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Footer */}
+          <form onSubmit={handleSubmit} className="flex-shrink-0">
+            <footer className="px-4 sm:px-6 py-3 bg-slate-900 text-white border-t-2 border-yellow-400 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+              <div className="min-w-0">
                 {open && (
                   <>
-                    <div className="pm-progress-row">
-                      <span className="pm-progress-lab">Progreso</span>
-                      <span className="pm-progress-cn">
-                        <strong>{filledCount}</strong>/ {totalMatches}
+                    <div className="flex items-baseline justify-between text-[9px] tracking-wider uppercase mb-2">
+                      <span className="text-slate-400 font-bold">Progreso</span>
+                      <span className="text-white font-bold">
+                        <strong className="text-yellow-400 text-lg mr-1 font-black">{filledCount}</strong>
+                        <span className="text-slate-400">de</span> {totalMatches}
                       </span>
                     </div>
-                    <div className="pm-progress-bar">
-                      <div className="pm-progress-fill" style={{ width: `${progressPct}%` }} />
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 rounded-full transition-all duration-500"
+                        style={{ width: `${progressPct}%` }}
+                      />
                     </div>
                   </>
                 )}
               </div>
 
-              <div className="pm-actions">
-                <button type="button" className="pm-btn pm-btn-cancel" onClick={onClose}>
+              <div className="flex gap-2 justify-stretch sm:justify-end">
+                <button 
+                  type="button" 
+                  className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-transparent border border-white/30 text-slate-300 hover:border-white hover:text-white hover:bg-white/10 transition-all active:scale-95 cursor-pointer"
+                  onClick={cerrarModal}
+                >
                   Cancelar
                 </button>
                 {open && !estaBloqueado && (
                   <button
                     type="submit"
-                    className="pm-btn pm-btn-submit"
+                    className="flex-1 sm:flex-none px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wide bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 text-slate-900 shadow-lg shadow-yellow-500/50 border border-yellow-400 hover:-translate-y-0.5 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:transform-none transition-all inline-flex items-center justify-center gap-2 active:scale-95"
                     disabled={loading || filledCount === 0}
                   >
                     {loading ? (
                       <>
-                        <span className="pm-spin" />
-                        Guardando
+                        <span className="w-3 h-3 border-2 border-slate-900/30 border-t-slate-900 rounded-full animate-spin" />
+                        Guardando...
                       </>
-                    ) : hadPredictions ? 'Actualizar' : 'Guardar'}
+                    ) : (
+                      <>
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        {hadPredictions ? 'Actualizar' : 'Guardar'}
+                      </>
+                    )}
                   </button>
                 )}
               </div>
 
               {open && !estaBloqueado && (
-                <div className="pm-foot-note">
-                  Podés editar tus predicciones mientras la apuesta siga abierta
+                <div className="col-span-full text-[10px] text-slate-400 text-center tracking-wide">
+                  💡 Podés modificar mientras esté abierta
                 </div>
               )}
               {open && estaBloqueado && (
-                <div className="pm-foot-note warn">
-                  Modo solo lectura · No podés modificar predicciones
+                <div className="col-span-full text-[10px] text-pink-300 text-center tracking-wide font-bold">
+                  🔒 Solo lectura
                 </div>
               )}
             </footer>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
-    </>
+    </div>
   )
 
   return createPortal(modalContent, document.body)

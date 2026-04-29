@@ -74,15 +74,43 @@ export function fmtFechaLarga(iso) {
   })
 }
 
+/**
+ * Convierte una fecha que viene del backend (formato ISO con Z)
+ * interpretándola como hora Argentina, no UTC.
+ * Backend guarda "2026-04-29T13:30:00.000Z" queriendo decir 13:30 Argentina.
+ * Esta función lo convierte a un timestamp correcto.
+ */
+function fechaArgentinaATimestamp(fechaISO) {
+  if (!fechaISO) return null
+  const str = String(fechaISO).trim()
+  
+  // Si termina en Z, asumir que es hora Argentina (no UTC)
+  if (/Z$/.test(str)) {
+    const sinZ = str.replace(/Z$/, '')
+    const conOffset = `${sinZ}-03:00` // Argentina UTC-3
+    const date = new Date(conOffset)
+    if (isNaN(date.getTime())) return null
+    return date.getTime()
+  }
+  
+  // Si no tiene Z, parsearlo normalmente
+  const date = new Date(str)
+  if (isNaN(date.getTime())) return null
+  return date.getTime()
+}
+
 /** Tiempo restante hasta una fecha límite: "2d 5h", "45m", "Cerrada" */
-export function timeLeft(deadline) {
-  if (!deadline) return 'Cerrada'
-  const diff = new Date(deadline) - Date.now()
-  if (isNaN(diff) || diff <= 0) return 'Cerrada'
-  const h = Math.floor(diff / 3_600_000)
-  const m = Math.floor((diff % 3_600_000) / 60_000)
+export function timeLeft(fechaCierre) {
+  const timestamp = fechaArgentinaATimestamp(fechaCierre)
+  if (!timestamp) return 'Cerrada'
+  
+  const diff = timestamp - Date.now()
+  if (diff <= 0) return 'Cerrada'
+  
+  const h = Math.floor(diff / 3600000)
+  const m = Math.floor((diff % 3600000) / 60000)
   if (h >= 24) return `${Math.floor(h / 24)}d ${h % 24}h`
-  if (h > 0)   return `${h}h ${m}m`
+  if (h > 0) return `${h}h ${m}m`
   return `${m}m`
 }
 
@@ -129,7 +157,6 @@ export function isoUtcAInputLocal(iso) {
    ══════════════════════════════════════════════════════════ */
 
 /** Devuelve true si una apuesta está abierta */
-// ✅ CORRECTO:
 export function isBetOpen(bet) {
   return bet.estado === 'abierta'
 }

@@ -7,6 +7,7 @@
  *    (necesario para puntuar fases eliminatorias).
  *  - El banner del "Sistema de puntos" ahora muestra una sección extra
  *    explicando la regla del +1 por acertar al clasificado.
+ *  - ✅ ARREGLADO: onFinalize cambiado a onClose para que el botón X funcione
  */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -151,11 +152,11 @@ const filtered = bets.filter(b => {
   return b.estado === 'abierta'
 })
 
-  // ★ CAMBIO: el payload ahora incluye pred_clasificado cuando el modal lo envía
-  // (lo hace solo en partidos de fase eliminatoria).
+  // ★ OPTIMIZADO: Guarda todas las predicciones en paralelo
   async function handlePredict(betId,preds){
     try{
-      for(const p of preds){
+      // Preparar todos los payloads
+      const payloads = preds.map(p => {
         const payload = {
           apuesta_id: betId,
           partido_id: p.partido_id,
@@ -163,8 +164,12 @@ const filtered = bets.filter(b => {
           pred_visitante: p.pred_visitante,
         }
         if (p.pred_clasificado) payload.pred_clasificado = p.pred_clasificado
-        await savePrediction(payload)
-      }
+        return payload
+      })
+      
+      // Guardar todas en paralelo
+      await Promise.all(payloads.map(payload => savePrediction(payload)))
+      
       setActiveBet(null)
       showToast('Predicciones guardadas exitosamente',true)
     }catch(err){showToast(err.message||'Error al guardar',false)}
@@ -333,9 +338,9 @@ const filtered = bets.filter(b => {
         )}
       </div>
 
-      {/* Modal de predicción */}
+      {/* ✅ Modal de predicción - ARREGLADO onClose */}
       {activeBet&&(
-        <PredictModal bet={activeBet} onSubmit={(id,preds)=>handlePredict(id,preds)} onFinalize={()=>setActiveBet(null)} loading={loading}/>
+        <PredictModal bet={activeBet} onSubmit={(id,preds)=>handlePredict(id,preds)} onClose={()=>setActiveBet(null)} loading={loading}/>
       )}
     </AppShell>
   )
