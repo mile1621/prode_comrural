@@ -18,9 +18,9 @@ function BetRow({ bet, onClose, onFinalize }) {
   const isOpen     = isBetOpen(bet)
 
   return (
-    <div
-      className="rounded-xl p-4 transition-all"
-      style={{
+  <div
+    className="rounded-xl p-3 sm:p-4 transition-all w-full"
+    style={{
         background: '#fff',
         border: `1px solid ${status.border}`,
         boxShadow: '0 2px 8px rgba(12,24,43,.04)',
@@ -28,7 +28,7 @@ function BetRow({ bet, onClose, onFinalize }) {
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(12,24,43,.08)' }}
       onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 2px 8px rgba(12,24,43,.04)' }}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -81,11 +81,11 @@ function BetRow({ bet, onClose, onFinalize }) {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col gap-1.5 flex-shrink-0">
+<div className="flex flex-row sm:flex-col gap-1.5 flex-shrink-0 w-full sm:w-auto">
           {isOpen && onClose && (
-            <button
-              onClick={() => onClose(bet.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all"
+<button
+  onClick={() => onClose(bet.id)}
+  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
               style={{ fontSize: 11, background: 'transparent', border: '1px solid rgba(224,50,82,.3)', color: '#e03252' }}
               onMouseEnter={e => { e.currentTarget.style.background = 'rgba(224,50,82,.06)' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
@@ -94,9 +94,9 @@ function BetRow({ bet, onClose, onFinalize }) {
             </button>
           )}
           {bet.estado === 'cerrada' && onFinalize && (
-            <button
-              onClick={() => onFinalize(bet.id)}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full font-body font-bold transition-all"
+<button
+  onClick={() => onClose(bet.id)}
+  className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-full font-body font-semibold transition-all w-full sm:w-auto"
               style={{ fontSize: 11, background: 'rgba(235,195,43,.1)', border: '1px solid rgba(235,195,43,.35)', color: '#c99f16' }}
               onMouseEnter={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.color = '#05090f' }}
               onMouseLeave={e => { e.currentTarget.style.background = 'rgba(235,195,43,.1)'; e.currentTarget.style.color = '#c99f16' }}
@@ -127,12 +127,12 @@ export default function BetsTab({ bets, loading, createBet, matches, closeBet, f
     catch (e) { alert('Error al finalizar: ' + e.message) }
   }
 
-  return (
-    <div className="grid lg:grid-cols-2 gap-6 animate-fade-in delay-2" style={{ alignItems: 'start' }}>
+return (
+  <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 animate-fade-in delay-2 px-4 sm:px-0" style={{ alignItems: 'start' }}>
 
       {/* ── Formulario nueva apuesta ── */}
 <div
-  className="rounded-2xl p-6"
+  className="rounded-2xl p-4 sm:p-6 w-full"
   style={{
     background: '#fff',
     border: '1px solid #f0eadb',
@@ -154,7 +154,7 @@ export default function BetsTab({ bets, loading, createBet, matches, closeBet, f
       </div>
 
       {/* ── Lista de apuestas ── */}
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-5 w-full">
 
         {loading && bets.length === 0 && (
           <div className="text-center py-16">

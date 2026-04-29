@@ -574,7 +574,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
         /* Top bar */
         .pm-topbar {
-          padding: 1.25rem 1.5rem;
+padding: 0.875rem 1rem;
           background: white;
           border-bottom: 1px solid ${C.cream200};
           display: flex; 
@@ -721,7 +721,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 .pm-list {
   flex: 1; 
   overflow-y: auto;
-  padding: 1.25rem 1.5rem 1.5rem;
+padding: 0.875rem 1rem;
   scroll-behavior: smooth;
   
   /* ← AGREGÁ ESTAS LÍNEAS */
@@ -785,7 +785,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
           border-left: 4px solid ${C.red500};
           border-radius: 8px;
           padding: 1.125rem 1.25rem;
-          margin-bottom: 1.25rem;
+margin-bottom: 0.75rem;
         }
 
         .pm-block-icon {
@@ -824,7 +824,7 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 .pm-card {
   background: white;
   border-radius: 10px;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
   overflow: hidden;
   box-shadow:
     0 1px 0 rgba(10,18,38,.03),
@@ -1070,9 +1070,9 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
         }
 
 .pm-input {
-  width: 64px;      /* antes: 80px */
-  height: 64px;     /* antes: 80px */
-  font-size: 2rem;  /* antes: 2.5rem */
+  width: 52px;
+  height: 52px;
+  font-size: 1.75rem;
           text-align: center;
           font-weight: 800;
           background: ${C.cream50};
@@ -1117,9 +1117,9 @@ export default function PredictModal({ bet, onSubmit, onClose, loading }) {
 
 @media (max-width: 600px) {
   .pm-input {
-    width: 56px;   /* antes: 68px */
-    height: 56px;  /* antes: 68px */
-    font-size: 1.75rem;  /* antes: 2rem */
+    width: 48px;
+    height: 48px;
+    font-size: 1.5rem;
   }
 }
 
