@@ -9,7 +9,7 @@
 
 // URL directa del deploy de Apps Script.
 // Si hacés un nuevo deploy, actualizá esta URL.
-const API_URL = 'https://script.google.com/macros/s/AKfycbzfbJWCINrxwJA3ySovexoOteHdZ-zEiPMTjeszvuesGhQDXzX0JDelknKWi4fxIdkM/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbzddnn9HyIcySTquLkv5bX-hj9LcvaUCgDhFRnFc_KFC8mpGn7AKwJRuAUQrIq97PoA/exec'
 
 // ── Caché de cliente en memoria ────────────────────────────
 const CLIENT_CACHE = new Map()
