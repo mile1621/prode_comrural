@@ -20,8 +20,7 @@ function timeLeft(d){const diff=new Date(d)-Date.now();if(diff<=0)return'Cerrada
 const CARD_BASE={background:'#fff',border:'1px solid #f0eadb',borderRadius:16,boxShadow:'0 1px 0 rgba(12,24,43,.04)'}
 const MUTED={fontSize:'.78rem',color:'#5f6e8a'}
 
-function isOpen(b){return b.estado==='abierta'&&new Date(b.fecha_cierre)>Date.now()}
-
+function isOpen(b){return b.estado==='abierta'}
 const FILTERS=[
   {key:'todas', label:'Todas'},
   {key:'activas', label:'Activas'},
