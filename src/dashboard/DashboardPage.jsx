@@ -152,7 +152,7 @@ function SectionHead({ title, to, cta }) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { bets, predictions, submitPredictions } = useBets()
+  const { bets, predictions, savePrediction } = useBets()
   
   // ✅ ESTADO PARA CONTROLAR EL MODAL
   const [selectedBet, setSelectedBet] = useState(null)
@@ -173,16 +173,36 @@ export default function DashboardPage() {
     setSelectedBet(null)
   }
 
-  // ✅ FUNCIÓN PARA GUARDAR PREDICCIONES
+  // ✅ FUNCIÓN PARA GUARDAR PREDICCIONES (con batches de 3 en paralelo)
   const handleSubmitPredictions = async (betId, matchPredictions) => {
     setIsSubmitting(true)
+    
     try {
-      await submitPredictions(betId, matchPredictions)
+      const BATCH_SIZE = 3
+      
+      for (let i = 0; i < matchPredictions.length; i += BATCH_SIZE) {
+        const batch = matchPredictions.slice(i, i + BATCH_SIZE)
+        
+        await Promise.all(
+          batch.map(async (p) => {
+            const payload = {
+              apuesta_id: betId,
+              partido_id: p.partido_id,
+              pred_local: p.pred_local,
+              pred_visitante: p.pred_visitante,
+            }
+            if (p.pred_clasificado) payload.pred_clasificado = p.pred_clasificado
+            return savePrediction(payload)
+          })
+        )
+      }
+      
+      // Cerrar modal después de guardar exitosamente
       setSelectedBet(null)
+      setIsSubmitting(false)
     } catch (error) {
-      console.error('Error submitting predictions:', error)
+      console.error('Error guardando predicciones:', error)
       alert('Error al guardar predicciones. Por favor intentá de nuevo.')
-    } finally {
       setIsSubmitting(false)
     }
   }

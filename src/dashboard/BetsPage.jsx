@@ -152,11 +152,10 @@ const filtered = bets.filter(b => {
   return b.estado === 'abierta'
 })
 
-  // ★ OPTIMIZADO: Guarda todas las predicciones en paralelo
+  // Guardar predicciones una por una (funciona pero es más lento)
   async function handlePredict(betId,preds){
     try{
-      // Preparar todos los payloads
-      const payloads = preds.map(p => {
+      for(const p of preds){
         const payload = {
           apuesta_id: betId,
           partido_id: p.partido_id,
@@ -164,15 +163,14 @@ const filtered = bets.filter(b => {
           pred_visitante: p.pred_visitante,
         }
         if (p.pred_clasificado) payload.pred_clasificado = p.pred_clasificado
-        return payload
-      })
-      
-      // Guardar todas en paralelo
-      await Promise.all(payloads.map(payload => savePrediction(payload)))
-      
+        await savePrediction(payload)
+      }
       setActiveBet(null)
       showToast('Predicciones guardadas exitosamente',true)
-    }catch(err){showToast(err.message||'Error al guardar',false)}
+    }catch(err){
+      console.error('Error guardando:', err)
+      showToast(err.message||'Error al guardar',false)
+    }
   }
 
   return(
