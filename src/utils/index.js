@@ -129,11 +129,9 @@ export function isoUtcAInputLocal(iso) {
    ══════════════════════════════════════════════════════════ */
 
 /** Devuelve true si una apuesta está abierta */
+// ✅ CORRECTO:
 export function isBetOpen(bet) {
-  if (!bet) return false
-  if (bet.estado !== 'abierta') return false
-  const t = new Date(bet.fecha_cierre).getTime()
-  return !isNaN(t) && t > Date.now()
+  return bet.estado === 'abierta'
 }
 
 /** Clases CSS para el estado de una apuesta */
