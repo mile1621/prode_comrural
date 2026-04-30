@@ -12,29 +12,38 @@ const FAQS = [
 
 export default function HomeFaq() {
   const [open, setOpen] = useState(0)
+  const [hoveredIndex, setHoveredIndex] = useState(null)
 
   return (
-    <section id="faq" className="relative" style={{ background: '#faf7f0', paddingTop: '5rem', paddingBottom: '5rem' }}>
+    <section id="faq" className="relative" style={{ background: '#faf7f0', paddingTop: '6rem', paddingBottom: '8rem' }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 1.5rem' }}>
-        <div className="grid lg:grid-cols-2 gap-14 items-start">
+        <div className="grid lg:grid-cols-2 gap-16 items-start">
 
           {/* Left */}
           <div className="lg:sticky" style={{ top: '7rem' }}>
-            <span className="inline-flex items-center gap-2 font-body font-bold text-xs uppercase tracking-widest px-4 py-1.5 rounded-full mb-6"
-              style={{ border: '1px solid #ebc32b', color: '#c99f16', background: 'rgba(235,195,43,.1)' }}>
+            <span className="inline-flex items-center gap-2 font-body font-bold text-xs uppercase tracking-widest px-4 py-2 rounded-full mb-6"
+              style={{ border: '1.5px solid #ebc32b', color: '#c99f16', background: 'rgba(235,195,43,.12)' }}>
               Ayuda
             </span>
-            <h2 className="font-display mb-5" style={{ fontSize: 'clamp(2.4rem,6vw,4rem)', color: '#0c182b', lineHeight: 1, letterSpacing: '.01em' }}>
+            <h2 className="font-display mb-6" style={{ fontSize: 'clamp(2.5rem,6vw,4.2rem)', color: '#0c182b', lineHeight: 0.95, letterSpacing: '.01em' }}>
               PREGUNTAS<br />FRECUENTES
             </h2>
-            <p className="font-body text-base leading-relaxed mb-8" style={{ color: '#5f6e8a', maxWidth: '26rem' }}>
+            <p className="font-body text-base leading-relaxed mb-10" style={{ color: '#5f6e8a', maxWidth: '28rem' }}>
               Todo lo que necesitás saber para empezar a participar y sacarle el máximo a la plataforma.
             </p>
             <Link to="/register"
-              className="inline-flex items-center gap-2 font-body font-bold text-sm px-6 py-3.5 rounded-full transition-all"
-              style={{ background: '#0c182b', color: '#fff', textDecoration: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#18243f'; e.currentTarget.style.transform = 'translateY(-2px)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#0c182b'; e.currentTarget.style.transform = '' }}>
+              className="inline-flex items-center gap-2 font-body font-bold text-sm px-7 py-4 rounded-full transition-all duration-300"
+              style={{ background: '#0c182b', color: '#fff', textDecoration: 'none', boxShadow: '0 4px 14px rgba(12,24,43,.25)' }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.background = '#18243f'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(12,24,43,.35)'
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.background = '#0c182b'
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 14px rgba(12,24,43,.25)'
+              }}>
               Registrarme ahora
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                 <polyline points="9 18 15 12 9 6"/>
@@ -43,44 +52,74 @@ export default function HomeFaq() {
           </div>
 
           {/* Accordion */}
-          <div className="space-y-3">
-            {FAQS.map(({ q, a }, i) => (
-              <div key={i} className="rounded-xl overflow-hidden bg-white transition-all duration-200"
-                style={{
-                  border: open === i ? '1px solid #ebc32b' : '1px solid #f0eadb',
-                  boxShadow: open === i ? '0 6px 20px rgba(235,195,43,.12)' : '0 1px 0 rgba(12,24,43,.03)',
-                }}>
-                <button
-                  className="w-full flex items-start justify-between gap-4 text-left px-6 py-5"
-                  onClick={() => setOpen(open === i ? -1 : i)}>
-                  <span className="font-body font-semibold text-sm leading-snug"
-                    style={{ color: open === i ? '#0c182b' : '#2b3a5a' }}>{q}</span>
-                  <span className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 transition-all"
-                    style={open === i ? { background: '#ebc32b', color: '#05090f' } : { background: '#f0eadb', color: '#5f6e8a' }}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                      className="w-3.5 h-3.5"
-                      style={{ transform: open === i ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform .3s' }}>
-                      <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                  </span>
-                </button>
-                {open === i && (
-                  <div className="px-6 pb-5" style={{ borderTop: '1px solid #f0eadb' }}>
-                    <p className="font-body text-sm leading-relaxed pt-4" style={{ color: '#5f6e8a' }}>{a}</p>
+          <div className="space-y-4">
+            {FAQS.map(({ q, a }, i) => {
+              const isOpen = open === i
+              const isHovered = hoveredIndex === i
+              
+              return (
+                <div 
+                  key={i} 
+                  className="rounded-2xl overflow-hidden bg-white transition-all duration-300"
+                  style={{
+                    border: isOpen ? '2px solid #ebc32b' : isHovered ? '2px solid #f0eadb' : '2px solid transparent',
+                    boxShadow: isOpen 
+                      ? '0 8px 24px rgba(235,195,43,.18), 0 2px 8px rgba(235,195,43,.1)' 
+                      : isHovered 
+                        ? '0 4px 12px rgba(12,24,43,.08)' 
+                        : '0 2px 4px rgba(12,24,43,.04)',
+                    transform: isOpen ? 'scale(1.01)' : 'scale(1)',
+                  }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                >
+                  <button
+                    className="w-full flex items-start justify-between gap-4 text-left px-6 py-5 transition-colors duration-200"
+                    style={{ background: isOpen ? 'rgba(235,195,43,.03)' : 'transparent' }}
+                    onClick={() => setOpen(isOpen ? -1 : i)}
+                  >
+                    <span className="font-body font-bold text-base leading-snug"
+                      style={{ color: isOpen ? '#0c182b' : '#2b3a5a' }}>
+                      {q}
+                    </span>
+                    <span 
+                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300"
+                      style={isOpen 
+                        ? { background: '#ebc32b', color: '#05090f', transform: 'rotate(180deg)' } 
+                        : { background: isHovered ? '#f5edd5' : '#f0eadb', color: '#5f6e8a', transform: 'rotate(0deg)' }
+                      }
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <polyline points="6 9 12 15 18 9"/>
+                      </svg>
+                    </span>
+                  </button>
+                  
+                  <div 
+                    className="overflow-hidden transition-all duration-300"
+                    style={{
+                      maxHeight: isOpen ? '300px' : '0',
+                      opacity: isOpen ? 1 : 0,
+                    }}
+                  >
+                    <div className="px-6 pb-6 pt-2" style={{ borderTop: isOpen ? '1px solid #f0eadb' : 'none' }}>
+                      <p className="font-body text-sm leading-relaxed pt-3" style={{ color: '#5f6e8a' }}>
+                        {a}
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
 
-{/* Wave FAQ → footer */}
-<svg className="absolute bottom-0 left-0 w-full" style={{ display: 'block', height: 100, marginBottom: -2 }}
-  viewBox="0 0 1440 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="1440" height="100" fill="#faf7f0" />
-  <path d="M0,30 C360,100 720,0 1080,45 C1260,60 1380,35 1440,28 L1440,100 L0,100 Z" fill="#05090f" />
-</svg>
+      {/* Wave FAQ → footer */}
+      <svg className="absolute bottom-0 left-0 w-full" style={{ display: 'block', height: 120, marginBottom: -2 }}
+        viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,40 C360,110 720,10 1080,55 C1260,70 1380,45 1440,38 L1440,120 L0,120 Z" fill="#05090f" />
+      </svg>
     </section>
   )
 }

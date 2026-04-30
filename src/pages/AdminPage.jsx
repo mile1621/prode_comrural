@@ -9,6 +9,7 @@ import AdminHeader from '../components/admin/AdminHeader.jsx'
 import AdminTabs from '../components/admin/AdminTabs.jsx'
 import CreateBetTab from '../components/admin/CreateBetTab.jsx'
 import BetsListTab from '../components/admin/BetsListTab.jsx'
+import Loading from '../hooks/Loading.jsx'
 
 /* ── Helpers ────────────────────────────────────────────── */
 
@@ -28,8 +29,14 @@ function getBetStatusColor(bet) {
 }
 
 export default function AdminPage() {
-  const { bets, loading, createBet, closeBet, finalizeBet, matches, loadBets } = useBets()
+  const { bets, loading: betsLoading, createBet, closeBet, finalizeBet, matches, loadBets } = useBets({ 
+    autoLoad: false, 
+    autoLoadPredictions: false 
+  })
   const { isPro } = useAuth()
+
+  // ✅ Estado de loading inicial
+  const [initialLoading, setInitialLoading] = useState(true)
 
   const [tab, setTab] = useState('NuevaApuesta')
 
@@ -49,9 +56,25 @@ export default function AdminPage() {
   const [newArea, setNewArea] = useState({ nombre: '', descripcion: '' })
   const [savingArea, setSavingArea] = useState(false)
 
-  /* ── Efectos ──────────────────────────────────────────── */
-  useEffect(() => {
-    if (tab === 'Usuarios') {
+/* ── Efectos ──────────────────────────────────────────── */
+
+/* ── Carga inicial ──────────────────────────────────────── */
+useEffect(() => {
+  async function loadInitialData() {
+    setInitialLoading(true)
+    try {
+      await loadBets()
+    } catch (error) {
+      console.error('Error cargando datos iniciales:', error)
+    } finally {
+      setInitialLoading(false)
+    }
+  }
+  loadInitialData()
+}, [loadBets])
+
+useEffect(() => {
+  if (tab === 'Usuarios') {
       loadPendingUsers()
       if (isPro) loadAreas()
     }
@@ -143,7 +166,12 @@ export default function AdminPage() {
     }
   }
 
-  /* ── Render ───────────────────────────────────────────── */
+// ✅ MOSTRAR LOADING MIENTRAS CARGA DATOS INICIALES
+if (initialLoading) {
+  return <Loading message="Cargando panel de administración..." />
+}
+
+/* ── Render ───────────────────────────────────────────── */
   return (
     <AppShell>
       <style>{`
@@ -168,21 +196,21 @@ export default function AdminPage() {
 
         {/* TAB 1: Nueva Apuesta */}
         {tab === 'NuevaApuesta' && (
-          <CreateBetTab
-            createBet={createBet}
-            loading={loading}
-            matches={matches}
-          />
+<CreateBetTab
+  createBet={createBet}
+  loading={betsLoading}
+  matches={matches}
+/>
         )}
 
         {/* TAB 2: Apuestas Creadas */}
         {tab === 'ApuestasCreadas' && (
-          <BetsListTab
-            bets={bets}
-            loading={loading}
-            closeBet={closeBet}
-            finalizeBet={finalizeBet}
-          />
+<BetsListTab
+  bets={bets}
+  loading={betsLoading}
+  closeBet={closeBet}
+  finalizeBet={finalizeBet}
+/>
         )}
 
         {/* TAB 3: Usuarios */}

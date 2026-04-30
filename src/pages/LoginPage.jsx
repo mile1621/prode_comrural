@@ -251,7 +251,7 @@ export default function LoginPage() {
             Volver al inicio
           </Link>
           <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,.22)' }}>
-            Solo mayores de 18 años · Juego responsable
+            Prohibida la participación de menores de 18 años. Juega con responsabilidad.
           </p>
         </div>
 

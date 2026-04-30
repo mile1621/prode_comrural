@@ -41,7 +41,7 @@ export default function HomeHowItWorks() {
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#ebc32b'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 14px 36px rgba(12,24,43,.1)' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = '#f0eadb'; e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 1px 0 rgba(12,24,43,.03)' }}
             >
-              <div className="font-display leading-none mb-4 select-none" style={{ fontSize: '5.5rem', color: '#ebc32b', opacity: .28 }}>
+              <div className="font-display leading-none mb-4 select-none" style={{ fontSize: '5.5rem', color: '#ebc32b', opacity: .70 }}>
                 {n}
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5"

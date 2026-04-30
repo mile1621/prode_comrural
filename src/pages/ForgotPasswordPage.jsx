@@ -242,7 +242,7 @@ export default function ForgotPasswordPage() {
         {/* ── Footer ── */}
         <div className="relative z-10 flex flex-col items-center gap-2 mt-6 lp-card" style={{ animationDelay: '.2s' }}>
           <p className="font-body text-xs" style={{ color: 'rgba(255,255,255,.22)' }}>
-            Solo mayores de 18 años · Juego responsable
+            Prohibida la participación de menores de 18 años. Juega con responsabilidad.
           </p>
         </div>
 

@@ -5,7 +5,6 @@ export default function HomeFooter() {
     <footer style={{ background: '#05090f', position: 'relative', overflow: 'hidden' }}>
 
       {/* Glow ambiental de fondo */}
-      <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:700, height:300, background:'radial-gradient(ellipse at 50% 0%,rgba(235,195,43,.07),transparent 70%)', pointerEvents:'none' }}/>
       <div style={{ position:'absolute', bottom:0, left:0, width:400, height:250, background:'radial-gradient(ellipse at 0% 100%,rgba(11,74,110,.18),transparent 65%)', pointerEvents:'none' }}/>
 
       {/* ── Cuerpo principal ── */}
@@ -158,7 +157,7 @@ export default function HomeFooter() {
 
           {/* Der: legal */}
           <div style={{ display:'flex', alignItems:'center', gap:'1.25rem' }}>
-            {['V1.0.6'].map(t => (
+            {['V1.0.7'].map(t => (
               <span key={t} style={{ fontFamily:"'DM Sans',sans-serif", fontSize:'.72rem', color:'rgba(255,255,255,.22)', cursor:'pointer', transition:'color .18s' }}
                 onMouseEnter={e=>{ e.currentTarget.style.color='rgba(255,255,255,.5)' }}
                 onMouseLeave={e=>{ e.currentTarget.style.color='rgba(255,255,255,.22)' }}>

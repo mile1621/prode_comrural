@@ -2,6 +2,7 @@
  * DashboardPage.jsx
  * Ubicación: src/dashboard/DashboardPage.jsx
  * ✅ INTEGRADO CON PredictModal
+ * ✅ INTEGRADO CON Loading OVERLAY
  */
 import { useState } from 'react'
 import AppShell from '../dashboard/AppShell.jsx'
@@ -10,6 +11,7 @@ import { useBets } from '../hooks/useBets.jsx'
 import { isBetOpen, timeLeft } from '../utils/index.js'
 import { Link } from 'react-router-dom'
 import PredictModal from '../components/user/PredictModal.jsx'
+import Loading from '../hooks/Loading.jsx'
 
 function StatCard({ label, value, sub, icon, gold = false, live = false }) {
   const accentColor = live ? '#e03252' : gold ? '#c99f16' : '#425b8b'
@@ -152,7 +154,7 @@ function SectionHead({ title, to, cta }) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
-  const { bets, predictions, savePrediction } = useBets()
+  const { bets, predictions, savePrediction, loading } = useBets()
   
   // ✅ ESTADO PARA CONTROLAR EL MODAL
   const [selectedBet, setSelectedBet] = useState(null)
@@ -209,6 +211,12 @@ export default function DashboardPage() {
 
   return (
     <AppShell>
+      {/* ✅ LOADING OVERLAY - Se muestra ENCIMA del contenido mientras carga */}
+      {loading && bets.length === 0 && (
+        <Loading message="Cargando dashboard..." />
+      )}
+
+      {/* ✅ CONTENIDO - Siempre se renderiza */}
       <div style={{ maxWidth: 1400, margin: '0 auto', padding: '2rem 1.5rem 3rem' }}>
 
         <div className="rounded-2xl p-6 md:p-8 mb-8 relative overflow-hidden animate-fade-in"
