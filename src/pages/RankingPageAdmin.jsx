@@ -1,14 +1,13 @@
 /**
- * RankingPageUser.jsx — Diseño premium v6 (USER VERSION)
- * Ubicación: src/pages/RankingPageUser.jsx
+ * RankingPageAdmin.jsx — Versión ADMIN
+ * Ubicación: src/pages/RankingPageAdmin.jsx
  *
- * Mismo diseño que RankingPage.jsx pero:
- * - Sin expandir predicciones
- * - Solo muestra TOP 3
- * - Solo puntajes totales visibles
- *
- * v6.1 — Dimensiones alineadas con FixturePage (maxWidth:1400, padding:'2rem 1.5rem 3rem')
- *        y header con estilo navy + dorado (RANKING + en dorado)
+ * MISMO diseño que RankingPageUser pero:
+ * - Permite expandir cada participante (TOP 3 y Otros) para ver sus predicciones
+ * - Las predicciones se cargan BAJO DEMANDA al apretar "Ver detalle" (no antes)
+ * - Caché en memoria por usuario (no vuelve a pedir si ya se cargó)
+ * - Hace JOIN cliente entre predicciones crudas (de la hoja `predicciones`) y los
+ *   partidos completos (de `apuestas.obtener` que trae datos de PartidosMundial)
  */
 import { useState, useMemo, useEffect } from 'react'
 import AppShell from '../dashboard/AppShell.jsx'
@@ -25,6 +24,7 @@ const CSS = `
 @keyframes rk-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
 @keyframes rk-fade { from{opacity:0} to{opacity:1} }
 @keyframes rk-shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+@keyframes rk-spin { to { transform: rotate(360deg) } }
 .rk-in { animation: rk-in .28s ease both }
 
 /* Panel izquierdo */
@@ -50,6 +50,31 @@ const CSS = `
 /* Skeleton */
 .rk-sk { background:linear-gradient(90deg,rgba(12,24,43,.06) 25%,rgba(12,24,43,.1) 50%,rgba(12,24,43,.06) 75%);background-size:400px 100%;animation:rk-shimmer 1.4s ease infinite;border-radius:8px }
 
+/* Spinner para botones de carga */
+.rk-spinner { width:11px;height:11px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:rk-spin .65s linear infinite;display:inline-block;opacity:.6 }
+
+/* Botón "Ver detalle" */
+.rk-detail-btn {
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  font-family:'DM Sans',sans-serif;font-size:9px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.1em;
+  border:none;cursor:pointer;border-radius:99px;padding:5px 10px;
+  transition:all .15s;white-space:nowrap;
+}
+.rk-detail-btn:disabled { opacity:.7;cursor:wait }
+.rk-detail-btn-podio {
+  background:rgba(12,24,43,.06);color:#0c182b;
+}
+.rk-detail-btn-podio:hover:not(:disabled) { background:rgba(12,24,43,.12) }
+.rk-detail-btn-podio.active { background:#0c182b;color:#ebc32b }
+
+.rk-detail-btn-mini {
+  background:rgba(12,24,43,.05);color:#5f6e8a;
+  font-size:8px;padding:4px 8px;
+}
+.rk-detail-btn-mini:hover:not(:disabled) { background:rgba(12,24,43,.1);color:#0c182b }
+.rk-detail-btn-mini.active { background:#0c182b;color:#ebc32b }
+
 /* Mobile */
 @media(max-width:720px) {
   .rk-shell { flex-direction:column!important;height:auto!important }
@@ -62,7 +87,7 @@ const CSS = `
 /* ══════════════════════════════════════════
    COMPONENTE PRINCIPAL
 ══════════════════════════════════════════ */
-export default function RankingPageUser() {
+export default function RankingPageAdmin() {
   const { bets, loading:lb } = useBets()
   const { user }  = useAuth()
 
@@ -71,26 +96,90 @@ export default function RankingPageUser() {
   const [meta, setMeta]           = useState({})
   const [loading, setLoading]     = useState(false)
 
+  // ── Estados para carga BAJO DEMANDA de predicciones ──
+  const [expandedUser, setExpandedUser] = useState(null)   // user_id expandido
+  const [predicciones, setPredicciones] = useState({})     // caché { user_id: [...preds enriquecidas] }
+  const [loadingUser, setLoadingUser]   = useState(null)   // user_id que está cargando
+
+  // Mapa de partidos por id (para hacer JOIN cliente)
+  const partidosMap = useMemo(() => {
+    const map = new Map()
+    if (sel?.partidos) {
+      sel.partidos.forEach(p => map.set(p.id, p))
+    }
+    return map
+  }, [sel])
+
   async function cargarRanking(bet) {
     if (sel?.id===bet.id) return
     setSel(bet); setLoading(true); setTabla([]); setMeta({})
+    setExpandedUser(null); setPredicciones({}); setLoadingUser(null)
+
     try {
       const [rT, rA] = await Promise.all([sheetsApi.predicciones.tabla(bet.id), sheetsApi.apuestas.obtener(bet.id)])
       setTabla(rT.tabla||[])
       setMeta({ total:rT.total, mi_posicion:rT.mi_posicion, esta_en_top:rT.esta_en_top })
+      // ⚡ rA.apuesta trae .partidos[] con TODOS los datos (equipo_local, jornada, goles, etc.)
       setSel(prev=>({...(prev||bet),...rA.apuesta}))
     } catch(e) { alert('Error: '+e.message) }
     finally { setLoading(false) }
+  }
+
+  // Toggle expand de un usuario (con caché y lazy load)
+  async function toggleUser(userId) {
+    // Si ya está expandido → colapsar
+    if (expandedUser === userId) {
+      setExpandedUser(null)
+      return
+    }
+    // Si ya tenemos predicciones cacheadas → expandir directo
+    if (predicciones[userId]) {
+      setExpandedUser(userId)
+      return
+    }
+    // Si no, cargar del backend
+    setLoadingUser(userId)
+    try {
+      const r = await sheetsApi.predicciones.deUsuario(sel.id, userId)
+      // ⚡ ENRIQUECER cada predicción con los datos del partido (JOIN cliente)
+      const predsRaw = r.mis || r.predicciones || []
+      const predsEnriquecidas = predsRaw.map(pred => {
+        const partido = partidosMap.get(pred.partido_id) || {}
+        return {
+          ...pred,
+          // Datos del partido (vienen de sel.partidos via apuestas.obtener)
+          equipo_local: partido.equipo_local || pred.partido_id,
+          equipo_visitante: partido.equipo_visitante || '',
+          codigo_local: partido.codigo_local || '',
+          codigo_visitante: partido.codigo_visitante || '',
+          bandera_local: partido.bandera_local || '',
+          bandera_visitante: partido.bandera_visitante || '',
+          fecha_partido: partido.fecha_partido || '',
+          jornada: partido.jornada || '',
+          fase: partido.fase || '',
+          goles_local: partido.goles_local,
+          goles_visitante: partido.goles_visitante,
+          penales_local: partido.penales_local,
+          penales_visit: partido.penales_visit,
+          estado_partido: partido.estado || '',
+        }
+      })
+      setPredicciones(prev => ({...prev, [userId]: predsEnriquecidas}))
+      setExpandedUser(userId)
+    } catch(e) {
+      alert('Error al cargar predicciones: '+e.message)
+    } finally {
+      setLoadingUser(null)
+    }
   }
 
   return (
     <AppShell>
       <style>{CSS}</style>
 
-      {/* ⚡ Dimensiones alineadas con FixturePage */}
       <div style={{ maxWidth:1400, margin:'0 auto', padding:'2rem 1.5rem 3rem' }}>
 
-        {/* Título página — RANKING navy + (subtítulo gris debajo) */}
+        {/* Título página — alineado con FixturePage */}
         <div className="rk-in" style={{ marginBottom:'1.5rem' }}>
           <h1 style={{
             fontFamily:"'Bebas Neue',sans-serif",
@@ -99,14 +188,15 @@ export default function RankingPageUser() {
             lineHeight:1,
             letterSpacing:'.02em',
           }}>
-            <span style={{color:'#0c182b'}}>RANKING</span>
+            <span style={{color:'#0c182b'}}>RANKING </span>
+            <span style={{color:'#ebc32b'}}>ADMIN</span>
           </h1>
           <p style={{ fontSize:'.84rem', color:'#5f6e8a', margin:0 }}>
-            {sel ? sel.titulo : 'Seleccioná una apuesta para ver el ranking'}
+            {sel ? sel.titulo : 'Seleccioná una apuesta para ver el detalle'}
           </p>
         </div>
 
-        {/* Shell principal — altura ajustada al nuevo padding */}
+        {/* Shell principal */}
         <div className="rk-shell" style={{display:'flex',height:'calc(100vh - 200px)',minHeight:520,borderRadius:20,overflow:'hidden',boxShadow:'0 8px 48px rgba(12,24,43,.14)'}}>
 
           {/* ══ SIDEBAR CREAM ══ */}
@@ -165,14 +255,31 @@ export default function RankingPageUser() {
                       top={tabla.slice(0,3)}
                       miId={user?.id}
                       apuesta={sel}
+                      expandedUser={expandedUser}
+                      loadingUser={loadingUser}
+                      onToggle={toggleUser}
                     />
 
-                    {!meta.esta_en_top && meta.mi_posicion && (
-                      <MiPosicion pos={meta.mi_posicion}/>
+                    {/* Panel de predicciones cuando se expande alguien del TOP 3 */}
+                    {expandedUser && tabla.slice(0,3).some(u => u.user_id === expandedUser) && (
+                      <PrediccionesPanel
+                        user={tabla.find(u => u.user_id === expandedUser)}
+                        predicciones={predicciones[expandedUser] || []}
+                        apuesta={sel}
+                        onClose={() => setExpandedUser(null)}
+                      />
                     )}
 
                     {tabla.length > 3 && (
-                      <OtrosParticipantes tabla={tabla} user={user} />
+                      <OtrosParticipantes
+                        tabla={tabla}
+                        user={user}
+                        apuesta={sel}
+                        expandedUser={expandedUser}
+                        loadingUser={loadingUser}
+                        predicciones={predicciones}
+                        onToggle={toggleUser}
+                      />
                     )}
 
                     <LeyendaPuntos apuesta={sel} total={meta.total}/>
@@ -264,7 +371,6 @@ function Banner({ apuesta, meta, loading }) {
         {!loading && (
           <div style={{display:'flex',gap:20,flexShrink:0}}>
             {meta.total>0 && <BannerStat n={meta.total} label="Part."/>}
-            {meta.mi_posicion && <BannerStat n={`#${meta.mi_posicion.posicion}`} label="Tu pos." gold/>}
           </div>
         )}
       </div>
@@ -282,7 +388,7 @@ function BannerStat({ n, label, gold }) {
 }
 
 /* ══════════════════════════════════════════
-   PODIO (SIN EXPANDIR)
+   PODIO (con botón Ver detalle por card)
 ══════════════════════════════════════════ */
 const PODIO_CFG = {
   0: { grad:'linear-gradient(145deg,#f5d75a 0%,#c99f16 100%)', shadow:'rgba(235,195,43,.5)', border:'rgba(235,195,43,.7)', ring:'rgba(235,195,43,.3)', emoji:'🥇', label:'1°' },
@@ -290,7 +396,7 @@ const PODIO_CFG = {
   2: { grad:'linear-gradient(145deg,#fed7aa 0%,#c2720e 100%)', shadow:'rgba(194,114,14,.4)',  border:'rgba(194,114,14,.5)',  ring:'rgba(194,114,14,.2)',  emoji:'🥉', label:'3°' },
 }
 
-function Podio({ top, miId, apuesta }) {
+function Podio({ top, miId, apuesta, expandedUser, loadingUser, onToggle }) {
   if (!top.length) return null
 
   const orden   = top.length===1?[top[0]]:top.length===2?[top[1],top[0]]:[top[1],top[0],top[2]]
@@ -311,11 +417,13 @@ function Podio({ top, miId, apuesta }) {
         margin:'0 auto',
       }}>
         {orden.map(u => {
-          const rank   = rankOf(u)
-          const cfg    = PODIO_CFG[rank]
-          const isTop  = rank===0
-          const me     = u.user_id===miId
-          const sz     = isTop ? 60 : 48
+          const rank      = rankOf(u)
+          const cfg       = PODIO_CFG[rank]
+          const isTop     = rank===0
+          const me        = u.user_id===miId
+          const sz        = isTop ? 60 : 48
+          const isExpanded = expandedUser === u.user_id
+          const isLoading  = loadingUser === u.user_id
 
           return (
             <div key={u.user_id} className="rk-pcard"
@@ -353,7 +461,7 @@ function Podio({ top, miId, apuesta }) {
                 {me && <span style={{fontSize:10,color:'#94a3b8',fontWeight:400,marginLeft:4}}>(vos)</span>}
               </p>
 
-              <p style={{fontSize:10,color:'#94a3b8',margin:'0 0 12px'}}>
+              <p style={{fontSize:10,color:'#94a3b8',margin:'0 0 10px'}}>
                 {u.predicciones} pred · {u.aciertos_exactos} ✓
               </p>
 
@@ -361,12 +469,37 @@ function Podio({ top, miId, apuesta }) {
                 background: isTop ? 'linear-gradient(135deg,rgba(235,195,43,.12),rgba(235,195,43,.06))' : 'rgba(12,24,43,.04)',
                 border: isTop ? '1px solid rgba(235,195,43,.25)' : '1px solid #f0eadb',
                 borderRadius:10, padding:'8px 0',
+                marginBottom:10,
               }}>
                 <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:isTop?36:28,color:isTop?'#c99f16':'#0c182b',margin:0,lineHeight:1}}>
                   {u.puntos_totales}
                 </p>
                 <p style={{fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:'.14em',color:'#94a3b8',margin:'2px 0 0'}}>puntos</p>
               </div>
+
+              {/* BOTÓN VER DETALLE */}
+              <button
+                onClick={()=>onToggle(u.user_id)}
+                disabled={isLoading}
+                className={`rk-detail-btn rk-detail-btn-podio ${isExpanded?'active':''}`}
+                style={{width:'100%'}}
+              >
+                {isLoading ? (
+                  <><span className="rk-spinner"/> Cargando…</>
+                ) : isExpanded ? (
+                  <>Ocultar detalle
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="18 15 12 9 6 15"/>
+                    </svg>
+                  </>
+                ) : (
+                  <>Ver detalle
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </>
+                )}
+              </button>
             </div>
           )
         })}
@@ -376,43 +509,186 @@ function Podio({ top, miId, apuesta }) {
 }
 
 /* ══════════════════════════════════════════
-   MI POSICIÓN (sticky) - SIN EXPANDIR
+   PANEL DE PREDICCIONES (cuando se expande del TOP 3)
 ══════════════════════════════════════════ */
-function MiPosicion({ pos }) {
+function PrediccionesPanel({ user, predicciones, apuesta, onClose }) {
   return (
-    <div style={{position:'sticky',bottom:12,marginTop:12,zIndex:10}}>
-      <div style={{borderRadius:13,overflow:'hidden',boxShadow:'0 8px 32px rgba(12,24,43,.28)',border:'2px solid rgba(235,195,43,.45)'}}>
-        <div style={{
-          display:'grid',gridTemplateColumns:'44px 1fr 100px 68px',
-          padding:'10px 16px',gap:8,alignItems:'center',
-          background:'linear-gradient(90deg,#0c182b,#17376a)',
-        }}>
-          <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,color:'#ebc32b'}}>#{pos.posicion}</span>
-          <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
-            <div style={{width:32,height:32,borderRadius:'50%',background:'linear-gradient(135deg,#ebc32b,#c99f16)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:"'Bebas Neue',sans-serif",fontSize:12,color:'#0c182b',flexShrink:0}}>
-              {initials(pos.nombre)}
-            </div>
-            <div style={{minWidth:0}}>
-              <p style={{fontWeight:700,fontSize:13,color:'#fff',margin:'0 0 1px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                {pos.nombre}<span style={{fontSize:10,color:'#ebc32b',fontWeight:400,marginLeft:4}}>(vos)</span>
-              </p>
-              <p style={{fontSize:10,color:'rgba(255,255,255,.4)',margin:0}}>{pos.predicciones} predicciones</p>
-            </div>
-          </div>
-          <div style={{display:'flex',justifyContent:'center',gap:8}}>
-            {[['#22c55e',pos.aciertos_exactos],['#ebc32b',pos.aciertos_diferencia||0],['rgba(255,255,255,.45)',pos.aciertos_resultado]].map(([c,n],i)=>(
-              <span key={i} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:11,fontWeight:600,color:n>0?c:'rgba(255,255,255,.2)'}}>
-                <span style={{width:6,height:6,borderRadius:'50%',background:n>0?c:'rgba(255,255,255,.1)',display:'inline-block'}}/>
-                {n}
-              </span>
-            ))}
-          </div>
-          <div style={{textAlign:'center'}}>
-            <span style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:20,color:'#ebc32b'}}>{pos.puntos_totales}</span>
-            <span style={{fontSize:8,color:'rgba(255,255,255,.3)',marginLeft:2,letterSpacing:'.1em',fontWeight:700,display:'block'}}>PTS</span>
-          </div>
+    <div className="rk-in" style={{
+      background:'#fff',
+      border:'1px solid #f0eadb',
+      borderRadius:14,
+      padding:'1rem 1.2rem',
+      marginBottom:20,
+      boxShadow:'0 4px 20px rgba(12,24,43,.06)',
+    }}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'.9rem',paddingBottom:'.7rem',borderBottom:'1px solid #f0eadb'}}>
+        <div>
+          <p style={{fontSize:9,fontWeight:800,textTransform:'uppercase',letterSpacing:'.22em',color:'#94a3b8',margin:'0 0 3px'}}>
+            Predicciones de
+          </p>
+          <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:18,color:'#0c182b',margin:0,letterSpacing:'.02em',lineHeight:1}}>
+            {user?.nombre}
+          </p>
         </div>
+        <button
+          onClick={onClose}
+          style={{
+            background:'rgba(12,24,43,.06)',
+            border:'none',
+            borderRadius:'50%',
+            width:28,height:28,
+            cursor:'pointer',
+            display:'flex',alignItems:'center',justifyContent:'center',
+            color:'#0c182b',
+            transition:'all .15s',
+          }}
+          onMouseEnter={e=>e.currentTarget.style.background='rgba(12,24,43,.12)'}
+          onMouseLeave={e=>e.currentTarget.style.background='rgba(12,24,43,.06)'}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
       </div>
+
+      {predicciones.length > 0 ? (
+        <PrediccionesGrid predicciones={predicciones} apuesta={apuesta}/>
+      ) : (
+        <p style={{fontSize:'.8rem',color:'#a8b2c4',margin:0,textAlign:'center',padding:'.8rem 0'}}>
+          Sin predicciones cargadas
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════
+   GRID DE PREDICCIONES (compartido)
+══════════════════════════════════════════ */
+function PrediccionesGrid({ predicciones, apuesta }) {
+  // Ordenar por jornada y fecha
+  const ordenadas = useMemo(() => {
+    return [...predicciones].sort((a,b) => {
+      const ja = parseInt(a.jornada) || 999
+      const jb = parseInt(b.jornada) || 999
+      if (ja !== jb) return ja - jb
+      const fa = a.fecha_partido ? new Date(a.fecha_partido).getTime() : 0
+      const fb = b.fecha_partido ? new Date(b.fecha_partido).getTime() : 0
+      return fa - fb
+    })
+  }, [predicciones])
+
+  return (
+    <div>
+      <p style={{fontSize:'.65rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.14em',color:'#94a3b8',margin:'0 0 .7rem'}}>
+        {predicciones.length} predicciones
+      </p>
+      <div style={{display:'grid',gap:'.5rem'}}>
+        {ordenadas.map((pred, i) => (
+          <PrediccionRow key={pred.id || i} pred={pred} apuesta={apuesta}/>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PrediccionRow({ pred, apuesta }) {
+  // Calcular si acertó (para colorear)
+  const tieneResultado = pred.goles_local !== '' && pred.goles_local !== null && pred.goles_local !== undefined
+  const predLocal = parseInt(pred.pred_local)
+  const predVisit = parseInt(pred.pred_visitante)
+  const realLocal = parseInt(pred.goles_local)
+  const realVisit = parseInt(pred.goles_visitante)
+
+  let borderC = '#f0eadb'
+  let bgC = '#fcfaf6'
+  let badge = null
+  const ptsExacto = parseInt(apuesta?.puntos_exacto) || 5
+  const ptsDif = parseInt(apuesta?.puntos_diferencia) || 3
+  const ptsRes = parseInt(apuesta?.puntos_resultado) || 1
+
+  if (tieneResultado && !isNaN(realLocal) && !isNaN(realVisit) && !isNaN(predLocal) && !isNaN(predVisit)) {
+    const exacto = predLocal === realLocal && predVisit === realVisit
+    const dif = (predLocal - predVisit) === (realLocal - realVisit)
+    const resultado = (predLocal > predVisit && realLocal > realVisit) ||
+                      (predLocal < predVisit && realLocal < realVisit) ||
+                      (predLocal === predVisit && realLocal === realVisit)
+    if (exacto) { borderC='#22c55e40'; bgC='#22c55e0a'; badge={c:'#22c55e',label:`+${ptsExacto}`} }
+    else if (dif) { borderC='#ebc32b40'; bgC='#ebc32b0a'; badge={c:'#ebc32b',label:`+${ptsDif}`} }
+    else if (resultado) { borderC='#94a3b830'; bgC='#94a3b808'; badge={c:'#94a3b8',label:`+${ptsRes}`} }
+    else { borderC='#f43f5e30'; bgC='#f43f5e08'; badge={c:'#f43f5e',label:'0'} }
+  }
+
+  // Texto del partido (con fallback)
+  const local = pred.equipo_local || pred.codigo_local || pred.partido_id
+  const visit = pred.equipo_visitante || pred.codigo_visitante || ''
+
+  return (
+    <div style={{
+      display:'grid',
+      gridTemplateColumns:'1fr 60px 60px auto',
+      gap:'.7rem',
+      padding:'.6rem .8rem',
+      background:bgC,
+      border:`1px solid ${borderC}`,
+      borderRadius:9,
+      alignItems:'center',
+    }}>
+      <div style={{minWidth:0}}>
+        <p style={{fontSize:'.78rem',fontWeight:600,color:'#0c182b',margin:'0 0 .12rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+          {local} {visit && <><span style={{color:'#94a3b8'}}>vs</span> {visit}</>}
+        </p>
+        <p style={{fontSize:'.62rem',color:'#94a3b8',margin:0}}>
+          {pred.jornada && `Jornada ${pred.jornada}`}
+          {pred.jornada && pred.fecha_partido && ' · '}
+          {pred.fecha_partido && new Date(pred.fecha_partido).toLocaleDateString('es-AR')}
+          {!pred.jornada && !pred.fecha_partido && '—'}
+        </p>
+      </div>
+      <div style={{textAlign:'center'}}>
+        <p style={{fontSize:'.55rem',color:'#94a3b8',margin:'0 0 .1rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em'}}>Pred.</p>
+        <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.05rem',fontWeight:700,color:'#0c182b',margin:0,letterSpacing:'.04em'}}>
+          {isNaN(predLocal) ? '—' : `${predLocal}-${predVisit}`}
+        </p>
+      </div>
+      <div style={{textAlign:'center'}}>
+        <p style={{fontSize:'.55rem',color:'#94a3b8',margin:'0 0 .1rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.1em'}}>Real</p>
+        <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'1.05rem',fontWeight:700,color:tieneResultado?'#0c182b':'#a8b2c4',margin:0,letterSpacing:'.04em'}}>
+          {tieneResultado ? `${realLocal}-${realVisit}` : '—'}
+        </p>
+      </div>
+      {badge && (
+        <span style={{
+          background:`${badge.c}18`,
+          border:`1px solid ${badge.c}40`,
+          color:badge.c,
+          fontSize:9,
+          fontWeight:800,
+          padding:'3px 7px',
+          borderRadius:5,
+          letterSpacing:'.05em',
+          minWidth:32,
+          textAlign:'center',
+        }}>
+          {badge.label}
+        </span>
+      )}
+      {!badge && (
+        <span style={{
+          background:'rgba(12,24,43,.04)',
+          border:'1px dashed #d8d2c5',
+          color:'#a8b2c4',
+          fontSize:9,
+          fontWeight:700,
+          padding:'3px 7px',
+          borderRadius:5,
+          minWidth:32,
+          textAlign:'center',
+        }}>
+          —
+        </span>
+      )}
     </div>
   )
 }
@@ -432,7 +708,7 @@ function LeyendaPuntos({ apuesta, total }) {
           </span>
         ))}
       </div>
-      {total>0 && <span>Mostrando top 3 de {total} participantes</span>}
+      {total>0 && <span>{total} participantes</span>}
     </div>
   )
 }
@@ -478,9 +754,9 @@ function SkeletonContent() {
 }
 
 /* ══════════════════════════════════════════
-   OTROS PARTICIPANTES — Con toggle
+   OTROS PARTICIPANTES — Con toggle + botón Ver detalle por fila
 ══════════════════════════════════════════ */
-function OtrosParticipantes({ tabla, user }) {
+function OtrosParticipantes({ tabla, user, apuesta, expandedUser, loadingUser, predicciones, onToggle }) {
   const [exp, setExp] = useState(() => {
     try {
       return JSON.parse(sessionStorage.getItem('otros_participantes_expanded')) ?? true
@@ -530,68 +806,101 @@ function OtrosParticipantes({ tabla, user }) {
 
       {exp && (
         <div style={{display:'flex',flexDirection:'column',gap:6,paddingTop:12}}>
-          {otros.map((u, idx) => (
-            <div key={u.user_id} style={{
-              display:'grid',
-              gridTemplateColumns:'32px 1fr 64px 56px',
-              gap:10,
-              padding:'9px 12px',
-              background: u.user_id === user?.id ? 'rgba(235,195,43,.1)' : '#fff',
-              border: u.user_id === user?.id ? '1.5px solid #ebc32b' : '1px solid #f5f3ee',
-              boxShadow: u.user_id === user?.id ? '0 0 0 1px rgba(235,195,43,.3), 0 2px 8px rgba(235,195,43,.12)' : 'none',
-              borderRadius:10,
-              alignItems:'center',
-              transition:'all .15s',
-            }}
-              onMouseEnter={e => {
-                if (u.user_id !== user?.id) {
-                  e.currentTarget.style.background='#fcfaf6'
-                  e.currentTarget.style.borderColor='#e8e3db'
-                }
-              }}
-              onMouseLeave={e => {
-                if (u.user_id !== user?.id) {
-                  e.currentTarget.style.background='#fff'
-                  e.currentTarget.style.borderColor='#f5f3ee'
-                }
+          {otros.map((u, idx) => {
+            const isExpanded = expandedUser === u.user_id
+            const isLoading  = loadingUser === u.user_id
+            const isMe       = u.user_id === user?.id
+
+            return (
+              <div key={u.user_id} style={{
+                background: isMe ? 'rgba(235,195,43,.1)' : '#fff',
+                border: isMe ? '1.5px solid #ebc32b' : '1px solid #f5f3ee',
+                boxShadow: isMe ? '0 0 0 1px rgba(235,195,43,.3), 0 2px 8px rgba(235,195,43,.12)' : 'none',
+                borderRadius:10,
+                overflow:'hidden',
+                transition:'all .15s',
               }}>
 
-              <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,color:'#94a3b8',textAlign:'center'}}>#{idx+4}</span>
+                {/* Fila principal */}
+                <div style={{
+                  display:'grid',
+                  gridTemplateColumns:'32px 1fr 64px 56px auto',
+                  gap:10,
+                  padding:'9px 12px',
+                  alignItems:'center',
+                }}>
+                  <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:11,fontWeight:700,color:'#94a3b8',textAlign:'center'}}>#{idx+4}</span>
 
-              <div style={{minWidth:0}}>
-                <p style={{fontWeight: u.user_id === user?.id ? 700 : 500,fontSize:11,color: u.user_id === user?.id ? '#ebc32b' : '#0c182b',margin:'0 0 1px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                  {u.nombre}
-                  {u.user_id === user?.id && (
-                    <span style={{
-                      fontSize:8,
-                      color:'#ebc32b',
-                      marginLeft:6,
-                      fontWeight:700,
-                      background:'rgba(235,195,43,.15)',
-                      border:'1px solid rgba(235,195,43,.3)',
-                      padding:'1px 5px',
-                      borderRadius:3,
-                      textTransform:'uppercase',
-                      letterSpacing:'.05em'
-                    }}>
-                      (vos)
-                    </span>
-                  )}
-                </p>
-                <p style={{fontSize:8,color:'#c8d0dc',margin:0}}>{u.predicciones} pred</p>
+                  <div style={{minWidth:0}}>
+                    <p style={{fontWeight: isMe ? 700 : 500,fontSize:11,color: isMe ? '#ebc32b' : '#0c182b',margin:'0 0 1px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                      {u.nombre}
+                      {isMe && (
+                        <span style={{
+                          fontSize:8,
+                          color:'#ebc32b',
+                          marginLeft:6,
+                          fontWeight:700,
+                          background:'rgba(235,195,43,.15)',
+                          border:'1px solid rgba(235,195,43,.3)',
+                          padding:'1px 5px',
+                          borderRadius:3,
+                          textTransform:'uppercase',
+                          letterSpacing:'.05em'
+                        }}>
+                          (vos)
+                        </span>
+                      )}
+                    </p>
+                    <p style={{fontSize:8,color:'#c8d0dc',margin:0}}>{u.predicciones} pred</p>
+                  </div>
+
+                  <div style={{display:'flex',gap:4,justifyContent:'flex-start'}}>
+                    {[{v:u.aciertos_exactos,c:'#22c55e'},{v:u.aciertos_diferencia||0,c:'#ebc32b'}].map((x,i)=>(
+                      x.v > 0 && (
+                        <span key={i} style={{display:'flex',alignItems:'center',justifyContent:'center',width:22,height:22,borderRadius:5,background:`${x.c}12`,border:`1px solid ${x.c}25`,fontSize:9,fontWeight:600,color:x.c}}>{x.v}</span>
+                      )
+                    ))}
+                  </div>
+
+                  <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:700,color:'#0c182b',textAlign:'right'}}>{u.puntos_totales}</div>
+
+                  {/* Botón Ver detalle */}
+                  <button
+                    onClick={()=>onToggle(u.user_id)}
+                    disabled={isLoading}
+                    className={`rk-detail-btn rk-detail-btn-mini ${isExpanded?'active':''}`}
+                  >
+                    {isLoading ? (
+                      <><span className="rk-spinner"/></>
+                    ) : isExpanded ? (
+                      <>Ocultar
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="18 15 12 9 6 15"/>
+                        </svg>
+                      </>
+                    ) : (
+                      <>Ver
+                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Predicciones inline (cuando expanded) */}
+                {isExpanded && (
+                  <div style={{borderTop:'1px solid #f0eadb',padding:'.8rem 1rem',background:'#fcfaf6'}}>
+                    {(predicciones[u.user_id] || []).length > 0 ? (
+                      <PrediccionesGrid predicciones={predicciones[u.user_id]} apuesta={apuesta}/>
+                    ) : (
+                      <p style={{fontSize:'.7rem',color:'#a8b2c4',margin:0,textAlign:'center'}}>Sin predicciones</p>
+                    )}
+                  </div>
+                )}
               </div>
-
-              <div style={{display:'flex',gap:4,justifyContent:'flex-start'}}>
-                {[{v:u.aciertos_exactos,c:'#22c55e'},{v:u.aciertos_diferencia||0,c:'#ebc32b'}].map((x,i)=>(
-                  x.v > 0 && (
-                    <span key={i} style={{display:'flex',alignItems:'center',justifyContent:'center',width:22,height:22,borderRadius:5,background:`${x.c}12`,border:`1px solid ${x.c}25`,fontSize:9,fontWeight:600,color:x.c}}>{x.v}</span>
-                  )
-                ))}
-              </div>
-
-              <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:700,color:'#0c182b',textAlign:'right'}}>{u.puntos_totales}</div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

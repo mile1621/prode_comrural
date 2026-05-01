@@ -15,11 +15,10 @@ import DashboardPage       from './dashboard/DashboardPage.jsx'
 import BetsPage            from './dashboard/BetsPage.jsx'
 import PartidosPage        from './dashboard/FixturePage.jsx'
 import MisPrediccionesPage from './dashboard/MisPredesPage.jsx'
-import RankingPage         from './dashboard/RankingPage.jsx'
 import ManualPage          from './dashboard/ManualPage.jsx'
 import ManualUser          from './pages/ManualUser.jsx'
 import RankingPageUser     from './pages/RankingPageUser.jsx'
-
+import RankingWrapper      from './pages/RankingWrapper.jsx'
 
 export default function App() {
   return (
@@ -41,9 +40,8 @@ export default function App() {
               <Route path="/apuestas"         element={<BetsPage />} />
               <Route path="/partidos"         element={<PartidosPage />} />
               <Route path="/mis-predicciones" element={<MisPrediccionesPage />} />
-              <Route path="/ranking"          element={<RankingPageUser />} />
               <Route path="/manual"           element={<ManualUser />} />
-
+              <Route path="/ranking"          element={<RankingWrapper />} />
             </Route>
 
             {/* Solo admin */}

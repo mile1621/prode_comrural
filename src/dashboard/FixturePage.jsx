@@ -947,10 +947,19 @@
 
         <div style={{ maxWidth:1400, margin:'0 auto', padding:'2rem 1.5rem 3rem' }}>
 
-          <div className="din" style={{ marginBottom:'1.5rem' }}>
-            <h1 style={{ fontFamily:"'Bebas Neue',sans-serif", fontSize:'clamp(2.4rem,6vw,3.5rem)', color:'#0c182b', margin:'0 0 .3rem', lineHeight:1, letterSpacing:'.02em' }}>FIXTURE</h1>
-            <p style={{ fontSize:'.84rem', color:'#5f6e8a', margin:0 }}>{matches?.length || 0} partidos del Mundial 2026</p>
-          </div>
+<div className="din" style={{ marginBottom:'1.5rem' }}>
+  <h1 style={{
+    fontFamily:"'Bebas Neue',sans-serif",
+    fontSize:'clamp(2.4rem,6vw,3.5rem)',
+    margin:'0 0 .3rem',
+    lineHeight:1,
+    letterSpacing:'.02em',
+  }}>
+    <span style={{color:'#0c182b'}}>CRONOGRAMA </span>
+    <span style={{color:'#ebc32b'}}>MUNDIALISTA</span>
+  </h1>
+  <p style={{ fontSize:'.84rem', color:'#5f6e8a', margin:0 }}>{matches?.length || 0} partidos del Mundial 2026</p>
+</div>
 
           <div className="din" style={{ display:'flex', gap:'.3rem', padding:'.3rem', background:'#fff', border:'1px solid #f0eadb', borderRadius:14, width:'fit-content', marginBottom:'1.75rem', animationDelay:'40ms' }}>
             <TabBtn active={tab==='fixture'} onClick={()=>setTab('fixture')} label="Fixture"
