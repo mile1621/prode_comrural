@@ -1,13 +1,8 @@
 /**
- * RankingPageAdmin.jsx — Versión ADMIN
+ * RankingPageAdmin.jsx — Versión ADMIN CON FIX
  * Ubicación: src/pages/RankingPageAdmin.jsx
  *
- * MISMO diseño que RankingPageUser pero:
- * - Permite expandir cada participante (TOP 3 y Otros) para ver sus predicciones
- * - Las predicciones se cargan BAJO DEMANDA al apretar "Ver detalle" (no antes)
- * - Caché en memoria por usuario (no vuelve a pedir si ya se cargó)
- * - Hace JOIN cliente entre predicciones crudas (de la hoja `predicciones`) y los
- *   partidos completos (de `apuestas.obtener` que trae datos de PartidosMundial)
+ * CAMBIO: PrediccionRow ahora usa pred.puntos del backend
  */
 import { useState, useMemo, useEffect } from 'react'
 import AppShell from '../dashboard/AppShell.jsx'
@@ -96,12 +91,10 @@ export default function RankingPageAdmin() {
   const [meta, setMeta]           = useState({})
   const [loading, setLoading]     = useState(false)
 
-  // ── Estados para carga BAJO DEMANDA de predicciones ──
-  const [expandedUser, setExpandedUser] = useState(null)   // user_id expandido
-  const [predicciones, setPredicciones] = useState({})     // caché { user_id: [...preds enriquecidas] }
-  const [loadingUser, setLoadingUser]   = useState(null)   // user_id que está cargando
+  const [expandedUser, setExpandedUser] = useState(null)
+  const [predicciones, setPredicciones] = useState({})
+  const [loadingUser, setLoadingUser]   = useState(null)
 
-  // Mapa de partidos por id (para hacer JOIN cliente)
   const partidosMap = useMemo(() => {
     const map = new Map()
     if (sel?.partidos) {
@@ -119,35 +112,28 @@ export default function RankingPageAdmin() {
       const [rT, rA] = await Promise.all([sheetsApi.predicciones.tabla(bet.id), sheetsApi.apuestas.obtener(bet.id)])
       setTabla(rT.tabla||[])
       setMeta({ total:rT.total, mi_posicion:rT.mi_posicion, esta_en_top:rT.esta_en_top })
-      // ⚡ rA.apuesta trae .partidos[] con TODOS los datos (equipo_local, jornada, goles, etc.)
       setSel(prev=>({...(prev||bet),...rA.apuesta}))
     } catch(e) { alert('Error: '+e.message) }
     finally { setLoading(false) }
   }
 
-  // Toggle expand de un usuario (con caché y lazy load)
   async function toggleUser(userId) {
-    // Si ya está expandido → colapsar
     if (expandedUser === userId) {
       setExpandedUser(null)
       return
     }
-    // Si ya tenemos predicciones cacheadas → expandir directo
     if (predicciones[userId]) {
       setExpandedUser(userId)
       return
     }
-    // Si no, cargar del backend
     setLoadingUser(userId)
     try {
       const r = await sheetsApi.predicciones.deUsuario(sel.id, userId)
-      // ⚡ ENRIQUECER cada predicción con los datos del partido (JOIN cliente)
       const predsRaw = r.mis || r.predicciones || []
       const predsEnriquecidas = predsRaw.map(pred => {
         const partido = partidosMap.get(pred.partido_id) || {}
         return {
           ...pred,
-          // Datos del partido (vienen de sel.partidos via apuestas.obtener)
           equipo_local: partido.equipo_local || pred.partido_id,
           equipo_visitante: partido.equipo_visitante || '',
           codigo_local: partido.codigo_local || '',
@@ -179,7 +165,6 @@ export default function RankingPageAdmin() {
 
       <div style={{ maxWidth:1400, margin:'0 auto', padding:'2rem 1.5rem 3rem' }}>
 
-        {/* Título página — alineado con FixturePage */}
         <div className="rk-in" style={{ marginBottom:'1.5rem' }}>
           <h1 style={{
             fontFamily:"'Bebas Neue',sans-serif",
@@ -196,12 +181,9 @@ export default function RankingPageAdmin() {
           </p>
         </div>
 
-        {/* Shell principal */}
         <div className="rk-shell" style={{display:'flex',height:'calc(100vh - 200px)',minHeight:520,borderRadius:20,overflow:'hidden',boxShadow:'0 8px 48px rgba(12,24,43,.14)'}}>
 
-          {/* ══ SIDEBAR CREAM ══ */}
           <div className="rk-sidebar">
-            {/* Header sidebar */}
             <div style={{padding:'20px 16px 14px',borderBottom:'1px solid #f0eadb'}}>
               <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:11,letterSpacing:'.2em',color:'#94a3b8',margin:'0 0 10px'}}>APUESTAS</p>
               <div style={{display:'flex',gap:6}}>
@@ -234,7 +216,6 @@ export default function RankingPageAdmin() {
             </div>
           </div>
 
-          {/* ══ CONTENIDO DERECHO ══ */}
           <div className="rk-content" style={{padding:'24px 32px 32px'}}>
 
             {!sel ? (
@@ -242,7 +223,6 @@ export default function RankingPageAdmin() {
             ) : (
               <div className="rk-in">
 
-                {/* Banner */}
                 <Banner apuesta={sel} meta={meta} loading={loading}/>
 
                 {loading ? (
@@ -260,7 +240,6 @@ export default function RankingPageAdmin() {
                       onToggle={toggleUser}
                     />
 
-                    {/* Panel de predicciones cuando se expande alguien del TOP 3 */}
                     {expandedUser && tabla.slice(0,3).some(u => u.user_id === expandedUser) && (
                       <PrediccionesPanel
                         user={tabla.find(u => u.user_id === expandedUser)}
@@ -388,7 +367,7 @@ function BannerStat({ n, label, gold }) {
 }
 
 /* ══════════════════════════════════════════
-   PODIO (con botón Ver detalle por card)
+   PODIO
 ══════════════════════════════════════════ */
 const PODIO_CFG = {
   0: { grad:'linear-gradient(145deg,#f5d75a 0%,#c99f16 100%)', shadow:'rgba(235,195,43,.5)', border:'rgba(235,195,43,.7)', ring:'rgba(235,195,43,.3)', emoji:'🥇', label:'1°' },
@@ -477,7 +456,6 @@ function Podio({ top, miId, apuesta, expandedUser, loadingUser, onToggle }) {
                 <p style={{fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:'.14em',color:'#94a3b8',margin:'2px 0 0'}}>puntos</p>
               </div>
 
-              {/* BOTÓN VER DETALLE */}
               <button
                 onClick={()=>onToggle(u.user_id)}
                 disabled={isLoading}
@@ -509,7 +487,7 @@ function Podio({ top, miId, apuesta, expandedUser, loadingUser, onToggle }) {
 }
 
 /* ══════════════════════════════════════════
-   PANEL DE PREDICCIONES (cuando se expande del TOP 3)
+   PANEL DE PREDICCIONES
 ══════════════════════════════════════════ */
 function PrediccionesPanel({ user, predicciones, apuesta, onClose }) {
   return (
@@ -564,10 +542,9 @@ function PrediccionesPanel({ user, predicciones, apuesta, onClose }) {
 }
 
 /* ══════════════════════════════════════════
-   GRID DE PREDICCIONES (compartido)
+   GRID DE PREDICCIONES
 ══════════════════════════════════════════ */
 function PrediccionesGrid({ predicciones, apuesta }) {
-  // Ordenar por jornada y fecha
   const ordenadas = useMemo(() => {
     return [...predicciones].sort((a,b) => {
       const ja = parseInt(a.jornada) || 999
@@ -594,7 +571,6 @@ function PrediccionesGrid({ predicciones, apuesta }) {
 }
 
 function PrediccionRow({ pred, apuesta }) {
-  // Calcular si acertó (para colorear)
   const tieneResultado = pred.goles_local !== '' && pred.goles_local !== null && pred.goles_local !== undefined
   const predLocal = parseInt(pred.pred_local)
   const predVisit = parseInt(pred.pred_visitante)
@@ -604,23 +580,44 @@ function PrediccionRow({ pred, apuesta }) {
   let borderC = '#f0eadb'
   let bgC = '#fcfaf6'
   let badge = null
+  
   const ptsExacto = parseInt(apuesta?.puntos_exacto) || 5
   const ptsDif = parseInt(apuesta?.puntos_diferencia) || 3
   const ptsRes = parseInt(apuesta?.puntos_resultado) || 1
 
-  if (tieneResultado && !isNaN(realLocal) && !isNaN(realVisit) && !isNaN(predLocal) && !isNaN(predVisit)) {
+  // ✅ SOLUCIÓN: Usar pred.puntos si existe (backend)
+  const puntosDlBackend = pred.puntos !== undefined && pred.puntos !== null ? parseInt(pred.puntos) : null
+
+  if (puntosDlBackend !== null) {
+    // El backend YA calculó los puntos → úsalos SIEMPRE
+    if (puntosDlBackend === ptsExacto) {
+      borderC='#22c55e40'; bgC='#22c55e0a'; badge={c:'#22c55e',label:`+${puntosDlBackend}`}
+    } else if (puntosDlBackend === ptsDif) {
+      borderC='#ebc32b40'; bgC='#ebc32b0a'; badge={c:'#ebc32b',label:`+${puntosDlBackend}`}
+    } else if (puntosDlBackend === ptsRes) {
+      borderC='#94a3b830'; bgC='#94a3b808'; badge={c:'#94a3b8',label:`+${puntosDlBackend}`}
+    } else if (puntosDlBackend === 0) {
+      if (tieneResultado) {
+        borderC='#f43f5e30'; bgC='#f43f5e08'; badge={c:'#f43f5e',label:'0'}
+      } else {
+        // Sin resultado aún = sin puntos
+        borderC='#f0eadb'; bgC='#fcfaf6'; badge=null
+      }
+    }
+  } else if (tieneResultado && !isNaN(realLocal) && !isNaN(realVisit) && !isNaN(predLocal) && !isNaN(predVisit)) {
+    // Fallback: recalcular si no viene del backend (solo para fases de grupos sin clasificado)
     const exacto = predLocal === realLocal && predVisit === realVisit
     const dif = (predLocal - predVisit) === (realLocal - realVisit)
     const resultado = (predLocal > predVisit && realLocal > realVisit) ||
                       (predLocal < predVisit && realLocal < realVisit) ||
                       (predLocal === predVisit && realLocal === realVisit)
+    
     if (exacto) { borderC='#22c55e40'; bgC='#22c55e0a'; badge={c:'#22c55e',label:`+${ptsExacto}`} }
     else if (dif) { borderC='#ebc32b40'; bgC='#ebc32b0a'; badge={c:'#ebc32b',label:`+${ptsDif}`} }
     else if (resultado) { borderC='#94a3b830'; bgC='#94a3b808'; badge={c:'#94a3b8',label:`+${ptsRes}`} }
     else { borderC='#f43f5e30'; bgC='#f43f5e08'; badge={c:'#f43f5e',label:'0'} }
   }
 
-  // Texto del partido (con fallback)
   const local = pred.equipo_local || pred.codigo_local || pred.partido_id
   const visit = pred.equipo_visitante || pred.codigo_visitante || ''
 
@@ -694,7 +691,7 @@ function PrediccionRow({ pred, apuesta }) {
 }
 
 /* ══════════════════════════════════════════
-   LEYENDA Y ESTADOS VACÍOS
+   LEYENDA Y ESTADOS
 ══════════════════════════════════════════ */
 function LeyendaPuntos({ apuesta, total }) {
   const e=parseInt(apuesta?.puntos_exacto)||5, d=parseInt(apuesta?.puntos_diferencia)||3, r=parseInt(apuesta?.puntos_resultado)||1
@@ -725,11 +722,6 @@ function EmptySelect() {
         <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:22,color:'#0c182b',margin:'0 0 6px',letterSpacing:'.04em'}}>SELECCIONÁ UNA APUESTA</p>
         <p style={{fontSize:13,color:'#94a3b8',margin:0,lineHeight:1.7}}>Elegí una apuesta del panel de la<br/>izquierda para ver su ranking</p>
       </div>
-      <div style={{display:'flex',gap:8,alignItems:'flex-end',opacity:.15,marginTop:8,pointerEvents:'none'}}>
-        {[80,110,80].map((h,i)=>(
-          <div key={i} style={{width:56,height:h,borderRadius:12,background:`linear-gradient(180deg,${i===1?'#ebc32b':'#cbd5e1'},transparent)`}}/>
-        ))}
-      </div>
     </div>
   )
 }
@@ -754,7 +746,7 @@ function SkeletonContent() {
 }
 
 /* ══════════════════════════════════════════
-   OTROS PARTICIPANTES — Con toggle + botón Ver detalle por fila
+   OTROS PARTICIPANTES
 ══════════════════════════════════════════ */
 function OtrosParticipantes({ tabla, user, apuesta, expandedUser, loadingUser, predicciones, onToggle }) {
   const [exp, setExp] = useState(() => {
@@ -821,7 +813,6 @@ function OtrosParticipantes({ tabla, user, apuesta, expandedUser, loadingUser, p
                 transition:'all .15s',
               }}>
 
-                {/* Fila principal */}
                 <div style={{
                   display:'grid',
                   gridTemplateColumns:'32px 1fr 64px 56px auto',
@@ -864,7 +855,6 @@ function OtrosParticipantes({ tabla, user, apuesta, expandedUser, loadingUser, p
 
                   <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:15,fontWeight:700,color:'#0c182b',textAlign:'right'}}>{u.puntos_totales}</div>
 
-                  {/* Botón Ver detalle */}
                   <button
                     onClick={()=>onToggle(u.user_id)}
                     disabled={isLoading}
@@ -888,7 +878,6 @@ function OtrosParticipantes({ tabla, user, apuesta, expandedUser, loadingUser, p
                   </button>
                 </div>
 
-                {/* Predicciones inline (cuando expanded) */}
                 {isExpanded && (
                   <div style={{borderTop:'1px solid #f0eadb',padding:'.8rem 1rem',background:'#fcfaf6'}}>
                     {(predicciones[u.user_id] || []).length > 0 ? (

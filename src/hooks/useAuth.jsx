@@ -1,3 +1,5 @@
+/* ── ./hooks/useAuth.jsx */
+
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import sheetsApi from '../services/sheetsApi.js'
 
@@ -75,7 +77,12 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const isAdmin = user?.rol === 'admin'
+const isAdmin = !!(
+  user?.rol === 'admin' ||
+  user?.role === 'admin' ||
+  user?.es_admin === true ||
+  user?.tipo_usuario === 'admin'
+)
 
   // Plan de la empresa del usuario logueado.
   // Si la columna empresa está vacía, se considera Plan_pro por defecto
