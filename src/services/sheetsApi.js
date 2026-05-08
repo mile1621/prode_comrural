@@ -9,7 +9,7 @@
 
 // URL directa del deploy de Apps Script.
 // Si hacés un nuevo deploy, actualizá esta URL.
-const API_URL = 'https://script.google.com/macros/s/AKfycbzddnn9HyIcySTquLkv5bX-hj9LcvaUCgDhFRnFc_KFC8mpGn7AKwJRuAUQrIq97PoA/exec'
+const API_URL = 'https://script.google.com/macros/s/AKfycbxhSAcGGBkJNWcFBbJ8elP7I3MVYL64kW-oKJv4sAl2meOIRY8uaGfBjGTqKVR_7zlq/exec'
 
 // ── Caché de cliente en memoria ────────────────────────────
 const CLIENT_CACHE = new Map()
@@ -282,6 +282,12 @@ const areas = {
   toggle_activa: (area_id) => post('areas.toggle_activa', { area_id }),
 }
 
+
+// ✅ Equipos
+const equipos = {
+  listar: () => get('listarEquipos'),
+}
+
 // ── Export ────────────────────────────────────────────────
 
 const sheetsApi = {
@@ -294,6 +300,7 @@ const sheetsApi = {
   predicciones,
   grupos,
   areas,
+  equipos,
   _token: { get: getToken, save: saveToken, clear: clearToken },
   _cache: { invalidate: invalidateClientCache },
 }

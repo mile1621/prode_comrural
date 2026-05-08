@@ -19,7 +19,11 @@ import ManualPage          from './dashboard/ManualPage.jsx'
 import ManualUser          from './pages/ManualUser.jsx'
 import RankingPageUser     from './pages/RankingPageUser.jsx'
 import RankingWrapper      from './pages/RankingWrapper.jsx'
+// import ApuestaManualPostMundial from './pages/ApuestaManualPostMundial.jsx'
+// import ApuestaManualAdmin from './pages/ApuestaManualPostMundial.jsx'
 
+
+ 
 export default function App() {
   return (
     <ToastProvider>
@@ -46,8 +50,9 @@ export default function App() {
 
             {/* Solo admin */}
             <Route element={<ProtectedRoute requireAdmin />}>
-              <Route path="/admin"        element={<AdminPage />} />
-              <Route path="/manual-admin" element={<ManualPage />} />
+              <Route path="/admin"               element={<AdminPage />} />
+              <Route path="/manual-admin"        element={<ManualPage />} />
+              {/* <Route path="/apuesta-manual-admin" element={<ApuestaManualPostMundial />} /> */}
             </Route>
 
             {/* Fallback */}
