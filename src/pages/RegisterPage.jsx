@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import sheetsApi from '../services/sheetsApi.js'
 
 export default function RegisterPage() {
-  const [form, setForm]       = useState({ nombre: '', email: '', password: '' })
-  const [done, setDone]       = useState(false)
+  const [form, setForm] = useState({ nombre: '', email: '', password: '' })
+  const [done, setDone] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
+  const [error, setError] = useState(null)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -31,13 +31,13 @@ export default function RegisterPage() {
   }
   const onFocus = e => {
     e.target.style.borderColor = 'rgba(235,195,43,.55)'
-    e.target.style.background  = 'rgba(235,195,43,.06)'
-    e.target.style.boxShadow   = '0 0 0 3px rgba(235,195,43,.1)'
+    e.target.style.background = 'rgba(235,195,43,.06)'
+    e.target.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)'
   }
   const onBlur = e => {
     e.target.style.borderColor = 'rgba(255,255,255,.1)'
-    e.target.style.background  = 'rgba(255,255,255,.06)'
-    e.target.style.boxShadow   = 'none'
+    e.target.style.background = 'rgba(255,255,255,.06)'
+    e.target.style.boxShadow = 'none'
   }
 
   return (
@@ -78,7 +78,7 @@ export default function RegisterPage() {
         <div className="relative z-10 flex flex-col items-center mb-6 rp-card">
 
           <img
-            src="./imgprode/one-prode-talento-new3.png"
+            src="./imgprode/comruralxxi_logo_sin_fondo.png"
             alt="Prode Talento"
             style={{ height: 52, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,.6))' }}
           />
@@ -137,7 +137,7 @@ export default function RegisterPage() {
                   onMouseLeave={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.transform = '' }}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
                   </svg>
                   Ir al inicio de sesión
                 </Link>
@@ -243,7 +243,7 @@ export default function RegisterPage() {
                     <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl font-body text-sm"
                       style={{ background: 'rgba(184,69,46,.12)', border: '1px solid rgba(184,69,46,.35)', color: '#e07050' }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-px">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                       </svg>
                       <span>{error}</span>
                     </div>
@@ -267,7 +267,7 @@ export default function RegisterPage() {
                       <>
                         Crear mi cuenta
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+                          <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
                         </svg>
                       </>
                     )}
@@ -305,7 +305,7 @@ export default function RegisterPage() {
               onMouseEnter={e => { e.currentTarget.style.color = '#ebc32b' }}
               onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,.38)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
               </svg>
               Volver al inicio
             </Link>

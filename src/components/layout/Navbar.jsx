@@ -1,13 +1,13 @@
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.jsx'
- 
+
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/apuestas',  label: 'Apuestas'  },
-  { to: '/partidos',  label: 'Partidos'  },
+  { to: '/apuestas', label: 'Apuestas' },
+  { to: '/partidos', label: 'Partidos' },
 ]
 
-const USER_LINKS  = [{ to: '/mis-predicciones', label: 'Mis Predicciones' }]
+const USER_LINKS = [{ to: '/mis-predicciones', label: 'Mis Predicciones' }]
 const ADMIN_LINKS = [{ to: '/admin', label: 'Admin' }, { to: '/ranking', label: 'Ranking' }]
 
 export default function Navbar() {
@@ -21,10 +21,9 @@ export default function Navbar() {
   })
 
   const linkClass = ({ isActive }) =>
-    `px-3 py-1.5 rounded-lg text-sm font-body font-medium whitespace-nowrap transition-all ${
-      isActive
-        ? 'font-bold'
-        : ''
+    `px-3 py-1.5 rounded-lg text-sm font-body font-medium whitespace-nowrap transition-all ${isActive
+      ? 'font-bold'
+      : ''
     }`
 
   const linkStyle = isActive => isActive
@@ -49,9 +48,9 @@ export default function Navbar() {
 
           <div className="w-px h-5 hidden sm:block" style={{ background: 'rgba(235,195,43,.25)' }} />
           <img
-            src="./imgprode/one-prode-talento-new3.png"
+            src="./imgprode/comruralxxi_logo_sin_fondo.png"
             alt="Prode Talento"
-            style={{ height: 32, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.5))' }}
+            style={{ height: 40, width: 'auto', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.5))' }}
           />
         </Link>
 

@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 ]
 
 const ADMIN_ICON = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-const MANUAL_ICON = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+const MANUAL_ICON = <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
 
 // ❌ ELIMINAR ESTAS LÍNEAS (26-31):
 // const filteredNavItems = NAV_ITEMS.filter(item => {
@@ -112,7 +112,7 @@ export default function AppShell({ children }) {
 
   const esAdmin = isAdmin || user?.rol === 'admin' || user?.es_admin === true || user?.tipo_usuario === 'admin'
 
-// ✅ FILTRAR NAV_ITEMS: ocultar "Apuestas", "Mis Prodes" y "Manual" para admins
+  // ✅ FILTRAR NAV_ITEMS: ocultar "Apuestas", "Mis Prodes" y "Manual" para admins
   const filteredNavItems = NAV_ITEMS.filter(item => {
     if (esAdmin && (item.to === '/apuestas' || item.to === '/mis-predicciones' || item.to === '/manual')) {
       return false
@@ -197,7 +197,7 @@ export default function AppShell({ children }) {
         }
       `}</style>
 
-<div
+      <div
         style={{
           background: '#faf7f0',
           display: 'flex',
@@ -215,82 +215,82 @@ export default function AppShell({ children }) {
             borderBottom: '1px solid rgba(235,195,43,.14)',
           }}
         >
-<div
-  style={{
-    maxWidth: 1200,  // ← cambiar de 896 a 1200
-    margin: '0 auto',
-    padding: '0 1.5rem',
-    height: 62,
-    display: 'flex',
-    alignItems: 'center',
-  }}
+          <div
+            style={{
+              maxWidth: 1200,  // ← cambiar de 896 a 1200
+              margin: '0 auto',
+              padding: '0 1.5rem',
+              height: 62,
+              display: 'flex',
+              alignItems: 'center',
+            }}
 
           >
             <Link to="/dashboard" style={{ textDecoration: 'none', flexShrink: 0, marginRight: '1.8rem' }}>
               <img
-                src="/imgprode/one-prode-talento-new3.png"
+                src="/imgprode/comruralxxi_logo_sin_fondo.png"
                 alt="Prode Talento"
                 style={{
-                  height: 32,
+                  height: 40,
                   width: 'auto',
                   filter: 'drop-shadow(0 2px 8px rgba(0,0,0,.5))',
                 }}
               />
             </Link>
 
-<div className="dnav" style={{ display: 'flex', alignItems: 'center', gap: '.15rem', flex: 1 }}>
-  {filteredNavItems.map(({ to, label, icon }) => (
-    <NavLink key={to} to={to} label={label} icon={icon} location={location} />
-  ))}
+            <div className="dnav" style={{ display: 'flex', alignItems: 'center', gap: '.15rem', flex: 1 }}>
+              {filteredNavItems.map(({ to, label, icon }) => (
+                <NavLink key={to} to={to} label={label} icon={icon} location={location} />
+              ))}
 
-  {esAdmin && (
-    <NavLink to="/admin" label="Configuración" icon={ADMIN_ICON} location={location} />
-  )}
-</div>
+              {esAdmin && (
+                <NavLink to="/admin" label="Configuración" icon={ADMIN_ICON} location={location} />
+              )}
+            </div>
 
-{esAdmin && (
-  <Link
-    to="/manual-admin"
-    style={{ textDecoration: 'none', marginRight: '.75rem' }}
-  >
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '.4rem',
-        padding: '.4rem .85rem',
-        borderRadius: 8,
-        fontWeight: 700,
-        fontSize: '.72rem',
-        letterSpacing: '.06em',
-        textTransform: 'uppercase',
-        color: location.pathname === '/manual-admin' ? '#0c182b' : '#ebc32b',
-        background: location.pathname === '/manual-admin' ? '#ebc32b' : 'transparent',
-        border: '1.5px solid #ebc32b',
-        transition: 'all .16s',
-        cursor: 'pointer',
-        boxShadow: location.pathname === '/manual-admin'
-          ? '0 0 0 3px rgba(235,195,43,.18)'
-          : 'none',
-      }}
-      onMouseEnter={e => {
-        if (location.pathname !== '/manual-admin') {
-          e.currentTarget.style.background = 'rgba(235,195,43,.14)'
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)'
-        }
-      }}
-      onMouseLeave={e => {
-        if (location.pathname !== '/manual-admin') {
-          e.currentTarget.style.background = 'transparent'
-          e.currentTarget.style.boxShadow = 'none'
-        }
-      }}
-    >
-      <span style={{ display: 'flex' }}>{MANUAL_ICON}</span>
-      Manual
-    </span>
-  </Link>
-)}
+            {esAdmin && (
+              <Link
+                to="/manual-admin"
+                style={{ textDecoration: 'none', marginRight: '.75rem' }}
+              >
+                <span
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '.4rem',
+                    padding: '.4rem .85rem',
+                    borderRadius: 8,
+                    fontWeight: 700,
+                    fontSize: '.72rem',
+                    letterSpacing: '.06em',
+                    textTransform: 'uppercase',
+                    color: location.pathname === '/manual-admin' ? '#0c182b' : '#ebc32b',
+                    background: location.pathname === '/manual-admin' ? '#ebc32b' : 'transparent',
+                    border: '1.5px solid #ebc32b',
+                    transition: 'all .16s',
+                    cursor: 'pointer',
+                    boxShadow: location.pathname === '/manual-admin'
+                      ? '0 0 0 3px rgba(235,195,43,.18)'
+                      : 'none',
+                  }}
+                  onMouseEnter={e => {
+                    if (location.pathname !== '/manual-admin') {
+                      e.currentTarget.style.background = 'rgba(235,195,43,.14)'
+                      e.currentTarget.style.boxShadow = '0 0 0 3px rgba(235,195,43,.1)'
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (location.pathname !== '/manual-admin') {
+                      e.currentTarget.style.background = 'transparent'
+                      e.currentTarget.style.boxShadow = 'none'
+                    }
+                  }}
+                >
+                  <span style={{ display: 'flex' }}>{MANUAL_ICON}</span>
+                  Manual
+                </span>
+              </Link>
+            )}
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginLeft: 'auto' }}>
               <span

@@ -13,10 +13,10 @@ export default function ResetPasswordPage() {
   const [userInfo, setUserInfo] = useState(null)
 
   // Estado del formulario
-  const [form, setForm]       = useState({ password: '', password2: '' })
+  const [form, setForm] = useState({ password: '', password2: '' })
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState(null)
-  const [done, setDone]       = useState(false)
+  const [error, setError] = useState(null)
+  const [done, setDone] = useState(false)
 
   // Validar el token al montar la pantalla
   useEffect(() => {
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
         {/* Logo */}
         <div className="relative z-10 flex flex-col items-center mb-6 lp-card">
           <img
-            src="./imgprode/one-prode-talento-new3.png"
+            src="./imgprode/comruralxxi_logo_sin_fondo.png"
             alt="Prode Talento"
             style={{ height: 52, width: 'auto', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,.6))' }}
           />
@@ -275,7 +275,7 @@ export default function ResetPasswordPage() {
                     <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl font-body text-sm"
                       style={{ background: 'rgba(184,69,46,.12)', border: '1px solid rgba(184,69,46,.35)', color: '#e07050' }}>
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-px">
-                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                       </svg>
                       {error}
                     </div>

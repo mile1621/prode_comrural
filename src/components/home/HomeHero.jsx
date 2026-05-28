@@ -19,8 +19,8 @@ function useCountdown(target) {
 
 const PREDS = [
   { user: 'M. García', pred: 'Argentina 2 – 1 España', pts: '+10' },
-  { user: 'C. López',  pred: 'Brasil 1 – 1 Francia',  pts: '+5'  },
-  { user: 'P. Romero', pred: 'Uruguay 3 – 0 México',  pts: '+10' },
+  { user: 'C. López', pred: 'Brasil 1 – 1 Francia', pts: '+5' },
+  { user: 'P. Romero', pred: 'Uruguay 3 – 0 México', pts: '+10' },
 ]
 
 export default function HomeHero() {
@@ -57,7 +57,7 @@ export default function HomeHero() {
 
             {/* ── COLUMNA IZQUIERDA ── */}
             <div className="lg:col-span-7 space-y-5 sm:space-y-6">
-              
+
               {/* Pills superiores */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className="inline-flex items-center gap-2 font-body font-bold text-xs uppercase tracking-widest px-3 py-1.5 rounded-full"
@@ -67,7 +67,7 @@ export default function HomeHero() {
                 </span>
                 <span className="hidden sm:flex items-center gap-2 text-xs font-body font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,.55)' }}>
                   <span className="h-px w-6" style={{ background: 'rgba(235,195,43,.45)' }} />
-                  Para tu empresa
+                  COMRURAL
                 </span>
               </div>
 
@@ -101,7 +101,7 @@ export default function HomeHero() {
                     style={{ background: 'rgba(255,255,255,.09)', border: '1px solid rgba(255,255,255,.13)', backdropFilter: 'blur(6px)' }}>
                     <span className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
                       <svg viewBox="0 0 24 24" fill="none" stroke={ic} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                       </svg>
                     </span>
                     <div>
@@ -119,7 +119,7 @@ export default function HomeHero() {
                   onMouseEnter={e => { e.currentTarget.style.background = '#f5d75a'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#ebc32b'; e.currentTarget.style.transform = '' }}>
                   Crear mi cuenta
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
                 </Link>
                 <Link to="/login" className="font-body font-semibold text-sm sm:text-base px-6 sm:px-7 py-3.5 sm:py-4 rounded-full inline-flex items-center justify-center gap-2 transition-all w-full sm:w-auto"
                   style={{ color: '#fff', border: '1.5px solid rgba(255,255,255,.3)', textDecoration: 'none' }}
@@ -132,7 +132,7 @@ export default function HomeHero() {
               {/* Alert box */}
               <div className="flex items-start gap-3 p-3 sm:p-4 rounded-lg max-w-xl"
                 style={{ background: 'linear-gradient(135deg,rgba(184,69,46,.12),rgba(184,69,46,.05))', border: '1px solid rgba(184,69,46,.35)', borderLeft: '3px solid #b8452e' }}>
-                <svg viewBox="0 0 24 24" fill="#b8452e" className="w-5 h-5 shrink-0 mt-0.5"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/></svg>
+                <svg viewBox="0 0 24 24" fill="#b8452e" className="w-5 h-5 shrink-0 mt-0.5"><path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" /></svg>
                 <p className="text-xs sm:text-sm font-body leading-relaxed" style={{ color: 'rgba(255,255,255,.88)' }}>
                   <strong className="text-white">El Mundial comienza el 11 de junio.</strong>{' '}
                   Registrate antes de que arranque para no perderte los primeros partidos.
@@ -145,14 +145,14 @@ export default function HomeHero() {
               {/* Medalla flotante */}
               <div className="relative mb-5 sm:mb-6 flex justify-center">
                 <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(235,195,43,.28), transparent 60%)', filter: 'blur(28px)' }} />
-                <img src="./imgprode/one-prode-dorado.png" alt="Prode Talento" className="relative float-medal-el"
-                  style={{ width: 'clamp(140px, 30vw, 180px)', filter: 'drop-shadow(0 16px 32px rgba(0,0,0,.6))' }} />
+                <img src="./imgprode/comruralxxi_logo_sin_fondo.png" alt="Prode Talento" className="relative float-medal-el"
+                  style={{ width: 'clamp(140px, 30vw, 180px)', filter: 'drop-shadow(0 0 25px rgba(255,255,255,0.65)) drop-shadow(0 8px 16px rgba(0,0,0,0.5))' }} />
               </div>
 
               {/* Panel principal */}
               <div className="rounded-2xl p-4 sm:p-5"
                 style={{ background: 'linear-gradient(160deg,rgba(12,24,43,.78),rgba(5,9,15,.88))', border: '1px solid rgba(235,195,43,.28)', backdropFilter: 'blur(16px)', boxShadow: '0 28px 70px rgba(5,9,15,.55)' }}>
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
@@ -172,11 +172,11 @@ export default function HomeHero() {
                   Falta para el inicio
                 </p>
                 <div className="grid grid-cols-4 gap-1.5 mb-4">
-                  {[{v:cd.days,l:'Días'},{v:cd.hours,l:'Horas'},{v:cd.minutes,l:'Min'},{v:cd.seconds,l:'Seg'}].map(({v,l}) => (
+                  {[{ v: cd.days, l: 'Días' }, { v: cd.hours, l: 'Horas' }, { v: cd.minutes, l: 'Min' }, { v: cd.seconds, l: 'Seg' }].map(({ v, l }) => (
                     <div key={l} className="py-2 sm:py-3 text-center rounded-lg"
                       style={{ background: 'rgba(235,195,43,.06)', border: '1px solid rgba(235,195,43,.18)' }}>
                       <div className="font-display leading-none" style={{ fontSize: 'clamp(1.2rem,5vw,2rem)', color: '#ebc32b' }}>
-                        {String(v).padStart(2,'0')}
+                        {String(v).padStart(2, '0')}
                       </div>
                       <div className="text-[10px] sm:text-xs uppercase tracking-wider mt-1 font-body" style={{ color: 'rgba(255,255,255,.45)' }}>{l}</div>
                     </div>
@@ -188,7 +188,7 @@ export default function HomeHero() {
                 {/* Predicciones recientes */}
                 <p className="font-body font-bold text-xs uppercase tracking-widest mb-3" style={{ color: '#ebc32b' }}>Predicciones recientes</p>
                 <div className="space-y-2.5 mb-4">
-                  {PREDS.map(({user,pred,pts}) => (
+                  {PREDS.map(({ user, pred, pts }) => (
                     <div key={user} className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0">
                         <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 font-body font-bold text-xs"
@@ -209,7 +209,7 @@ export default function HomeHero() {
                   onMouseEnter={e => { e.currentTarget.style.background = '#f5d75a' }}
                   onMouseLeave={e => { e.currentTarget.style.background = '#ebc32b' }}>
                   Empezar a pronosticar
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
                 </Link>
               </div>
             </div>
