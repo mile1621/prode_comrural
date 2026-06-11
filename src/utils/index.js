@@ -75,26 +75,20 @@ export function fmtFechaLarga(iso) {
 }
 
 /**
- * Convierte una fecha que viene del backend (formato ISO con Z)
- * interpretándola como hora Argentina, no UTC.
- * Backend guarda "2026-04-29T13:30:00.000Z" queriendo decir 13:30 Argentina.
- * Esta función lo convierte a un timestamp correcto.
+ * Convierte una fecha ISO del backend a timestamp.
+ *
+ * El backend SIEMPRE emite UTC real (fecha_cierre se guarda con
+ * inputLocalAIsoUtc → new Date(local).toISOString(), y los partidos
+ * se convierten a UTC real en Apps Script). Por lo tanto se interpreta
+ * como UTC estándar, igual que formatDate/fmtFecha y el resto de los
+ * contadores del proyecto. Cada navegador la muestra en su hora local.
+ *
+ * ⚠️ NO re-aplicar offset de Argentina: hacerlo empujaba el cierre 3h
+ * al futuro (el contador mostraba "5h" cuando faltaban ~2h).
  */
 function fechaArgentinaATimestamp(fechaISO) {
   if (!fechaISO) return null
-  const str = String(fechaISO).trim()
-  
-  // Si termina en Z, asumir que es hora Argentina (no UTC)
-  if (/Z$/.test(str)) {
-    const sinZ = str.replace(/Z$/, '')
-    const conOffset = `${sinZ}-03:00` // Argentina UTC-3
-    const date = new Date(conOffset)
-    if (isNaN(date.getTime())) return null
-    return date.getTime()
-  }
-  
-  // Si no tiene Z, parsearlo normalmente
-  const date = new Date(str)
+  const date = new Date(String(fechaISO).trim())
   if (isNaN(date.getTime())) return null
   return date.getTime()
 }
