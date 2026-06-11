@@ -544,7 +544,7 @@
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 400px), 1fr))',
               gap: '1.25rem',
             }}
           >
@@ -1001,7 +1001,7 @@
                     {Object.entries(groups).map(([group,items])=>(
                       <div key={group}>
                         <p style={{ fontSize:'.7rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'.12em',color:'rgba(235,195,43,.85)',marginBottom:'.7rem' }}>{group}</p>
-                        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'.8rem' }}>
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(min(100%,300px),1fr))', gap:'.8rem' }}>
                           {items.map(m=><PartidoCard key={m.id} match={m}/>)}
                         </div>
                       </div>

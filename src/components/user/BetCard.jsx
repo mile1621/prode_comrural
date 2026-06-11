@@ -149,7 +149,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
         {/* Header: título + badges de estado/tipo */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="min-w-0 flex-1">
-            <h3 className="font-display text-2xl md:text-3xl style={{ color: '#d0daf0' }} tracking-wide leading-tight truncate">
+            <h3 className="font-display text-2xl md:text-3xl tracking-wide leading-tight truncate" style={{ color: '#d0daf0' }}>
               {bet.titulo}
             </h3>
             <p className="text-xs text-[var(--color-text-muted)] font-body mt-1">
@@ -292,8 +292,8 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                   <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
                     <div className="flex items-center gap-2 min-w-0">
                       <Bandera url={match.bandera_local} alt={match.equipo_local} />
-                      <span className="font-body font-semibold  text-sm truncate">
-                        {match.equipo_local}style={{ color: '#d0daf0' }}
+                      <span className="font-body font-semibold text-sm truncate" style={{ color: '#d0daf0' }}>
+                        {match.equipo_local}
                       </span>
                     </div>
 
@@ -302,7 +302,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
                     </span>
 
                     <div className="flex items-center gap-2 min-w-0 justify-end">
-                      <span className="font-body font-semibold style={{ color: '#d0daf0' }} text-sm truncate text-right">
+                      <span className="font-body font-semibold text-sm truncate text-right" style={{ color: '#d0daf0' }}>
                         {match.equipo_visitante}
                       </span>
                       <Bandera url={match.bandera_visitante} alt={match.equipo_visitante} />
@@ -381,7 +381,7 @@ export default function BetCard({ bet, predictionsMap, onPredict }) {
               <p className="text-[10px] font-body font-bold uppercase tracking-[0.15em] text-[var(--color-warn)] mb-0.5">
                 Premio
               </p>
-              <p className="font-body font-semibold style={{ color: '#d0daf0' }} text-sm truncate">
+              <p className="font-body font-semibold text-sm truncate" style={{ color: '#d0daf0' }}>
                 {bet.premio}
               </p>
             </div>

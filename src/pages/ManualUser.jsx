@@ -319,7 +319,7 @@ export default function ManualUser() {
           `,
         }}/>
 
-        <div style={{
+        <div className="manual-layout" style={{
           position:'relative', zIndex:1,
           display:'grid', gridTemplateColumns:'minmax(0,260px) minmax(0,1fr)',
           gap:0, maxWidth:1280, margin:'0 auto',
@@ -708,6 +708,7 @@ export default function ManualUser() {
 
         <style>{`
           @media (max-width: 900px) {
+            .manual-layout { grid-template-columns: 1fr !important; }
             aside { display: none !important; }
             main { padding: 0 20px 60px !important; }
           }
