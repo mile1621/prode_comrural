@@ -20,6 +20,20 @@ import sheetsApi from '../services/sheetsApi.js'
 function isOpen(b)   { return b.estado==='abierta' && new Date(b.fecha_cierre)>Date.now() }
 function initials(n) { return (n||'').trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('')||'?' }
 
+/* Detecta viewport mobile y reacciona al resize/rotación */
+export function useIsMobile(bp = 720) {
+  const query = `(max-width:${bp}px)`
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const onChange = e => setM(e.matches)
+    mq.addEventListener('change', onChange)
+    setM(mq.matches)
+    return () => mq.removeEventListener('change', onChange)
+  }, [query])
+  return m
+}
+
 /* ─── estilos globales ─── */
 const CSS = `
 @keyframes rk-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -29,8 +43,10 @@ const CSS = `
 
 /* Panel izquierdo */
 .rk-sidebar { width:380px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;background:#fcfaf6;border-right:1px solid #f0eadb }
-.rk-sidebar-scroll::-webkit-scrollbar { width:2px }
-.rk-sidebar-scroll::-webkit-scrollbar-thumb { background:#e2ddd6;border-radius:99px }
+.rk-sidebar-scroll { flex:1;min-height:0;overflow-y:auto;overflow-x:hidden }
+.rk-sidebar-scroll::-webkit-scrollbar { width:6px }
+.rk-sidebar-scroll::-webkit-scrollbar-thumb { background:#cbb88f;border-radius:99px }
+.rk-sidebar-scroll::-webkit-scrollbar-thumb:hover { background:#b9a373 }
 
 /* Fila apuesta */
 .rk-row { display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid #f5f3ee;position:relative;transition:background .13s }
@@ -52,10 +68,14 @@ const CSS = `
 
 /* Mobile */
 @media(max-width:720px) {
-  .rk-shell { flex-direction:column!important;height:auto!important }
-  .rk-sidebar { width:100%;max-height:220px;border-right:none!important;border-bottom:1px solid rgba(255,255,255,.08) }
-  .rk-content { padding:16px!important }
-  .rk-podio-grid { grid-template-columns:1fr!important;max-width:220px!important }
+  .rk-shell { flex-direction:column!important;height:auto!important;box-shadow:0 4px 24px rgba(12,24,43,.1)!important }
+  .rk-sidebar { width:100%;max-height:320px;border-right:none!important;border-bottom:1px solid #f0eadb!important }
+  .rk-content { padding:14px!important }
+  /* Mini-podio: NO se apila — columnas según cantidad (a prueba de balas) */
+  .rk-podio-grid { gap:7px!important;max-width:100%!important }
+  .rk-podio-grid[data-count="2"] { grid-template-columns:repeat(2,minmax(0,1fr))!important }
+  .rk-podio-grid[data-count="3"] { grid-template-columns:repeat(3,minmax(0,1fr))!important }
+  .rk-row { padding:10px 14px!important }
 }
 `
 
@@ -65,13 +85,41 @@ const CSS = `
 export default function RankingPageUser() {
   const { bets, loading:lb } = useBets()
   const { user }  = useAuth()
+  const isMobile  = useIsMobile()
+
+  // Vista activa: 'global' (default) | 'apuesta'
+  const [modo, setModo]           = useState('global')
 
   const [sel, setSel]             = useState(null)
   const [tabla, setTabla]         = useState([])
   const [meta, setMeta]           = useState({})
   const [loading, setLoading]     = useState(false)
 
+  // Estado del ranking global (suma de todas las apuestas)
+  const [gTabla, setGTabla]       = useState([])
+  const [gMeta, setGMeta]         = useState({})
+  const [gLoading, setGLoading]   = useState(true)
+
+  useEffect(() => {
+    let cancel = false
+    ;(async () => {
+      setGLoading(true)
+      try {
+        const r = await sheetsApi.predicciones.tablaGlobal()
+        if (cancel) return
+        setGTabla(r.tabla || [])
+        setGMeta({ total:r.total, mi_posicion:r.mi_posicion, esta_en_top:r.esta_en_top })
+      } catch (e) {
+        if (!cancel) console.error('Error ranking global:', e.message)
+      } finally {
+        if (!cancel) setGLoading(false)
+      }
+    })()
+    return () => { cancel = true }
+  }, [])
+
   async function cargarRanking(bet) {
+    setModo('apuesta')
     if (sel?.id===bet.id) return
     setSel(bet); setLoading(true); setTabla([]); setMeta({})
     try {
@@ -90,7 +138,7 @@ export default function RankingPageUser() {
       {/* ⚡ Dimensiones alineadas con FixturePage */}
       <div style={{ maxWidth:1400, margin:'0 auto', padding:'2rem 1.5rem 3rem' }}>
 
-        {/* Título página — RANKING navy + (subtítulo gris debajo) */}
+        {/* Título página */}
         <div className="rk-in" style={{ marginBottom:'1.5rem' }}>
           <h1 style={{
             fontFamily:"'Bebas Neue',sans-serif",
@@ -100,9 +148,12 @@ export default function RankingPageUser() {
             letterSpacing:'.02em',
           }}>
             <span style={{color:'#0c182b'}}>RANKING</span>
+            {modo==='global' && <span style={{color:'#ebc32b'}}> GLOBAL</span>}
           </h1>
           <p style={{ fontSize:'.84rem', color:'#5f6e8a', margin:0 }}>
-            {sel ? sel.titulo : 'Seleccioná una apuesta para ver el ranking'}
+            {modo==='global'
+              ? 'Acumulado de puntos de todas las apuestas'
+              : (sel ? sel.titulo : 'Seleccioná una apuesta para ver el ranking')}
           </p>
         </div>
 
@@ -121,6 +172,9 @@ export default function RankingPageUser() {
             </div>
 
             <div className="rk-sidebar-scroll">
+              {/* 🌎 Ranking Global — primer ítem, seleccionado por defecto */}
+              <GlobalRow sel={modo==='global'} onPick={()=>setModo('global')} />
+
               {lb ? (
                 <div style={{padding:12,display:'flex',flexDirection:'column',gap:4}}>
                   {[...Array(6)].map((_,i)=><div key={i} className="rk-sk" style={{height:52}}/>)}
@@ -130,13 +184,13 @@ export default function RankingPageUser() {
                   {bets.filter(b=>isOpen(b)).length>0 && (
                     <SideSection label="Activas" dot="#22c55e">
                       {bets.filter(b=>isOpen(b)).map(b=>(
-                        <BetRow key={b.id} bet={b} sel={sel?.id===b.id} onPick={cargarRanking}/>
+                        <BetRow key={b.id} bet={b} sel={modo==='apuesta' && sel?.id===b.id} onPick={cargarRanking}/>
                       ))}
                     </SideSection>
                   )}
                   <SideSection label="Historial">
                     {bets.filter(b=>!isOpen(b)).map(b=>(
-                      <BetRow key={b.id} bet={b} sel={sel?.id===b.id} onPick={cargarRanking}/>
+                      <BetRow key={b.id} bet={b} sel={modo==='apuesta' && sel?.id===b.id} onPick={cargarRanking}/>
                     ))}
                   </SideSection>
                 </>
@@ -147,7 +201,9 @@ export default function RankingPageUser() {
           {/* ══ CONTENIDO DERECHO ══ */}
           <div className="rk-content" style={{padding:'24px 32px 32px'}}>
 
-            {!sel ? (
+            {modo==='global' ? (
+              <GlobalView tabla={gTabla} meta={gMeta} loading={gLoading} user={user} compact={isMobile} />
+            ) : !sel ? (
               <EmptySelect/>
             ) : (
               <div className="rk-in">
@@ -165,6 +221,7 @@ export default function RankingPageUser() {
                       top={tabla.slice(0,3)}
                       miId={user?.id}
                       apuesta={sel}
+                      compact={isMobile}
                     />
 
                     {!meta.esta_en_top && meta.mi_posicion && (
@@ -185,6 +242,82 @@ export default function RankingPageUser() {
         </div>
       </div>
     </AppShell>
+  )
+}
+
+/* ══════════════════════════════════════════
+   TOGGLE GLOBAL / POR APUESTA
+══════════════════════════════════════════ */
+export function GlobalRow({ sel, onPick }) {
+  return (
+    <div className={`rk-row${sel?' sel':''}`} onClick={onPick} style={{borderBottom:'1px solid #f0eadb'}}>
+      <div style={{
+        width:24,height:24,borderRadius:7,flexShrink:0,
+        display:'flex',alignItems:'center',justifyContent:'center',
+        fontSize:13,
+        background: sel ? 'linear-gradient(135deg,#ebc32b,#c99f16)' : 'rgba(12,24,43,.05)',
+      }}>🏆</div>
+      <div style={{flex:1,minWidth:0}}>
+        <p style={{fontSize:12,fontWeight:700,color:sel?'#fff':'#0c182b',margin:'0 0 2px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+          Ranking Global
+        </p>
+        <p style={{fontSize:10,color:sel?'rgba(255,255,255,.55)':'#94a3b8',margin:0}}>
+          Todas las apuestas
+        </p>
+      </div>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={sel?'#ebc32b':'#c8d0dc'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+    </div>
+  )
+}
+
+/* ══════════════════════════════════════════
+   VISTA GLOBAL — reusa Podio / MiPosicion / OtrosParticipantes
+   (se renderiza DENTRO del panel derecho, junto al sidebar)
+══════════════════════════════════════════ */
+export function GlobalView({ tabla, meta, loading, user, compact=false }) {
+  return (
+    <div className="rk-in">
+      {/* Banner */}
+      <div style={{borderRadius:14, marginBottom:24, background:'linear-gradient(125deg,#0c182b 0%,#1a3060 100%)', padding:'18px 22px', position:'relative', overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-30,right:-30,width:180,height:180,borderRadius:'50%',background:'rgba(235,195,43,.08)',pointerEvents:'none'}}/>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16,position:'relative'}}>
+          <div>
+            <span style={{fontSize:9,fontWeight:800,textTransform:'uppercase',letterSpacing:'.22em',color:'rgba(235,195,43,.55)',display:'block',marginBottom:4}}>
+              TABLA GENERAL
+            </span>
+            <h2 style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:'clamp(22px,3vw,32px)',color:'#fff',margin:0,letterSpacing:'.02em',lineHeight:1}}>
+              Ranking Global
+            </h2>
+          </div>
+          {!loading && (
+            <div style={{display:'flex',gap:20,flexShrink:0}}>
+              {meta.total>0 && <BannerStat n={meta.total} label="Part."/>}
+              {meta.mi_posicion && <BannerStat n={`#${meta.mi_posicion.posicion}`} label="Tu pos." gold/>}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {loading ? (
+        <SkeletonContent/>
+      ) : tabla.length===0 ? (
+        <SinParticipantes/>
+      ) : (
+        <>
+          <Podio top={tabla.slice(0,3)} miId={user?.id} apuesta={{}} compact={compact} />
+
+          {!meta.esta_en_top && meta.mi_posicion && (
+            <MiPosicion pos={meta.mi_posicion}/>
+          )}
+
+          {tabla.length > 3 && (
+            <OtrosParticipantes tabla={tabla} user={user} />
+          )}
+        </>
+      )}
+    </div>
   )
 }
 
@@ -290,7 +423,7 @@ const PODIO_CFG = {
   2: { grad:'linear-gradient(145deg,#fed7aa 0%,#c2720e 100%)', shadow:'rgba(194,114,14,.4)',  border:'rgba(194,114,14,.5)',  ring:'rgba(194,114,14,.2)',  emoji:'🥉', label:'3°' },
 }
 
-function Podio({ top, miId, apuesta }) {
+function Podio({ top, miId, apuesta, compact=false }) {
   if (!top.length) return null
 
   const orden   = top.length===1?[top[0]]:top.length===2?[top[1],top[0]]:[top[1],top[0],top[2]]
@@ -303,10 +436,10 @@ function Podio({ top, miId, apuesta }) {
         <div style={{flex:1,height:1,background:'linear-gradient(90deg,#e2ddd6,transparent)'}}/>
       </div>
 
-      <div className="rk-podio-grid" style={{
+      <div className="rk-podio-grid" data-count={top.length} style={{
         display:'grid',
         gridTemplateColumns:top.length===1?'1fr':top.length===2?'1fr 1fr':'1fr 1.08fr 1fr',
-        gap:12, alignItems:'end',
+        gap:compact?8:12, alignItems:'end',
         maxWidth:top.length===1?200:top.length===2?420:'100%',
         margin:'0 auto',
       }}>
@@ -315,14 +448,16 @@ function Podio({ top, miId, apuesta }) {
           const cfg    = PODIO_CFG[rank]
           const isTop  = rank===0
           const me     = u.user_id===miId
-          const sz     = isTop ? 60 : 48
+          const sz     = compact ? (isTop?46:38) : (isTop?60:48)
 
           return (
             <div key={u.user_id} className="rk-pcard"
               style={{
                 background:'#fff',
                 border:`${isTop?2:1.5}px solid ${isTop?cfg.border:'#e8e3db'}`,
-                padding: isTop ? '20px 14px 14px' : '16px 12px 12px',
+                padding: compact
+                  ? (isTop ? '16px 6px 10px' : '13px 5px 9px')
+                  : (isTop ? '20px 14px 14px' : '16px 12px 12px'),
                 boxShadow: isTop
                   ? `0 0 0 4px ${cfg.ring}, 0 12px 40px ${cfg.shadow}`
                   : '0 2px 12px rgba(12,24,43,.06)',
@@ -334,35 +469,35 @@ function Podio({ top, miId, apuesta }) {
                 </div>
               )}
 
-              <div style={{fontSize:isTop?28:20,marginBottom:10,lineHeight:1}}>{cfg.emoji}</div>
+              <div style={{fontSize:compact?(isTop?22:17):(isTop?28:20),marginBottom:compact?7:10,lineHeight:1}}>{cfg.emoji}</div>
 
               <div style={{
                 width:sz, height:sz, borderRadius:'50%',
                 background:cfg.grad,
-                margin:'0 auto 10px',
+                margin:compact?'0 auto 7px':'0 auto 10px',
                 display:'flex',alignItems:'center',justifyContent:'center',
                 fontFamily:"'Bebas Neue',sans-serif",
-                fontSize:isTop?22:17,
+                fontSize:compact?(isTop?16:13):(isTop?22:17),
                 color:'#fff',
                 boxShadow:`0 0 0 3px #fff, 0 0 0 ${isTop?6:5}px ${cfg.ring}, 0 6px 20px ${cfg.shadow}`,
                 letterSpacing:'.04em',
               }}>{initials(u.nombre)}</div>
 
-              <p style={{fontWeight:700,fontSize:isTop?15:13,color:'#0c182b',margin:'0 0 2px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+              <p style={{fontWeight:700,fontSize:compact?(isTop?12:11):(isTop?15:13),color:'#0c182b',margin:'0 0 2px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                 {u.nombre}
-                {me && <span style={{fontSize:10,color:'#94a3b8',fontWeight:400,marginLeft:4}}>(vos)</span>}
+                {me && <span style={{fontSize:compact?9:10,color:'#94a3b8',fontWeight:400,marginLeft:4}}>(vos)</span>}
               </p>
 
-              <p style={{fontSize:10,color:'#94a3b8',margin:'0 0 12px'}}>
+              <p style={{fontSize:compact?9:10,color:'#94a3b8',margin:compact?'0 0 8px':'0 0 12px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                 {u.predicciones} pred · {u.aciertos_exactos} ✓
               </p>
 
               <div style={{
                 background: isTop ? 'linear-gradient(135deg,rgba(235,195,43,.12),rgba(235,195,43,.06))' : 'rgba(12,24,43,.04)',
                 border: isTop ? '1px solid rgba(235,195,43,.25)' : '1px solid #f0eadb',
-                borderRadius:10, padding:'8px 0',
+                borderRadius:10, padding:compact?'6px 0':'8px 0',
               }}>
-                <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:isTop?36:28,color:isTop?'#c99f16':'#0c182b',margin:0,lineHeight:1}}>
+                <p style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:compact?(isTop?26:21):(isTop?36:28),color:isTop?'#c99f16':'#0c182b',margin:0,lineHeight:1}}>
                   {u.puntos_totales}
                 </p>
                 <p style={{fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:'.14em',color:'#94a3b8',margin:'2px 0 0'}}>puntos</p>
